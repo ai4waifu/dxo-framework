@@ -1,0 +1,18 @@
+{
+    "name": "@dxo/dxo-darwin-arm64",
+    "version": "0.1.0",
+    "private": true,
+    "description": "DXO native N-API addon for @dxo/core (darwin-arm64)",
+    "license": "MIT OR Apache-2.0",
+    "os": [
+        "darwin"
+    ],
+    "cpu": [
+        "arm64"
+    ],
+    "main": "dxo.darwin-arm64.node",
+    "files": [
+        "dxo.darwin-arm64.node",
+        "README.md"
+    ]
+}

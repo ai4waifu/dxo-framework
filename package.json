@@ -1,11 +1,23 @@
 {
+    "name": "dxo-framework",
     "private": true,
+    "type": "module",
+    "packageManager": "pnpm@9.15.4",
     "scripts": {
-        "doc": "cargo doc --no-deps --all-features",
-        "test": "cargo test --release",
-        "fmt": "cargo fmt --all",
-        "p": "git push && git push --tags --prune",
-        "reset": "git reset Head~ --soft",
-        "u": "cargo upgrade --workspace"
+        "build:native": "node scripts/build/napi.mjs --release",
+        "build": "pnpm run build:native",
+        "test": "cargo test --release && node scripts/test/smoke.mjs",
+        "lint": "biome check .",
+        "lint:fix": "biome check --write .",
+        "fmt": "biome format --write . && cargo fmt --all",
+        "fmt:check": "biome format . && cargo fmt --all -- --check",
+        "smoke": "node scripts/test/smoke.mjs",
+        "placeholder": "node scripts/ci/publish-placeholder.mjs",
+        "placeholder:publish": "node scripts/ci/publish-placeholder.mjs publish",
+        "placeholder:trust": "node scripts/ci/publish-placeholder.mjs trust"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.5.7",
+        "@dxo/core": "workspace:*"
     }
 }

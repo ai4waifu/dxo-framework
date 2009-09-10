@@ -1,0 +1,37 @@
+{
+    "name": "@dxo/core",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "DXO deep learning framework — TypeScript entry, native runtime via optionalDependencies",
+    "license": "MIT OR Apache-2.0",
+    "main": "src/index.js",
+    "types": "./src/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./src/index.d.ts",
+            "default": "./src/index.js"
+        }
+    },
+    "files": [
+        "src",
+        "README.md"
+    ],
+    "scripts": {
+        "build:native": "node ../../../scripts/build/napi.mjs --release",
+        "smoke": "node ../../../scripts/test/smoke.mjs"
+    },
+    "optionalDependencies": {
+        "@dxo/dxo-win32-x64": "workspace:*",
+        "@dxo/dxo-linux-x64": "workspace:*",
+        "@dxo/dxo-darwin-arm64": "workspace:*",
+        "@dxo/dxo-darwin-x64": "workspace:*"
+    },
+    "keywords": [
+        "dxo",
+        "deep-learning",
+        "typescript",
+        "napi",
+        "rust"
+    ]
+}
