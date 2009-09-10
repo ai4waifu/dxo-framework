@@ -1,14 +1,25 @@
 [workspace]
 resolver = "2"
-members = ["projects/*"]
-default-members = [
-    "projects/game-extension",
+members = [
+    "projects/compilers/dxo-core",
+    "projects/compilers/dxo-napi",
 ]
-exclude = [
-    "projects/game-client",
-    "projects/.DS_Store",
-]
+default-members = ["projects/compilers/dxo-core"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["DXO Contributors"]
+repository = "https://github.com/ai4waifu/dxo-framework"
+rust-version = "1.77"
+
+[workspace.dependencies]
+dxo-core = { path = "projects/compilers/dxo-core" }
+napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
+napi-derive = "3.6.3"
 
 [profile.release]
 lto = true
+codegen-units = 1
 panic = "abort"
