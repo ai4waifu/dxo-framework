@@ -1,23 +1,13 @@
-//! DXO dxo-core engine — tensor storage, backends, autograd (M0: version + empty tensor shell).
+//! DXO dxo-core engine — CPU tensor slice (M1); autograd/backends follow titan integration.
 
 #![deny(missing_docs)]
 
-/// Crate version string (mirrors npm `@dxo/dxo-core` semver during M0).
+mod tensor;
+
+pub use tensor::{Tensor, TensorError};
+
+/// Crate version string (mirrors npm `@dxo/core` semver during M0–M1).
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-/// Placeholder n-dimensional array handle (M1 will add storage/shape/strides).
-#[derive(Debug, Clone, Default)]
-pub struct Tensor {
-    _private: (),
-}
-
-impl Tensor {
-    /// Create an empty tensor shell (M0 scaffold).
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 
 #[cfg(test)]
 mod tests {
