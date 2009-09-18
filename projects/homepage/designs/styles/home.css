@@ -1,0 +1,121 @@
+.dxo-home,
+.dxo-lite-page {
+    --dxo-bg: #0b1020;
+    --dxo-surface: #141c2f;
+    --dxo-text: #e8eefc;
+    --dxo-muted: #9aa8c7;
+    --dxo-accent: #5b9dff;
+    --dxo-border: #243049;
+    font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    color: var(--dxo-text);
+    background: radial-gradient(1200px 600px at 10% -10%, #1a2848 0%, var(--dxo-bg) 55%);
+    min-height: 100vh;
+    padding: 2rem 1.5rem 3rem;
+    line-height: 1.5;
+}
+
+.dxo-home__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+
+.dxo-home__brand {
+    color: var(--dxo-text);
+    text-decoration: none;
+    font-size: 1.125rem;
+}
+
+.dxo-home__nav a {
+    color: var(--dxo-muted);
+    text-decoration: none;
+    margin-left: 1rem;
+}
+
+.dxo-home__nav a:hover {
+    color: var(--dxo-accent);
+}
+
+.dxo-home__hero {
+    max-width: 42rem;
+    margin-bottom: 2rem;
+}
+
+.dxo-home__kicker {
+    color: var(--dxo-accent);
+    font-size: 0.875rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin: 0 0 0.75rem;
+}
+
+.dxo-home__hero h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.1;
+    margin: 0 0 1rem;
+}
+
+.dxo-home__lede {
+    color: var(--dxo-muted);
+    font-size: 1.0625rem;
+    margin: 0;
+}
+
+.dxo-home__card {
+    background: var(--dxo-surface);
+    border: 1px solid var(--dxo-border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    max-width: 42rem;
+    margin-top: 1rem;
+}
+
+.dxo-home__card h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.125rem;
+}
+
+.dxo-home__card dl {
+    margin: 0;
+}
+
+.dxo-home__card dl div {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--dxo-border);
+}
+
+.dxo-home__card dl div:last-child {
+    border-bottom: none;
+}
+
+.dxo-home__card dt {
+    color: var(--dxo-muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.875rem;
+}
+
+.dxo-home__card dd {
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.dxo-home__hint {
+    margin: 1rem 0 0;
+    color: var(--dxo-muted);
+    font-size: 0.875rem;
+}
+
+.dxo-lite-page h1 {
+    margin: 0 0 0.5rem;
+}
+
+.dxo-lite-page > p {
+    color: var(--dxo-muted);
+    max-width: 42rem;
+    margin: 0 0 1.5rem;
+}

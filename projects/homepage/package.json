@@ -1,0 +1,21 @@
+{
+    "name": "@dxo/homepage",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "DXO marketing homepage — VMZ frontend with @dxo/lite smoke surface",
+    "scripts": {
+        "check": "vmz check .",
+        "build": "vmz build --release --profile static . && node ../../scripts/build/homepage-cdn.mjs",
+        "dev": "vmz dev .",
+        "preview": "vmz serve --profile static .",
+        "test:lite": "node ./tests/lite-probe.mjs"
+    },
+    "dependencies": {
+        "@dxo/lite": "workspace:*",
+        "@vmz/core": "^0.1.12"
+    },
+    "devDependencies": {
+        "@vmz/vmz": "^0.1.12"
+    }
+}

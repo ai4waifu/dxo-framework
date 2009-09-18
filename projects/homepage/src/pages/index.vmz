@@ -1,0 +1,42 @@
+<template>
+  <main class="dxo-home">
+    <header class="dxo-home__header">
+      <a class="dxo-home__brand" href="/"><strong>DXO</strong></a>
+      <nav class="dxo-home__nav">
+        <a href="/lite">@dxo/lite</a>
+      </nav>
+    </header>
+
+    <section class="dxo-home__hero">
+      <p class="dxo-home__kicker">Deep Learning for the JavaScript Era</p>
+      <h1>TypeScript-first training on Node.js</h1>
+      <p class="dxo-home__lede">
+        Rust core engine, napi-rs bindings, and define-by-run dynamic graphs — without leaving the npm ecosystem.
+      </p>
+    </section>
+
+    <section class="dxo-home__card" aria-labelledby="lite-probe-title">
+      <h2 id="lite-probe-title">@dxo/lite runtime probe</h2>
+      <dl>
+        <div><dt>version</dt><dd>{liteVersion}</dd></div>
+        <div><dt>Tensor</dt><dd>{liteTensorClass}</dd></div>
+      </dl>
+      <p class="dxo-home__hint">Values come from <code>@dxo/lite</code> in the browser bundle (no native .node).</p>
+    </section>
+  </main>
+</template>
+
+<script client>
+import { probeLite } from '../lib/lite-probe.ts';
+
+export default class IndexPage {
+    liteVersion = '…';
+    liteTensorClass = '…';
+
+    onMount() {
+        const probe = probeLite();
+        this.liteVersion = probe.version;
+        this.liteTensorClass = probe.tensorClass;
+    }
+}
+</script>

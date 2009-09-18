@@ -1,0 +1,44 @@
+<template>
+  <main class="dxo-lite-page">
+    <header class="dxo-home__header">
+      <a class="dxo-home__brand" href="/"><strong>DXO</strong></a>
+      <nav class="dxo-home__nav">
+        <a href="/">Home</a>
+      </nav>
+    </header>
+
+    <h1>@dxo/lite test surface</h1>
+    <p>Lightweight CPU-only stub for browsers and environments without native CUDA/Metal binaries.</p>
+
+    <section class="dxo-home__card">
+      <h2>Probe results</h2>
+      <dl>
+        <div><dt>version()</dt><dd>{liteVersion}</dd></div>
+        <div><dt>new Tensor()</dt><dd>{liteTensorClass}</dd></div>
+        <div><dt>tensor instanceof Tensor</dt><dd>{tensorInstanceOk}</dd></div>
+      </dl>
+    </section>
+
+    <section class="dxo-home__card">
+      <h2>Node self-test</h2>
+      <p>Run <code>pnpm test:lite</code> in <code>projects/homepage</code> for the same contract under Node.</p>
+    </section>
+  </main>
+</template>
+
+<script client>
+import { Tensor, version } from '@dxo/lite';
+
+export default class LiteTestPage {
+    liteVersion = '';
+    liteTensorClass = '';
+    tensorInstanceOk = '';
+
+    onMount() {
+        const tensor = new Tensor();
+        this.liteVersion = version();
+        this.liteTensorClass = tensor.constructor.name;
+        this.tensorInstanceOk = tensor instanceof Tensor ? 'yes' : 'no';
+    }
+}
+</script>
