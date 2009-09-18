@@ -14,7 +14,13 @@
         "smoke": "node scripts/test/smoke.mjs",
         "placeholder": "node scripts/ci/publish-placeholder.mjs",
         "placeholder:publish": "node scripts/ci/publish-placeholder.mjs publish",
-        "placeholder:trust": "node scripts/ci/publish-placeholder.mjs trust"
+        "placeholder:trust": "node scripts/ci/publish-placeholder.mjs trust",
+        "homepage": "pnpm install && pnpm --filter @dxo/homepage build",
+        "homepage:check": "pnpm --filter @dxo/homepage check",
+        "homepage:build": "pnpm --filter @dxo/homepage build",
+        "homepage:dev": "pnpm --filter @dxo/homepage dev",
+        "homepage:preview": "pnpm --filter @dxo/homepage preview",
+        "homepage:test:lite": "pnpm --filter @dxo/homepage test:lite"
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.7",
