@@ -5,16 +5,19 @@
     "type": "module",
     "description": "DXO lightweight CPU-only surface (M0 stub; WASM backend later)",
     "license": "MIT OR Apache-2.0",
-    "main": "src/index.js",
-    "types": "./src/index.d.ts",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "exports": {
         ".": {
-            "types": "./src/index.d.ts",
-            "default": "./src/index.js"
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
         }
     },
     "files": [
-        "src",
+        "dist",
         "README.md"
-    ]
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json"
+    }
 }

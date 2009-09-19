@@ -1,0 +1,32 @@
+{
+    "name": "@dxo/nn",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "DXO neural network modules — pure TypeScript composition over @dxo/core",
+    "license": "MIT OR Apache-2.0",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "test:forward": "tsx ../../../scripts/test/nn-forward.ts"
+    },
+    "dependencies": {
+        "@dxo/core": "workspace:*"
+    },
+    "keywords": [
+        "dxo",
+        "neural-network",
+        "typescript"
+    ]
+}

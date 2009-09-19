@@ -2,11 +2,12 @@ import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { NativeAddon } from './native-types.js';
 
 const require = createRequire(import.meta.url);
 const pkgRoot = path.dirname(fileURLToPath(new URL('../package.json', import.meta.url)));
 
-function platformTriple() {
+function platformTriple(): string {
     const { platform, arch } = process;
     if (platform === 'win32' && arch === 'x64') return 'win32-x64-msvc';
     if (platform === 'darwin' && arch === 'arm64') return 'darwin-arm64';
@@ -15,22 +16,17 @@ function platformTriple() {
     return `${platform}-${arch}`;
 }
 
-function platformShort(triple = platformTriple()) {
+function platformShort(triple = platformTriple()): string {
     if (triple === 'win32-x64-msvc') return 'win32-x64';
     if (triple === 'linux-x64-gnu') return 'linux-x64';
     return triple;
 }
 
-/**
- * Resolve native `.node` via the platform optionalDependency (`@dxo/dxo-<short>`).
- * @returns {string}
- */
-export function resolveNativePath() {
+export function resolveNativePath(): string {
     const triple = platformTriple();
     const short = platformShort(triple);
     const name = `@dxo/dxo-${short}`;
-    /** @type {string[]} */
-    const candidates = [];
+    const candidates: string[] = [];
     try {
         const resolved = require.resolve(`${name}/package.json`);
         const dir = path.dirname(resolved);
@@ -38,21 +34,23 @@ export function resolveNativePath() {
     } catch {
         /* optional dep not installed */
     }
-    candidates.push(path.join(pkgRoot, 'node_modules', name, `dxo.${triple}.node`), path.join(pkgRoot, 'node_modules', name, 'dxo.node'));
+    candidates.push(
+        path.join(pkgRoot, 'node_modules', name, `dxo.${triple}.node`),
+        path.join(pkgRoot, 'node_modules', name, 'dxo.node'),
+    );
     for (const p of candidates) {
         if (existsSync(p)) return p;
     }
     throw new Error(
-        `DXO native addon not found for ${name}. Run: pnpm build:native\n` + `Looked in:\n${candidates.map((c) => `  - ${c}`).join('\n')}`,
+        `DXO native addon not found for ${name}. Run: pnpm build:native\nLooked in:\n${candidates.map((c) => `  - ${c}`).join('\n')}`,
     );
 }
 
-let _native;
+let cached: NativeAddon | undefined;
 
-/** @returns {Record<string, unknown>} */
-export function loadNative() {
-    if (_native) return _native;
+export function loadNative(): NativeAddon {
+    if (cached) return cached;
     const addonPath = resolveNativePath();
-    _native = require(addonPath);
-    return _native;
+    cached = require(addonPath) as NativeAddon;
+    return cached;
 }

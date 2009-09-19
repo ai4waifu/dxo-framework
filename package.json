@@ -4,18 +4,19 @@
     "type": "module",
     "packageManager": "pnpm@9.15.4",
     "scripts": {
+        "build:ts": "pnpm --filter @dxo/core --filter @dxo/lite --filter @dxo/nn run build",
         "build:native": "node scripts/build/napi.mjs --release",
-        "build": "pnpm run build:native",
-        "test": "cargo test --release && node scripts/test/smoke.mjs",
+        "build": "pnpm run build:ts && pnpm run build:native",
+        "test": "pnpm run build && cargo test --release && tsx scripts/test/smoke.ts && tsx scripts/test/tensor-cpu.ts && tsx scripts/test/nn-forward.ts",
         "lint": "biome check .",
         "lint:fix": "biome check --write .",
         "fmt": "biome format --write . && cargo fmt --all",
         "fmt:check": "biome format . && cargo fmt --all -- --check",
-        "smoke": "node scripts/test/smoke.mjs",
+        "smoke": "tsx scripts/test/smoke.ts",
         "placeholder": "node scripts/ci/publish-placeholder.mjs",
         "placeholder:publish": "node scripts/ci/publish-placeholder.mjs publish",
         "placeholder:trust": "node scripts/ci/publish-placeholder.mjs trust",
-        "homepage": "pnpm install && pnpm --filter @dxo/homepage build",
+        "homepage": "pnpm install && pnpm run build:ts && pnpm --filter @dxo/homepage build",
         "homepage:check": "pnpm --filter @dxo/homepage check",
         "homepage:build": "pnpm --filter @dxo/homepage build",
         "homepage:dev": "pnpm --filter @dxo/homepage dev",
@@ -24,6 +25,9 @@
     },
     "devDependencies": {
         "@biomejs/biome": "^2.5.7",
-        "@dxo/core": "workspace:*"
+        "@dxo/core": "workspace:*",
+        "@dxo/nn": "workspace:*",
+        "tsx": "^4.19.4",
+        "typescript": "^5.8.3"
     }
 }

@@ -5,27 +5,32 @@
     "type": "module",
     "description": "DXO deep learning framework — TypeScript entry, native runtime via optionalDependencies",
     "license": "MIT OR Apache-2.0",
-    "main": "src/index.js",
-    "types": "./src/index.d.ts",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "exports": {
         ".": {
-            "types": "./src/index.d.ts",
-            "default": "./src/index.js"
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
         }
     },
     "files": [
-        "src",
+        "dist",
         "README.md"
     ],
     "scripts": {
+        "build": "tsc -p tsconfig.json",
         "build:native": "node ../../../scripts/build/napi.mjs --release",
-        "smoke": "node ../../../scripts/test/smoke.mjs"
+        "smoke": "tsx ../../../scripts/test/smoke.ts"
     },
     "optionalDependencies": {
         "@dxo/dxo-win32-x64": "workspace:*",
         "@dxo/dxo-linux-x64": "workspace:*",
         "@dxo/dxo-darwin-arm64": "workspace:*",
         "@dxo/dxo-darwin-x64": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.0",
+        "typescript": "^5.8.3"
     },
     "keywords": [
         "dxo",

@@ -33,7 +33,9 @@ jobs:
         run: pnpm install --no-frozen-lockfile
       - name: Biome
         run: pnpm run lint
+      - name: Build TypeScript packages
+        run: pnpm run build:ts
       - name: Build native addon
         run: pnpm run build:native
-      - name: Smoke test
-        run: pnpm run smoke
+      - name: JS verify
+        run: tsx scripts/test/smoke.ts && tsx scripts/test/tensor-cpu.ts && tsx scripts/test/nn-forward.ts

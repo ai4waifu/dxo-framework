@@ -11,6 +11,7 @@ thumbs.db
 # Node
 node_modules/
 projects/homepage/dist/
+projects/runtimes/*/dist/
 
 # Rust
 target/
