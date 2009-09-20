@@ -33,10 +33,7 @@ impl Tensor {
     #[must_use]
     pub fn zeros(shape: &[usize]) -> Self {
         let n = shape.iter().product();
-        Self {
-            data: vec![0.0; n],
-            shape: shape.to_vec(),
-        }
+        Self { data: vec![0.0; n], shape: shape.to_vec() }
     }
 
     /// Construct from flat data; `data.len()` must equal shape product.
@@ -78,22 +75,14 @@ impl Tensor {
                 self.numel()
             )));
         }
-        Ok(Self {
-            data: self.data.clone(),
-            shape: shape.to_vec(),
-        })
+        Ok(Self { data: self.data.clone(), shape: shape.to_vec() })
     }
 
     /// Element-wise add with broadcast (trailing dims; bias vector on last axis).
     pub fn add(&self, other: &Self) -> Result<Self, TensorError> {
         if self.shape == other.shape {
             return Ok(Self {
-                data: self
-                    .data
-                    .iter()
-                    .zip(&other.data)
-                    .map(|(a, b)| a + b)
-                    .collect(),
+                data: self.data.iter().zip(&other.data).map(|(a, b)| a + b).collect(),
                 shape: self.shape.clone(),
             });
         }
@@ -106,33 +95,23 @@ impl Tensor {
                         *slot += other.data[j];
                     }
                 }
-                return Ok(Self {
-                    data: out,
-                    shape: self.shape.clone(),
-                });
+                return Ok(Self { data: out, shape: self.shape.clone() });
             }
         }
-        Err(TensorError::Broadcast(format!(
-            "add: incompatible shapes {:?} and {:?}",
-            self.shape, other.shape
-        )))
+        Err(TensorError::Broadcast(format!("add: incompatible shapes {:?} and {:?}", self.shape, other.shape)))
     }
 
     /// Matrix multiply for rank-2 tensors: `[m,k] @ [k,n] -> [m,n]`.
     pub fn matmul(&self, other: &Self) -> Result<Self, TensorError> {
         if self.shape.len() != 2 || other.shape.len() != 2 {
-            return Err(TensorError::Shape(
-                "matmul requires rank-2 tensors".into(),
-            ));
+            return Err(TensorError::Shape("matmul requires rank-2 tensors".into()));
         }
         let m = self.shape[0];
         let k = self.shape[1];
         let k2 = other.shape[0];
         let n = other.shape[1];
         if k != k2 {
-            return Err(TensorError::Shape(format!(
-                "matmul inner dims mismatch: {k} vs {k2}"
-            )));
+            return Err(TensorError::Shape(format!("matmul inner dims mismatch: {k} vs {k2}")));
         }
         let mut out = vec![0.0f32; m * n];
         for i in 0..m {
@@ -144,19 +123,13 @@ impl Tensor {
                 out[i * n + j] = sum;
             }
         }
-        Ok(Self {
-            data: out,
-            shape: vec![m, n],
-        })
+        Ok(Self { data: out, shape: vec![m, n] })
     }
 
     /// Element-wise ReLU.
     #[must_use]
     pub fn relu(&self) -> Self {
-        Self {
-            data: self.data.iter().map(|&x| x.max(0.0)).collect(),
-            shape: self.shape.clone(),
-        }
+        Self { data: self.data.iter().map(|&x| x.max(0.0)).collect(), shape: self.shape.clone() }
     }
 }
 
