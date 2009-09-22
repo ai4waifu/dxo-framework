@@ -5,7 +5,7 @@ export type LiteProbe = {
     tensorClass: string;
 };
 
-/** Runtime probe for the lightweight CPU-only @dxo/lite package. */
+/** Runtime probe for @dxo/lite (WebGPU/WASM runtime; M0 stub). */
 export function probeLite(): LiteProbe {
     const tensor = new Tensor();
     return {
