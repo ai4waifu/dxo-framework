@@ -5,8 +5,12 @@ import { Linear, Sequential } from '@dxo/nn';
 const fc = new Linear(2, 3);
 fc.weight = tensor(
     [
-        1, 0, 0, //
-        0, 1, 0,
+        1,
+        0,
+        0, //
+        0,
+        1,
+        0,
     ],
     [2, 3],
 );
@@ -25,8 +29,14 @@ const mlp = new Sequential([new Linear(2, 4), new Linear(4, 1)]);
 const l0 = mlp.layers[0] as Linear;
 l0.weight = tensor(
     [
-        1, 0, 0, 0, //
-        0, 1, 0, 0,
+        1,
+        0,
+        0,
+        0, //
+        0,
+        1,
+        0,
+        0,
     ],
     [2, 4],
 );
@@ -38,8 +48,10 @@ l1.bias = tensor([0], [1]);
 
 const batch = tensor(
     [
-        1, 0, //
-        0, 1,
+        1,
+        0, //
+        0,
+        1,
     ],
     [2, 2],
 );

@@ -34,10 +34,7 @@ export function resolveNativePath(): string {
     } catch {
         /* optional dep not installed */
     }
-    candidates.push(
-        path.join(pkgRoot, 'node_modules', name, `dxo.${triple}.node`),
-        path.join(pkgRoot, 'node_modules', name, 'dxo.node'),
-    );
+    candidates.push(path.join(pkgRoot, 'node_modules', name, `dxo.${triple}.node`), path.join(pkgRoot, 'node_modules', name, 'dxo.node'));
     for (const p of candidates) {
         if (existsSync(p)) return p;
     }

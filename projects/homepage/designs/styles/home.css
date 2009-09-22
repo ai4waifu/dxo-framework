@@ -6,7 +6,11 @@
     --dxo-muted: #9aa8c7;
     --dxo-accent: #5b9dff;
     --dxo-border: #243049;
-    font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    font-family:
+        system-ui,
+        -apple-system,
+        Segoe UI,
+        sans-serif;
     color: var(--dxo-text);
     background: radial-gradient(1200px 600px at 10% -10%, #1a2848 0%, var(--dxo-bg) 55%);
     min-height: 100vh;

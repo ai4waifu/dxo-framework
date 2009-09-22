@@ -10,7 +10,7 @@ export interface TensorOptions {
     requiresGrad?: boolean;
 }
 
-export type { NativeTensor, NativeAddon } from './native-types.js';
+export type { NativeAddon, NativeTensor } from './native-types.js';
 
 export class Tensor {
     readonly #handle: NativeTensor;
