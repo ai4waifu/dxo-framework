@@ -38,4 +38,4 @@ jobs:
       - name: Build native addon
         run: pnpm run build:native
       - name: JS verify
-        run: tsx scripts/test/smoke.ts && tsx scripts/test/tensor-cpu.ts && tsx scripts/test/nn-forward.ts
+        run: pnpm run test:verify
