@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { loadNative } from './native.js';
 import type { NativeTensor } from './native-types.js';
 
@@ -35,12 +36,20 @@ export class Tensor {
         return new Tensor(this.#handle.add(other.#handle));
     }
 
+    mul(other: Tensor): Tensor {
+        return new Tensor(this.#handle.mul(other.#handle));
+    }
+
     matmul(other: Tensor): Tensor {
         return new Tensor(this.#handle.matmul(other.#handle));
     }
 
     reshape(shape: readonly number[]): Tensor {
         return new Tensor(this.#handle.reshape([...shape]));
+    }
+
+    transpose(): Tensor {
+        return new Tensor(this.#handle.transpose());
     }
 
     relu(): Tensor {
@@ -63,8 +72,12 @@ export function tensor(data: TensorData, shape: readonly number[], options: Tens
     if (options.requiresGrad) {
         throw new Error('requiresGrad is not available before autograd (M2)');
     }
-    const flat = flattenData(data);
     const native = loadNative();
+    if (data instanceof Float32Array) {
+        const buf = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+        return new Tensor(native.tensorF32(buf, [...shape]));
+    }
+    const flat = flattenData(data);
     return new Tensor(native.tensor(flat, [...shape]));
 }
 
@@ -76,17 +89,34 @@ export function zeros(shape: readonly number[], options: Pick<TensorOptions, 'de
     return new Tensor(native.zeros([...shape]));
 }
 
+export function ones(shape: readonly number[], options: Pick<TensorOptions, 'device'> = {}): Tensor {
+    if (options.device && options.device !== 'cpu') {
+        throw new Error('only cpu device is available in this slice');
+    }
+    const native = loadNative();
+    return new Tensor(native.ones([...shape]));
+}
+
+export function randn(shape: readonly number[], options: Pick<TensorOptions, 'device'> = {}): Tensor {
+    if (options.device && options.device !== 'cpu') {
+        throw new Error('only cpu device is available in this slice');
+    }
+    const native = loadNative();
+    return new Tensor(native.randn([...shape]));
+}
+
 export function version(): string {
     return loadNative().version();
+}
+
+export function backend(): string {
+    return loadNative().backend();
 }
 
 export function withoutGrad<T>(run: () => T): T {
     return run();
 }
 
-function flattenData(data: TensorData): number[] {
-    if (data instanceof Float32Array) {
-        return [...data];
-    }
+function flattenData(data: number[]): number[] {
     return data.flat(Infinity) as number[];
 }

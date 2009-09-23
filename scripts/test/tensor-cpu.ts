@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { tensor, version, zeros } from '@dxo/core';
+import { backend, ones, randn, tensor, version, zeros } from '@dxo/core';
 
 const v = version();
 assert.equal(typeof v, 'string');
 assert.match(v, /^\d+\.\d+\.\d+/);
+assert.equal(backend(), 'titan-cpu');
 
 const a = tensor([1, 2, 3, 4], [2, 2]);
 const b = tensor([5, 6, 7, 8], [2, 2]);
@@ -20,4 +21,26 @@ const z = zeros([3, 2]);
 assert.deepEqual([...z.shape], [3, 2]);
 assert.ok(z.toArray().every((n) => n === 0));
 
-console.log(`tensor-cpu ok: version=${v}, matmul=${c.toArray()[0]}`);
+const o = ones([2, 2]);
+assert.deepEqual(o.toArray(), [1, 1, 1, 1]);
+
+const r = randn([4]);
+assert.equal(r.toArray().length, 4);
+
+const m = tensor([2, 3, 4, 5], [2, 2]);
+const scaled = m.mul(bias);
+assert.deepEqual(scaled.toArray(), [20, 60, 40, 100]);
+
+const view = x.reshape([4]);
+assert.deepEqual([...view.shape], [4]);
+assert.deepEqual(view.toArray(), [1, 2, 3, 4]);
+
+const t = x.transpose();
+assert.deepEqual([...t.shape], [2, 2]);
+assert.deepEqual(t.toArray(), [1, 3, 2, 4]);
+
+const f32 = new Float32Array([1, 0, 0, 1]);
+const fromF32 = tensor(f32, [2, 2]);
+assert.deepEqual(fromF32.toArray(), [1, 0, 0, 1]);
+
+console.log(`tensor-cpu ok: version=${v}, backend=${backend()}, matmul=${c.toArray()[0]}`);

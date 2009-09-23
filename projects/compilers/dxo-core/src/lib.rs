@@ -1,12 +1,19 @@
-//! DXO dxo-core engine — CPU tensor slice (M1); autograd/backends follow titan integration.
+//! DXO dxo-core engine — Titan-backed CPU tensor facade (G1).
 
 #![deny(missing_docs)]
 
+mod broadcast;
+mod engine;
+mod shape;
+mod storage;
 mod tensor;
 
+pub use engine::{backend_label, cpu_session};
+pub use shape::{Shape, Strides, contiguous_strides};
+pub use storage::Storage;
 pub use tensor::{Tensor, TensorError};
 
-/// Crate version string (mirrors npm `@dxo/core` semver during M0–M1).
+/// Crate version string (mirrors npm `@dxo/core` semver during preview).
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg(test)]
@@ -16,5 +23,11 @@ mod tests {
     #[test]
     fn version_is_semver_like() {
         assert!(VERSION.starts_with("0."));
+    }
+
+    #[test]
+    fn titan_cpu_engine_wired() {
+        let _ = cpu_session();
+        assert_eq!(backend_label(), "titan-cpu");
     }
 }

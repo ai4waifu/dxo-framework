@@ -1,0 +1,21 @@
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const id = process.argv[2];
+
+const suites = {
+    smoke: 'scripts/test/smoke.ts',
+    'tensor-cpu': 'scripts/test/tensor-cpu.ts',
+    'nn-forward': 'scripts/test/nn-forward.ts',
+};
+
+if (!id || !(id in suites)) {
+    console.error(`usage: pnpm verify -- <${Object.keys(suites).join('|')}>`);
+    process.exit(1);
+}
+
+const script = path.join(root, suites[id]);
+const r = spawnSync('pnpm', ['exec', 'tsx', script], { cwd: root, stdio: 'inherit', shell: true });
+process.exit(r.status ?? 1);

@@ -16,6 +16,7 @@ rust-version = "1.77"
 
 [workspace.dependencies]
 dxo-core = { path = "projects/compilers/dxo-core" }
+rand = "0.9"
 napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"
 

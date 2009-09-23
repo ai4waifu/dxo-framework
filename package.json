@@ -9,6 +9,7 @@
         "build": "pnpm run build:ts && pnpm run build:native",
         "test": "pnpm run build && cargo test --release && pnpm run test:verify",
         "test:verify": "tsx scripts/test/smoke.ts && tsx scripts/test/tensor-cpu.ts && tsx scripts/test/nn-forward.ts",
+        "verify": "node scripts/verify.mjs",
         "lint": "biome check .",
         "lint:fix": "biome check --write .",
         "fmt": "biome format --write . && cargo fmt --all",
