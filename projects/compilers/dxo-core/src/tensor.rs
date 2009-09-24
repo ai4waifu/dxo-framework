@@ -167,7 +167,7 @@ impl Tensor {
             )));
         }
         if !self.is_contiguous() {
-            return Ok(Self::from_vec(self.to_vec(), shape.to_vec())?);
+            return Self::from_vec(self.to_vec(), shape.to_vec());
         }
         Ok(Self {
             storage: self.storage.clone(),
@@ -216,7 +216,7 @@ impl Tensor {
         if self.shape().len() != 2 || other.shape().len() != 2 {
             return Err(TensorError::Shape("matmul requires rank-2 tensors".into()));
         }
-        let a = if self.is_contiguous() { self.to_vec() } else { self.to_vec() };
+        let a = self.to_vec();
         let b = other.to_vec();
         let m = self.shape()[0];
         let k = self.shape()[1];

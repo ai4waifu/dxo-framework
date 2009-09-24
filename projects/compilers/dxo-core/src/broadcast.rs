@@ -22,14 +22,14 @@ pub fn broadcast_shapes(a: &[usize], b: &[usize]) -> Result<Vec<usize>, TensorEr
 pub fn broadcast_offset(index: &[usize], shape: &[usize], strides: &[i64], out_rank: usize) -> usize {
     let in_rank = shape.len();
     let mut offset = 0i64;
-    for out_dim in 0..out_rank {
+    for (out_dim, &coord_out) in index.iter().enumerate().take(out_rank) {
         let in_dim = out_dim as isize - out_rank as isize + in_rank as isize;
         if in_dim < 0 {
             continue;
         }
         let in_dim = in_dim as usize;
         let in_size = shape[in_dim];
-        let coord = if in_size == 1 { 0 } else { index[out_dim] };
+        let coord = if in_size == 1 { 0 } else { coord_out };
         offset += coord as i64 * strides[in_dim];
     }
     offset.max(0) as usize
