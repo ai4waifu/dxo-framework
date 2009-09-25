@@ -15,9 +15,7 @@ static CPU_SESSION: OnceLock<Arc<dyn DeviceSession>> = OnceLock::new();
 pub fn cpu_session() -> Arc<dyn DeviceSession> {
     CPU_SESSION
         .get_or_init(|| {
-            Arc::new(CpuDriver)
-                .open(DeviceId { backend: BackendId::Cpu, ordinal: 0 })
-                .expect("titan CpuDriver session")
+            Arc::new(CpuDriver).open(DeviceId { backend: BackendId::Cpu, ordinal: 0 }).expect("titan CpuDriver session")
         })
         .clone()
 }
