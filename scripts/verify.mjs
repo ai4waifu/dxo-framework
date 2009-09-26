@@ -10,7 +10,9 @@ const require = createRequire(import.meta.url);
 const suites = {
     smoke: 'scripts/test/smoke.ts',
     'tensor-cpu': 'scripts/test/tensor-cpu.ts',
+    'autograd-fd': 'scripts/test/autograd-fd.ts',
     'nn-forward': 'scripts/test/nn-forward.ts',
+    'mnist-linear': 'scripts/test/mnist-linear.ts',
 };
 
 if (!id || !(id in suites)) {

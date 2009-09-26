@@ -1,55 +1,72 @@
-//! CPU float32 tensor with shared storage and stride views.
+//! CPU float32 tensor with shared storage, stride views, and eager autograd (G2).
 
 use std::fmt;
+use std::sync::Arc;
 
 use rand::Rng;
 
+use crate::autograd::{GradFn, GradSlot, accumulate_grad, is_grad_enabled, new_grad_slot, propagate, sum_to_shape};
 use crate::broadcast::{broadcast_offset, broadcast_shapes, for_each_index};
 use crate::shape::{Shape, Strides, contiguous_strides, is_contiguous, numel};
 use crate::storage::Storage;
 
-/// Shape / broadcast / matmul errors surfaced to napi.
+/// Shape / broadcast / matmul / autograd errors surfaced to napi.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TensorError {
     /// Invalid shape or numel mismatch.
     Shape(String),
     /// Incompatible broadcast.
     Broadcast(String),
+    /// Autograd graph / backward errors.
+    Autograd(String),
 }
 
 impl fmt::Display for TensorError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Shape(msg) | Self::Broadcast(msg) => f.write_str(msg),
+            Self::Shape(msg) | Self::Broadcast(msg) | Self::Autograd(msg) => f.write_str(msg),
         }
     }
 }
 
 impl std::error::Error for TensorError {}
 
-/// Row-major float32 tensor view over shared [`Storage`].
-#[derive(Debug, Clone)]
+/// Row-major float32 tensor view over shared [`Storage`], with optional tape edges.
+#[derive(Clone)]
 pub struct Tensor {
     storage: Storage,
     offset: usize,
     shape: Shape,
     strides: Strides,
+    requires_grad: bool,
+    grad_slot: Option<GradSlot>,
+    grad_fn: Option<Arc<dyn GradFn>>,
+}
+
+impl fmt::Debug for Tensor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Tensor")
+            .field("shape", &self.shape.0)
+            .field("requires_grad", &self.requires_grad)
+            .field("has_grad_fn", &self.grad_fn.is_some())
+            .finish()
+    }
 }
 
 impl Tensor {
     /// Zeros tensor with the given shape.
     pub fn zeros(shape: &[usize]) -> Self {
         let n = numel(shape).unwrap_or(0);
-        Self::from_storage(Storage::zeros(n), 0, shape)
+        Self::from_storage(Storage::zeros(n), 0, shape, false, None, None)
     }
 
     /// Ones tensor with the given shape.
     pub fn ones(shape: &[usize]) -> Self {
         let n = numel(shape).unwrap_or(0);
-        Self::from_storage(Storage::from_vec(vec![1.0; n]), 0, shape)
+        Self::from_storage(Storage::from_vec(vec![1.0; n]), 0, shape, false, None, None)
     }
 
-    /// Standard-normal samples (Box–Muller); G1 uses host RNG only.
+    /// Standard-normal samples (Box–Muller); host RNG only.
     pub fn randn(shape: &[usize]) -> Self {
         let n = numel(shape).unwrap_or(0);
         let mut rng = rand::rng();
@@ -60,7 +77,7 @@ impl Tensor {
             let mag = (-2.0 * u1.ln()).sqrt();
             data.push(mag * (2.0 * std::f32::consts::PI * u2).cos());
         }
-        Self::from_storage(Storage::from_vec(data), 0, shape)
+        Self::from_storage(Storage::from_vec(data), 0, shape, false, None, None)
     }
 
     /// Construct from flat data; `data.len()` must equal shape product.
@@ -73,12 +90,29 @@ impl Tensor {
                 n
             )));
         }
-        Ok(Self::from_storage(Storage::from_vec(data), 0, &shape))
+        Ok(Self::from_storage(Storage::from_vec(data), 0, &shape, false, None, None))
     }
 
-    fn from_storage(storage: Storage, offset: usize, shape: &[usize]) -> Self {
+    /// Leaf tensor that participates in autograd when `requires_grad` is true.
+    pub fn from_vec_grad(data: Vec<f32>, shape: Vec<usize>, requires_grad: bool) -> Result<Self, TensorError> {
+        let mut t = Self::from_vec(data, shape)?;
+        if requires_grad {
+            t.requires_grad = true;
+            t.grad_slot = Some(new_grad_slot());
+        }
+        Ok(t)
+    }
+
+    fn from_storage(
+        storage: Storage,
+        offset: usize,
+        shape: &[usize],
+        requires_grad: bool,
+        grad_slot: Option<GradSlot>,
+        grad_fn: Option<Arc<dyn GradFn>>,
+    ) -> Self {
         let strides = contiguous_strides(shape);
-        Self { storage, offset, shape: Shape(shape.to_vec()), strides: Strides(strides) }
+        Self { storage, offset, shape: Shape(shape.to_vec()), strides: Strides(strides), requires_grad, grad_slot, grad_fn }
     }
 
     /// Shape dimensions.
@@ -89,6 +123,40 @@ impl Tensor {
     /// Element strides in elements.
     pub fn strides(&self) -> &[i64] {
         &self.strides.0
+    }
+
+    /// Whether this tensor (or its parents) require gradient tracking.
+    pub fn requires_grad(&self) -> bool {
+        self.requires_grad
+    }
+
+    /// Shared grad slot, if any.
+    pub fn grad_slot(&self) -> Option<&GradSlot> {
+        self.grad_slot.as_ref()
+    }
+
+    /// True when this node should receive gradients.
+    pub fn tracks_grad(&self) -> bool {
+        self.requires_grad && self.grad_slot.is_some()
+    }
+
+    /// Dense copy of accumulated gradient, if present.
+    pub fn grad(&self) -> Option<Vec<f32>> {
+        self.grad_slot.as_ref().and_then(|slot| slot.lock().ok().and_then(|g| g.clone()))
+    }
+
+    /// Clear accumulated gradient on this tensor.
+    pub fn zero_grad(&self) {
+        if let Some(slot) = &self.grad_slot {
+            if let Ok(mut g) = slot.lock() {
+                *g = None;
+            }
+        }
+    }
+
+    /// Clone values without tape / requires_grad.
+    pub fn detach(&self) -> Self {
+        Self::from_storage(self.storage.clone(), self.offset, self.shape(), false, None, None)
     }
 
     /// Titan protocol shape view.
@@ -156,6 +224,16 @@ impl Tensor {
         });
     }
 
+    fn maybe_attach(mut out: Self, parents: &[&Self], grad_fn: Arc<dyn GradFn>) -> Self {
+        let track = is_grad_enabled() && parents.iter().any(|p| p.requires_grad);
+        if track {
+            out.requires_grad = true;
+            out.grad_slot = Some(new_grad_slot());
+            out.grad_fn = Some(grad_fn);
+        }
+        out
+    }
+
     /// View with the same storage and a new shape (zero-copy when contiguous).
     pub fn reshape(&self, shape: &[usize]) -> Result<Self, TensorError> {
         let n = numel(shape)?;
@@ -166,15 +244,20 @@ impl Tensor {
                 n
             )));
         }
-        if !self.is_contiguous() {
-            return Self::from_vec(self.to_vec(), shape.to_vec());
-        }
-        Ok(Self {
-            storage: self.storage.clone(),
-            offset: self.offset,
-            shape: Shape(shape.to_vec()),
-            strides: Strides(contiguous_strides(shape)),
-        })
+        let base = if !self.is_contiguous() {
+            Self::from_storage(Storage::from_vec(self.to_vec()), 0, shape, false, None, None)
+        } else {
+            Self {
+                storage: self.storage.clone(),
+                offset: self.offset,
+                shape: Shape(shape.to_vec()),
+                strides: Strides(contiguous_strides(shape)),
+                requires_grad: false,
+                grad_slot: None,
+                grad_fn: None,
+            }
+        };
+        Ok(Self::maybe_attach(base, &[self], Arc::new(ReshapeBackward { input: self.clone(), out_shape: shape.to_vec() })))
     }
 
     /// Transpose rank-2 tensor (zero-copy view).
@@ -184,17 +267,28 @@ impl Tensor {
         }
         let shape = vec![self.shape()[1], self.shape()[0]];
         let strides = vec![self.strides()[1], self.strides()[0]];
-        Ok(Self { storage: self.storage.clone(), offset: self.offset, shape: Shape(shape), strides: Strides(strides) })
+        let base = Self {
+            storage: self.storage.clone(),
+            offset: self.offset,
+            shape: Shape(shape),
+            strides: Strides(strides),
+            requires_grad: false,
+            grad_slot: None,
+            grad_fn: None,
+        };
+        Ok(Self::maybe_attach(base, &[self], Arc::new(TransposeBackward { input: self.clone() })))
     }
 
     /// Element-wise add with NumPy-style broadcast.
     pub fn add(&self, other: &Self) -> Result<Self, TensorError> {
-        self.binary_broadcast(other, |a, b| a + b)
+        let out = self.binary_broadcast(other, |a, b| a + b)?;
+        Ok(Self::maybe_attach(out, &[self, other], Arc::new(AddBackward { a: self.clone(), b: other.clone() })))
     }
 
     /// Element-wise multiply with NumPy-style broadcast.
     pub fn mul(&self, other: &Self) -> Result<Self, TensorError> {
-        self.binary_broadcast(other, |a, b| a * b)
+        let out = self.binary_broadcast(other, |a, b| a * b)?;
+        Ok(Self::maybe_attach(out, &[self, other], Arc::new(MulBackward { a: self.clone(), b: other.clone() })))
     }
 
     fn binary_broadcast(&self, other: &Self, op: fn(f32, f32) -> f32) -> Result<Self, TensorError> {
@@ -208,7 +302,7 @@ impl Tensor {
             out[oi] = op(self.storage.data()[li], other.storage.data()[ri]);
             oi += 1;
         });
-        Ok(Self::from_storage(Storage::from_vec(out), 0, &out_shape))
+        Ok(Self::from_storage(Storage::from_vec(out), 0, &out_shape, false, None, None))
     }
 
     /// Matrix multiply for rank-2 tensors: `[m,k] @ [k,n] -> [m,n]`.
@@ -235,19 +329,252 @@ impl Tensor {
                 out[i * n + j] = sum;
             }
         }
-        Ok(Self::from_storage(Storage::from_vec(out), 0, &[m, n]))
+        let base = Self::from_storage(Storage::from_vec(out), 0, &[m, n], false, None, None);
+        Ok(Self::maybe_attach(base, &[self, other], Arc::new(MatmulBackward { a: self.clone(), b: other.clone() })))
     }
 
     /// Element-wise ReLU.
     pub fn relu(&self) -> Self {
         let data = self.to_vec().into_iter().map(|x| x.max(0.0)).collect();
-        Self::from_storage(Storage::from_vec(data), 0, self.shape())
+        let base = Self::from_storage(Storage::from_vec(data), 0, self.shape(), false, None, None);
+        Self::maybe_attach(base, &[self], Arc::new(ReluBackward { input: self.clone() }))
+    }
+
+    /// Sum all elements to a scalar tensor of shape `[1]`.
+    pub fn sum(&self) -> Self {
+        let s: f32 = self.to_vec().iter().sum();
+        let base = Self::from_storage(Storage::from_vec(vec![s]), 0, &[1], false, None, None);
+        Self::maybe_attach(base, &[self], Arc::new(SumBackward { input: self.clone() }))
+    }
+
+    /// Reverse-mode autodiff from a scalar output (shape `[1]` or numel 1).
+    pub fn backward(&self) -> Result<(), TensorError> {
+        if self.numel() != 1 {
+            return Err(TensorError::Autograd(format!(
+                "backward requires a scalar tensor (numel=1), got shape {:?}",
+                self.shape()
+            )));
+        }
+        if !self.requires_grad {
+            return Err(TensorError::Autograd("tensor does not require grad".into()));
+        }
+        if let Some(slot) = &self.grad_slot {
+            accumulate_grad(slot, &[1.0])?;
+        }
+        let mut order: Vec<Tensor> = Vec::new();
+        let mut visited: Vec<*const ()> = Vec::new();
+        topo_collect(self, &mut order, &mut visited);
+        for node in order.into_iter().rev() {
+            let gy = node
+                .grad_slot
+                .as_ref()
+                .and_then(|s| s.lock().ok().and_then(|g| g.clone()))
+                .unwrap_or_else(|| vec![0.0; node.numel()]);
+            if let Some(gf) = &node.grad_fn {
+                gf.apply(&gy)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+fn topo_collect(t: &Tensor, order: &mut Vec<Tensor>, visited: &mut Vec<*const ()>) {
+    let Some(gf) = &t.grad_fn else {
+        return;
+    };
+    let ptr = Arc::as_ptr(gf) as *const ();
+    if visited.contains(&ptr) {
+        return;
+    }
+    visited.push(ptr);
+    for parent in gf.parents() {
+        topo_collect(parent, order, visited);
+    }
+    order.push(t.clone());
+}
+
+// --- concrete VJPs ---------------------------------------------------------
+
+struct AddBackward {
+    a: Tensor,
+    b: Tensor,
+}
+
+impl GradFn for AddBackward {
+    fn apply(&self, grad_output: &[f32]) -> Result<(), TensorError> {
+        let out_shape = broadcast_shapes(self.a.shape(), self.b.shape())?;
+        let ga = sum_to_shape(grad_output, &out_shape, self.a.shape())?;
+        let gb = sum_to_shape(grad_output, &out_shape, self.b.shape())?;
+        propagate(&self.a, &ga)?;
+        propagate(&self.b, &gb)?;
+        Ok(())
+    }
+
+    fn parents(&self) -> Vec<&Tensor> {
+        vec![&self.a, &self.b]
+    }
+}
+
+struct MulBackward {
+    a: Tensor,
+    b: Tensor,
+}
+
+impl GradFn for MulBackward {
+    fn apply(&self, grad_output: &[f32]) -> Result<(), TensorError> {
+        let out_shape = broadcast_shapes(self.a.shape(), self.b.shape())?;
+        let rank = out_shape.len();
+        let mut ga_full = vec![0.0f32; grad_output.len()];
+        let mut gb_full = vec![0.0f32; grad_output.len()];
+        let mut oi = 0usize;
+        for_each_index(&out_shape, |index| {
+            let li = self.a.offset + broadcast_offset(index, self.a.shape(), self.a.strides(), rank);
+            let ri = self.b.offset + broadcast_offset(index, self.b.shape(), self.b.strides(), rank);
+            let av = self.a.storage.data()[li];
+            let bv = self.b.storage.data()[ri];
+            let g = grad_output[oi];
+            ga_full[oi] = g * bv;
+            gb_full[oi] = g * av;
+            oi += 1;
+        });
+        let ga = sum_to_shape(&ga_full, &out_shape, self.a.shape())?;
+        let gb = sum_to_shape(&gb_full, &out_shape, self.b.shape())?;
+        propagate(&self.a, &ga)?;
+        propagate(&self.b, &gb)?;
+        Ok(())
+    }
+
+    fn parents(&self) -> Vec<&Tensor> {
+        vec![&self.a, &self.b]
+    }
+}
+
+struct MatmulBackward {
+    a: Tensor,
+    b: Tensor,
+}
+
+impl GradFn for MatmulBackward {
+    fn apply(&self, grad_output: &[f32]) -> Result<(), TensorError> {
+        let m = self.a.shape()[0];
+        let k = self.a.shape()[1];
+        let n = self.b.shape()[1];
+        let a = self.a.to_vec();
+        let b = self.b.to_vec();
+        let mut ga = vec![0.0f32; m * k];
+        let mut gb = vec![0.0f32; k * n];
+        for i in 0..m {
+            for p in 0..k {
+                let mut s = 0.0f32;
+                for j in 0..n {
+                    s += grad_output[i * n + j] * b[p * n + j];
+                }
+                ga[i * k + p] = s;
+            }
+        }
+        for p in 0..k {
+            for j in 0..n {
+                let mut s = 0.0f32;
+                for i in 0..m {
+                    s += a[i * k + p] * grad_output[i * n + j];
+                }
+                gb[p * n + j] = s;
+            }
+        }
+        propagate(&self.a, &ga)?;
+        propagate(&self.b, &gb)?;
+        Ok(())
+    }
+
+    fn parents(&self) -> Vec<&Tensor> {
+        vec![&self.a, &self.b]
+    }
+}
+
+struct ReluBackward {
+    input: Tensor,
+}
+
+impl GradFn for ReluBackward {
+    fn apply(&self, grad_output: &[f32]) -> Result<(), TensorError> {
+        let x = self.input.to_vec();
+        let mut gx = vec![0.0f32; x.len()];
+        for i in 0..x.len() {
+            gx[i] = if x[i] > 0.0 { grad_output[i] } else { 0.0 };
+        }
+        propagate(&self.input, &gx)?;
+        Ok(())
+    }
+
+    fn parents(&self) -> Vec<&Tensor> {
+        vec![&self.input]
+    }
+}
+
+struct SumBackward {
+    input: Tensor,
+}
+
+impl GradFn for SumBackward {
+    fn apply(&self, grad_output: &[f32]) -> Result<(), TensorError> {
+        let g = grad_output.first().copied().unwrap_or(0.0);
+        let gx = vec![g; self.input.numel()];
+        propagate(&self.input, &gx)?;
+        Ok(())
+    }
+
+    fn parents(&self) -> Vec<&Tensor> {
+        vec![&self.input]
+    }
+}
+
+struct ReshapeBackward {
+    input: Tensor,
+    out_shape: Vec<usize>,
+}
+
+impl GradFn for ReshapeBackward {
+    fn apply(&self, grad_output: &[f32]) -> Result<(), TensorError> {
+        let _ = &self.out_shape;
+        if grad_output.len() != self.input.numel() {
+            return Err(TensorError::Autograd("reshape backward numel mismatch".into()));
+        }
+        propagate(&self.input, grad_output)?;
+        Ok(())
+    }
+
+    fn parents(&self) -> Vec<&Tensor> {
+        vec![&self.input]
+    }
+}
+
+struct TransposeBackward {
+    input: Tensor,
+}
+
+impl GradFn for TransposeBackward {
+    fn apply(&self, grad_output: &[f32]) -> Result<(), TensorError> {
+        let m = self.input.shape()[0];
+        let n = self.input.shape()[1];
+        let mut gx = vec![0.0f32; m * n];
+        for i in 0..n {
+            for j in 0..m {
+                gx[j * n + i] = grad_output[i * m + j];
+            }
+        }
+        propagate(&self.input, &gx)?;
+        Ok(())
+    }
+
+    fn parents(&self) -> Vec<&Tensor> {
+        vec![&self.input]
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::autograd::without_grad;
 
     #[test]
     fn matmul_2x2() {
@@ -300,5 +627,35 @@ mod tests {
         let r = Tensor::randn(&[4]);
         assert_eq!(r.shape(), &[4]);
         assert_eq!(r.numel(), 4);
+    }
+
+    #[test]
+    fn backward_matmul_sum_matches_fd() {
+        let x = Tensor::from_vec_grad(vec![1.0, 2.0, 3.0, 4.0], vec![2, 2], true).unwrap();
+        let w = Tensor::from_vec_grad(vec![0.5, 0.0, 0.0, 0.5], vec![2, 2], true).unwrap();
+        let y = x.matmul(&w).unwrap().sum();
+        y.backward().unwrap();
+        let gx = x.grad().unwrap();
+        let eps = 1e-3f32;
+        let mut fd = [0.0f32; 4];
+        for i in 0..4 {
+            let mut xp = vec![1.0, 2.0, 3.0, 4.0];
+            let mut xm = xp.clone();
+            xp[i] += eps;
+            xm[i] -= eps;
+            let yp = Tensor::from_vec(xp, vec![2, 2]).unwrap().matmul(&w.detach()).unwrap().sum().data()[0];
+            let ym = Tensor::from_vec(xm, vec![2, 2]).unwrap().matmul(&w.detach()).unwrap().sum().data()[0];
+            fd[i] = (yp - ym) / (2.0 * eps);
+        }
+        for i in 0..4 {
+            assert!((gx[i] - fd[i]).abs() < 5e-2, "i={i} gx={} fd={}", gx[i], fd[i]);
+        }
+    }
+
+    #[test]
+    fn without_grad_skips_tape() {
+        let x = Tensor::from_vec_grad(vec![1.0, -1.0], vec![2], true).unwrap();
+        let y = without_grad(|| x.relu());
+        assert!(!y.requires_grad());
     }
 }

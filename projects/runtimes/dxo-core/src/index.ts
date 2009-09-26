@@ -29,11 +29,20 @@ export class Tensor {
     }
 
     get requiresGrad(): boolean {
-        return false;
+        return this.#handle.requiresGrad;
+    }
+
+    /** Accumulated gradient (row-major), or `undefined` if absent. */
+    get grad(): number[] | undefined {
+        return this.#handle.grad ?? undefined;
     }
 
     add(other: Tensor): Tensor {
         return new Tensor(this.#handle.add(other.#handle));
+    }
+
+    sub(other: Tensor): Tensor {
+        return this.add(other.mul(tensor([-1], [1])));
     }
 
     mul(other: Tensor): Tensor {
@@ -56,6 +65,22 @@ export class Tensor {
         return new Tensor(this.#handle.relu());
     }
 
+    sum(): Tensor {
+        return new Tensor(this.#handle.sum());
+    }
+
+    detach(): Tensor {
+        return new Tensor(this.#handle.detach());
+    }
+
+    zeroGrad(): void {
+        this.#handle.zeroGrad();
+    }
+
+    backward(): void {
+        this.#handle.backward();
+    }
+
     toFloat32Array(): Float32Array {
         return Float32Array.from(this.#handle.toArray());
     }
@@ -65,44 +90,40 @@ export class Tensor {
     }
 }
 
-export function tensor(data: TensorData, shape: readonly number[], options: TensorOptions = {}): Tensor {
+function assertCpu(options: Pick<TensorOptions, 'device'>): void {
     if (options.device && options.device !== 'cpu') {
         throw new Error('only cpu device is available in this slice');
     }
-    if (options.requiresGrad) {
-        throw new Error('requiresGrad is not available before autograd (M2)');
-    }
+}
+
+export function tensor(data: TensorData, shape: readonly number[], options: TensorOptions = {}): Tensor {
+    assertCpu(options);
     const native = loadNative();
+    const rg = options.requiresGrad ?? false;
     if (data instanceof Float32Array) {
         const buf = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
-        return new Tensor(native.tensorF32(buf, [...shape]));
+        return new Tensor(native.tensorF32(buf, [...shape], rg));
     }
     const flat = flattenData(data);
-    return new Tensor(native.tensor(flat, [...shape]));
+    return new Tensor(native.tensor(flat, [...shape], rg));
 }
 
-export function zeros(shape: readonly number[], options: Pick<TensorOptions, 'device'> = {}): Tensor {
-    if (options.device && options.device !== 'cpu') {
-        throw new Error('only cpu device is available in this slice');
-    }
+export function zeros(shape: readonly number[], options: TensorOptions = {}): Tensor {
+    assertCpu(options);
     const native = loadNative();
-    return new Tensor(native.zeros([...shape]));
+    return new Tensor(native.zeros([...shape], options.requiresGrad ?? false));
 }
 
-export function ones(shape: readonly number[], options: Pick<TensorOptions, 'device'> = {}): Tensor {
-    if (options.device && options.device !== 'cpu') {
-        throw new Error('only cpu device is available in this slice');
-    }
+export function ones(shape: readonly number[], options: TensorOptions = {}): Tensor {
+    assertCpu(options);
     const native = loadNative();
-    return new Tensor(native.ones([...shape]));
+    return new Tensor(native.ones([...shape], options.requiresGrad ?? false));
 }
 
-export function randn(shape: readonly number[], options: Pick<TensorOptions, 'device'> = {}): Tensor {
-    if (options.device && options.device !== 'cpu') {
-        throw new Error('only cpu device is available in this slice');
-    }
+export function randn(shape: readonly number[], options: TensorOptions = {}): Tensor {
+    assertCpu(options);
     const native = loadNative();
-    return new Tensor(native.randn([...shape]));
+    return new Tensor(native.randn([...shape], options.requiresGrad ?? false));
 }
 
 export function version(): string {
@@ -114,7 +135,13 @@ export function backend(): string {
 }
 
 export function withoutGrad<T>(run: () => T): T {
-    return run();
+    const native = loadNative();
+    const prev = native.setGradEnabled(false);
+    try {
+        return run();
+    } finally {
+        native.setGradEnabled(prev);
+    }
 }
 
 function flattenData(data: number[]): number[] {
