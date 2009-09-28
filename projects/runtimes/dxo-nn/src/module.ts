@@ -1,4 +1,4 @@
-import { Tensor, tensor, zeros } from '@dxo/core';
+import { randn, Tensor, tensor, zeros } from '@dxo/core';
 
 export interface TensorStateSlice {
     shape: number[];
@@ -21,13 +21,24 @@ export abstract class Module {
         }
         return out;
     }
+
+    zeroGrad(): void {
+        for (const p of this.parameters()) p.zeroGrad();
+    }
 }
 
 export function relu(x: Tensor): Tensor {
     return x.relu();
 }
 
-/** Fully-connected: `y = relu(x @ weight + bias)`; weight `[inFeatures, outFeatures]`. */
+/** Element-wise ReLU module. */
+export class Relu extends Module {
+    forward(x: Tensor): Tensor {
+        return x.relu();
+    }
+}
+
+/** Fully-connected: `y = x @ weight + bias`; weight `[inFeatures, outFeatures]`. */
 export class Linear extends Module {
     weight: Tensor;
     bias: Tensor;
@@ -35,14 +46,27 @@ export class Linear extends Module {
     constructor(
         readonly inFeatures: number,
         readonly outFeatures: number,
+        opts: { requiresGrad?: boolean } = {},
     ) {
         super();
-        this.weight = zeros([inFeatures, outFeatures]);
-        this.bias = zeros([outFeatures]);
+        const rg = opts.requiresGrad ?? true;
+        const scale = Math.sqrt(2 / (inFeatures + outFeatures));
+        const raw = randn([inFeatures, outFeatures])
+            .toArray()
+            .map((v) => v * scale);
+        this.weight = tensor(raw, [inFeatures, outFeatures], { requiresGrad: rg });
+        this.bias = zeros([outFeatures], { requiresGrad: rg });
     }
 
     forward(x: Tensor): Tensor {
-        return relu(x.matmul(this.weight).add(this.bias));
+        return x.matmul(this.weight).add(this.bias);
+    }
+
+    /** Replace parameter leaves after an optimizer step. */
+    loadParameters(params: Tensor[]): void {
+        if (params.length < 2) throw new Error('Linear expects [weight, bias]');
+        this.weight = params[0]!;
+        this.bias = params[1]!;
     }
 
     state(): LinearState {
@@ -53,8 +77,8 @@ export class Linear extends Module {
     }
 
     loadState(saved: LinearState): void {
-        this.weight = tensor(saved.weight.data, saved.weight.shape);
-        this.bias = tensor(saved.bias.data, saved.bias.shape);
+        this.weight = tensor(saved.weight.data, saved.weight.shape, { requiresGrad: true });
+        this.bias = tensor(saved.bias.data, saved.bias.shape, { requiresGrad: true });
     }
 }
 

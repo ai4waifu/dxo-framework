@@ -29,6 +29,8 @@ const JS_PACKAGES = [
     { dir: 'projects/runtimes/dxo-lite' },
     { dir: 'projects/runtimes/dxo-core', publishName: '@dxo/core' },
     { dir: 'projects/runtimes/dxo', publishName: '@dxo/dxo' },
+    { dir: 'projects/runtimes/dxo-nn', publishName: '@dxo/nn' },
+    { dir: 'projects/runtimes/dxo-optimizer', publishName: '@dxo/optimizer' },
 ];
 
 function fail(msg) {

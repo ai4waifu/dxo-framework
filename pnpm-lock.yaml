@@ -17,6 +17,9 @@ importers:
       '@dxo/nn':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-nn
+      '@dxo/optimizer':
+        specifier: workspace:*
+        version: link:projects/runtimes/dxo-optimizer
       tsx:
         specifier: ^4.19.4
         version: 4.23.12
@@ -74,6 +77,12 @@ importers:
   projects/runtimes/dxo-lite: {}
 
   projects/runtimes/dxo-nn:
+    dependencies:
+      '@dxo/core':
+        specifier: workspace:*
+        version: link:../dxo-core
+
+  projects/runtimes/dxo-optimizer:
     dependencies:
       '@dxo/core':
         specifier: workspace:*
