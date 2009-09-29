@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO browser WebGPU/WASM runtime (M0 stub; wgpu lite-engine in M6)",
+    "description": "DXO WebGPU/WASM runtime stub (developer preview; wgpu in 0.0.8)",
     "license": "MIT OR Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",

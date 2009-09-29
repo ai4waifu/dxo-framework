@@ -1,10 +1,9 @@
 # @dxo/lite
 
-Browser / Worker / Service Worker 的 WebGPU/WASM runtime（M0 为 TS stub；M6 起接 wgpu lite-engine）。
+**Developer preview — API unstable (`0.0.x`).**
 
-- 独立 runtime，不是 `@dxo/core` 的去 napi 移植版
-- GPU 路径：TypeScript facade → wasm-bindgen → Rust + wgpu → WebGPU
-- 降级：`WebGPU → 显式允许的 CPU/WASM fallback → error`；**不支持 WebGL tensor 后端**
-- 异步边界为一等公民（device 初始化、queue 提交、readback、跨设备迁移）
+Browser / Worker WebGPU/WASM runtime facade. Through **0.0.7** this package remains a **stub/probe**; wgpu lite-engine lands as the **0.0.8** thin gate.
 
-不依赖 `@dxo/dxo-*` 原生平台包与 Node.js API。
+- Not a napi/`@dxo/core` port
+- Target path: TS facade → wasm-bindgen → Rust + wgpu → WebGPU
+- Fallback: WebGPU → explicit CPU/WASM → error; **no WebGL tensor backend**

@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO neural network modules — pure TypeScript composition over @dxo/core",
+    "description": "DXO neural modules over @dxo/core (developer preview, API unstable)",
     "license": "MIT OR Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",

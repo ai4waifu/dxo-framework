@@ -13,6 +13,15 @@ export interface TensorOptions {
 
 export type { NativeAddon, NativeTensor } from './native-types.js';
 
+/**
+ * Dense float32 tensor (CPU preview).
+ *
+ * Contract (G3 / 0.0.4):
+ * - Ops are eager; Tape records when `requiresGrad` and grad mode is enabled.
+ * - `backward()` requires a scalar (`numel === 1`, usually shape `[1]`).
+ * - `grad` is a row-major copy or `undefined`.
+ * - Only `device: 'cpu'` is available in this slice.
+ */
 export class Tensor {
     readonly #handle: NativeTensor;
 
@@ -37,10 +46,16 @@ export class Tensor {
         return this.#handle.grad ?? undefined;
     }
 
+    /** Number of elements (shape product). */
+    numel(): number {
+        return this.shape.reduce((n, d) => n * d, 1);
+    }
+
     add(other: Tensor): Tensor {
         return new Tensor(this.#handle.add(other.#handle));
     }
 
+    /** `this - other` via add/mul (broadcast-aware). */
     sub(other: Tensor): Tensor {
         return this.add(other.mul(tensor([-1], [1])));
     }
@@ -65,18 +80,29 @@ export class Tensor {
         return new Tensor(this.#handle.relu());
     }
 
+    /** Sum all elements → scalar tensor of shape `[1]`. */
     sum(): Tensor {
         return new Tensor(this.#handle.sum());
     }
 
+    /** Mean of all elements → scalar tensor of shape `[1]`. */
+    mean(): Tensor {
+        const n = this.numel();
+        if (n === 0) throw new Error('mean of empty tensor');
+        return this.sum().mul(tensor([1 / n], [1]));
+    }
+
+    /** Values only — drops requiresGrad and tape edges. */
     detach(): Tensor {
         return new Tensor(this.#handle.detach());
     }
 
+    /** Clear accumulated gradient on this leaf/intermediate slot. */
     zeroGrad(): void {
         this.#handle.zeroGrad();
     }
 
+    /** Reverse-mode from a scalar output. */
     backward(): void {
         this.#handle.backward();
     }
@@ -92,10 +118,11 @@ export class Tensor {
 
 function assertCpu(options: Pick<TensorOptions, 'device'>): void {
     if (options.device && options.device !== 'cpu') {
-        throw new Error('only cpu device is available in this slice');
+        throw new Error(`device '${options.device}' is not available in this preview (cpu only)`);
     }
 }
 
+/** Create a CPU tensor from flat data + shape. */
 export function tensor(data: TensorData, shape: readonly number[], options: TensorOptions = {}): Tensor {
     assertCpu(options);
     const native = loadNative();
@@ -130,10 +157,20 @@ export function version(): string {
     return loadNative().version();
 }
 
+/** Engine backend label (e.g. `titan-cpu`). */
 export function backend(): string {
     return loadNative().backend();
 }
 
+/** Whether the current thread records autograd ops. */
+export function isGradEnabled(): boolean {
+    return loadNative().isGradEnabled();
+}
+
+/**
+ * Run `fn` with tape recording disabled, then restore the previous flag.
+ * Uses a thread-local scope stack (not a permanent process global).
+ */
 export function withoutGrad<T>(run: () => T): T {
     const native = loadNative();
     const prev = native.setGradEnabled(false);

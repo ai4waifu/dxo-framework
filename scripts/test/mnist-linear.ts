@@ -32,13 +32,12 @@ model.loadState({
 });
 const opt = new SGD(0.1);
 const { x, y } = makeBatch(n);
-const invN = tensor([1 / n], [1]);
 
 function forwardLoss(): { value: number; backward: () => void } {
     model.zeroGrad();
     const pred = model.forward(x);
     const diff = pred.sub(y);
-    const loss = diff.mul(diff).sum().mul(invN);
+    const loss = diff.mul(diff).mean();
     const value = loss.toArray()[0]!;
     return {
         value,

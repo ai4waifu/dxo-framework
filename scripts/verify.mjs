@@ -13,6 +13,7 @@ const suites = {
     'autograd-fd': 'scripts/test/autograd-fd.ts',
     'nn-forward': 'scripts/test/nn-forward.ts',
     'mnist-linear': 'scripts/test/mnist-linear.ts',
+    'g3-contract': 'scripts/test/g3-contract.ts',
 };
 
 if (!id || !(id in suites)) {

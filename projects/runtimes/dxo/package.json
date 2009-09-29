@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO CLI — model inspect, train, export (M0 placeholder)",
+    "description": "DXO CLI placeholder (developer preview, API unstable)",
     "license": "MIT OR Apache-2.0",
     "bin": {
         "dxo": "./bin/dxo.mjs"

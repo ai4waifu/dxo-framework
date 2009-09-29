@@ -1,6 +1,8 @@
 # @dxo/dxo
 
-DXO 命令行工具（M0 占位）。全局安装：`pnpm add -g @dxo/dxo`（发布后）。
+**Developer preview — API unstable (`0.0.x`).**
+
+DXO CLI placeholder. Not required for `@dxo/core` training/inference.
 
 ```bash
 pnpm exec dxo

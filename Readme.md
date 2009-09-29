@@ -1,34 +1,50 @@
 # DXO Framework
 
-**Deep Learning for the JavaScript Era** — TypeScript-first API, Rust core engine, napi-rs native bindings.
+**Developer preview** — API unstable (`0.0.x`). TypeScript-first deep learning for Node.js: Rust engine, napi-rs bindings.
 
 ## Quick start
 
 ```bash
 pnpm install
-pnpm build:native
-pnpm smoke
+pnpm build
+pnpm verify -- smoke
 ```
 
 ```typescript
-import {version, Tensor} from '@dxo/core';
+import { backend, tensor, version } from '@dxo/core';
+import { Linear } from '@dxo/nn';
+import { SGD } from '@dxo/optimizer';
 
-console.log(version()); // "0.1.0"
-new Tensor();
+console.log(version(), backend()); // e.g. 0.1.0 titan-cpu
+
+const model = new Linear(2, 1);
+const x = tensor([1, 0, 0, 1], [2, 2]);
+const y = model.forward(x);
+const loss = y.mean(); // scalar shape [1]
+```
+
+## Verify gates
+
+```bash
+pnpm verify -- smoke
+pnpm verify -- tensor-cpu
+pnpm verify -- autograd-fd
+pnpm verify -- mnist-linear
+pnpm verify -- g3-contract
 ```
 
 ## Layout
 
-| Path                               | npm package           |
-|------------------------------------|-----------------------|
-| `projects/compilers/dxo-core`      | *(Rust crate)*        |
-| `projects/compilers/dxo-napi`      | *(Rust napi cdylib)*  |
-| `projects/runtimes/dxo-core`       | `@dxo/core`           |
-| `projects/runtimes/dxo-lite`       | `@dxo/lite`           |
-| `projects/runtimes/dxo`            | `@dxo/dxo` (CLI)      |
+| Path | npm package |
+|------|-------------|
+| `projects/compilers/dxo-core` | *(Rust crate)* |
+| `projects/compilers/dxo-napi` | *(Rust napi cdylib)* |
+| `projects/runtimes/dxo-core` | `@dxo/core` |
+| `projects/runtimes/dxo-nn` | `@dxo/nn` |
+| `projects/runtimes/dxo-optimizer` | `@dxo/optimizer` |
+| `projects/runtimes/dxo-lite` | `@dxo/lite` |
+| `projects/runtimes/dxo` | `@dxo/dxo` (CLI) |
 | `projects/runtimes/dxo-<platform>` | `@dxo/dxo-<platform>` |
-
-pnpm workspace：`projects/runtimes/*`（见 `pnpm-workspace.yaml`）。
 
 ## License
 

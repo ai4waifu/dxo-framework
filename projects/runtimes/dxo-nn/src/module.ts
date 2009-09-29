@@ -38,7 +38,11 @@ export class Relu extends Module {
     }
 }
 
-/** Fully-connected: `y = x @ weight + bias`; weight `[inFeatures, outFeatures]`. */
+/** Fully-connected affine map: `y = x @ weight + bias` (no activation).
+ *
+ * Weight layout: `[inFeatures, outFeatures]`. Default leaves use `requiresGrad: true`.
+ * After `optimizer.step(parameters())`, call `loadParameters` to install new leaves.
+ */
 export class Linear extends Module {
     weight: Tensor;
     bias: Tensor;

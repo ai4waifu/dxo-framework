@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO deep learning framework — TypeScript entry, native runtime via optionalDependencies",
+    "description": "DXO deep learning — TypeScript entry (developer preview, API unstable)",
     "license": "MIT OR Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",

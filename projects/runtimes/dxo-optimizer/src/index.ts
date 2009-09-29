@@ -1,11 +1,19 @@
 import { type Tensor, tensor } from '@dxo/core';
 
+/**
+ * Optimizer contract (G3 / 0.0.4):
+ * `step` returns new `requiresGrad` leaves; callers must reassign onto the module
+ * (e.g. `linear.loadParameters(opt.step(linear.parameters()))`).
+ */
 export interface Optimizer {
     /** Apply one update; returns new leaf tensors (caller reassigns onto the module). */
     step(params: Tensor[]): Tensor[];
 }
 
-/** Vanilla SGD: `p <- p - lr * grad`. */
+/**
+ * Vanilla SGD: `p ← p - lr * grad`.
+ * Does not mutate input tensors in place.
+ */
 export class SGD implements Optimizer {
     constructor(readonly lr: number) {
         if (!(lr > 0)) throw new Error('SGD lr must be positive');
