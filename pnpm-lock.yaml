@@ -17,6 +17,9 @@ importers:
       '@dxo/data':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-data
+      '@dxo/lite':
+        specifier: workspace:*
+        version: link:projects/runtimes/dxo-lite
       '@dxo/nn':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-nn

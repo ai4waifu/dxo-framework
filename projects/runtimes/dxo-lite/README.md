@@ -2,8 +2,31 @@
 
 **Developer preview — API unstable (`0.0.x`).**
 
-Browser / Worker WebGPU/WASM runtime facade. Through **0.0.7** this package remains a **stub/probe**; wgpu lite-engine lands as the **0.0.8** thin gate.
+Browser / Worker WebGPU runtime facade. **Not** a napi / `@dxo/core` port.
 
-- Not a napi/`@dxo/core` port
-- Target path: TS facade → wasm-bindgen → Rust + wgpu → WebGPU
-- Fallback: WebGPU → explicit CPU/WASM → error; **no WebGL tensor backend**
+## Contract (0.0.8)
+
+| API | Behavior |
+|-----|----------|
+| `createRuntime(opts?)` | **Async** init; acquires WebGPU when available |
+| `fallback: 'cpu' \| 'error'` | Default `'error'`; explicit CPU host path only — **never WebGL** |
+| `runtime.capabilities` | `backend`, `webgpu`, `webglTensorBackend: false`, dtype, features |
+| `Tensor` ops | `matmul` / `add` / `toCpu` return **Promises** |
+| Device compute | Host f32 subset in this slice; Rust `lite-engine` + wgpu kernels follow |
+
+```typescript
+import { createRuntime } from '@dxo/lite';
+
+const rt = await createRuntime({ fallback: 'cpu' });
+const a = await rt.tensor([1, 2, 3, 4], [2, 2]);
+const b = await rt.ones([2, 2]);
+const c = await a.matmul(b);
+console.log(rt.capabilities.backend, await c.toArray());
+rt.destroy();
+```
+
+## Non-goals (this gate)
+
+- WebGL tensor backend (forbidden)
+- Full wasm-bindgen / lite-engine ship
+- Training / autograd parity with `@dxo/core`

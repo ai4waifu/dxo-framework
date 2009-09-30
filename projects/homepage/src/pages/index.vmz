@@ -19,9 +19,13 @@
       <h2 id="lite-probe-title">@dxo/lite runtime probe</h2>
       <dl>
         <div><dt>version</dt><dd>{liteVersion}</dd></div>
+        <div><dt>backend</dt><dd>{liteBackend}</dd></div>
         <div><dt>Tensor</dt><dd>{liteTensorClass}</dd></div>
+        <div><dt>matmul</dt><dd>{liteMatmul}</dd></div>
       </dl>
-      <p class="dxo-home__hint">Values come from <code>@dxo/lite</code> in the browser bundle (no native .node).</p>
+      <p class="dxo-home__hint">
+        Async <code>createRuntime</code> — WebGPU when available, explicit CPU fallback; never WebGL.
+      </p>
     </section>
   </main>
 </template>
@@ -31,12 +35,16 @@ import { probeLite } from '../lib/lite-probe.ts';
 
 export default class IndexPage {
     liteVersion = '…';
+    liteBackend = '…';
     liteTensorClass = '…';
+    liteMatmul = '…';
 
-    onMount() {
-        const probe = probeLite();
+    async onMount() {
+        const probe = await probeLite();
         this.liteVersion = probe.version;
+        this.liteBackend = probe.backend;
         this.liteTensorClass = probe.tensorClass;
+        this.liteMatmul = probe.matmulOk ? 'ok' : 'fail';
     }
 }
 </script>

@@ -8,37 +8,48 @@
     </header>
 
     <h1>@dxo/lite test surface</h1>
-    <p>Lightweight CPU-only stub for browsers and environments without native CUDA/Metal binaries.</p>
+    <p>
+      Async WebGPU runtime facade with explicit CPU fallback. WebGL is not a tensor backend.
+    </p>
 
     <section class="dxo-home__card">
       <h2>Probe results</h2>
       <dl>
         <div><dt>version()</dt><dd>{liteVersion}</dd></div>
-        <div><dt>new Tensor()</dt><dd>{liteTensorClass}</dd></div>
-        <div><dt>tensor instanceof Tensor</dt><dd>{tensorInstanceOk}</dd></div>
+        <div><dt>capabilities.backend</dt><dd>{liteBackend}</dd></div>
+        <div><dt>webgpu</dt><dd>{liteWebgpu}</dd></div>
+        <div><dt>webglTensorBackend</dt><dd>{liteWebgl}</dd></div>
+        <div><dt>Tensor</dt><dd>{liteTensorClass}</dd></div>
+        <div><dt>matmul identity</dt><dd>{liteMatmul}</dd></div>
       </dl>
     </section>
 
     <section class="dxo-home__card">
       <h2>Node self-test</h2>
-      <p>Run <code>pnpm test:lite</code> in <code>projects/homepage</code> for the same contract under Node.</p>
+      <p>Run <code>pnpm test:lite</code> in <code>projects/homepage</code> or <code>pnpm verify -- lite-webgpu-smoke</code>.</p>
     </section>
   </main>
 </template>
 
 <script client>
-import { Tensor, version } from '@dxo/lite';
+import { probeLite } from '../lib/lite-probe.ts';
 
 export default class LiteTestPage {
     liteVersion = '';
+    liteBackend = '';
+    liteWebgpu = '';
+    liteWebgl = '';
     liteTensorClass = '';
-    tensorInstanceOk = '';
+    liteMatmul = '';
 
-    onMount() {
-        const tensor = new Tensor();
-        this.liteVersion = version();
-        this.liteTensorClass = tensor.constructor.name;
-        this.tensorInstanceOk = tensor instanceof Tensor ? 'yes' : 'no';
+    async onMount() {
+        const probe = await probeLite();
+        this.liteVersion = probe.version;
+        this.liteBackend = probe.backend;
+        this.liteWebgpu = String(probe.webgpu);
+        this.liteWebgl = String(probe.webglTensorBackend);
+        this.liteTensorClass = probe.tensorClass;
+        this.liteMatmul = probe.matmulOk ? 'ok' : 'fail';
     }
 }
 </script>

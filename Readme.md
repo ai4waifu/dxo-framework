@@ -34,6 +34,7 @@ pnpm verify -- g3-contract
 pnpm verify -- data-iter
 pnpm verify -- serialize-roundtrip
 pnpm verify -- trainer-loop
+pnpm verify -- lite-webgpu-smoke
 ```
 
 ## Layout
