@@ -4,11 +4,11 @@
     "type": "module",
     "packageManager": "pnpm@9.15.4",
     "scripts": {
-        "build:ts": "pnpm --filter @dxo/core --filter @dxo/lite --filter @dxo/nn --filter @dxo/optimizer run build",
+        "build:ts": "pnpm --filter @dxo/core --filter @dxo/lite --filter @dxo/nn --filter @dxo/optimizer --filter @dxo/data --filter @dxo/serialize --filter @dxo/train run build",
         "build:native": "node scripts/build/napi.mjs --release",
         "build": "pnpm run build:ts && pnpm run build:native",
         "test": "pnpm run build && cargo test --release && pnpm run test:verify",
-        "test:verify": "tsx scripts/test/smoke.ts && tsx scripts/test/tensor-cpu.ts && tsx scripts/test/autograd-fd.ts && tsx scripts/test/nn-forward.ts && tsx scripts/test/mnist-linear.ts && tsx scripts/test/g3-contract.ts",
+        "test:verify": "tsx scripts/test/smoke.ts && tsx scripts/test/tensor-cpu.ts && tsx scripts/test/autograd-fd.ts && tsx scripts/test/nn-forward.ts && tsx scripts/test/mnist-linear.ts && tsx scripts/test/g3-contract.ts && tsx scripts/test/data-iter.ts && tsx scripts/test/serialize-roundtrip.ts && tsx scripts/test/trainer-loop.ts",
         "verify": "node scripts/verify.mjs",
         "lint": "biome check .",
         "lint:fix": "biome check --write .",
@@ -28,8 +28,11 @@
     "devDependencies": {
         "@biomejs/biome": "^2.5.7",
         "@dxo/core": "workspace:*",
+        "@dxo/data": "workspace:*",
         "@dxo/nn": "workspace:*",
         "@dxo/optimizer": "workspace:*",
+        "@dxo/serialize": "workspace:*",
+        "@dxo/train": "workspace:*",
         "tsx": "^4.19.4",
         "typescript": "^5.8.3"
     }

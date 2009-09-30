@@ -14,6 +14,9 @@ const suites = {
     'nn-forward': 'scripts/test/nn-forward.ts',
     'mnist-linear': 'scripts/test/mnist-linear.ts',
     'g3-contract': 'scripts/test/g3-contract.ts',
+    'data-iter': 'scripts/test/data-iter.ts',
+    'serialize-roundtrip': 'scripts/test/serialize-roundtrip.ts',
+    'trainer-loop': 'scripts/test/trainer-loop.ts',
 };
 
 if (!id || !(id in suites)) {

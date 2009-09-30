@@ -31,6 +31,9 @@ pnpm verify -- tensor-cpu
 pnpm verify -- autograd-fd
 pnpm verify -- mnist-linear
 pnpm verify -- g3-contract
+pnpm verify -- data-iter
+pnpm verify -- serialize-roundtrip
+pnpm verify -- trainer-loop
 ```
 
 ## Layout
@@ -42,6 +45,9 @@ pnpm verify -- g3-contract
 | `projects/runtimes/dxo-core` | `@dxo/core` |
 | `projects/runtimes/dxo-nn` | `@dxo/nn` |
 | `projects/runtimes/dxo-optimizer` | `@dxo/optimizer` |
+| `projects/runtimes/dxo-data` | `@dxo/data` |
+| `projects/runtimes/dxo-serialize` | `@dxo/serialize` |
+| `projects/runtimes/dxo-train` | `@dxo/train` |
 | `projects/runtimes/dxo-lite` | `@dxo/lite` |
 | `projects/runtimes/dxo` | `@dxo/dxo` (CLI) |
 | `projects/runtimes/dxo-<platform>` | `@dxo/dxo-<platform>` |

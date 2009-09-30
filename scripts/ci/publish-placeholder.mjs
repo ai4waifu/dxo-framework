@@ -67,7 +67,7 @@ function loadLocalEnv(filePath) {
 const localEnv = loadLocalEnv(ENV_PATH);
 
 /** Keep in sync with scripts/ci/publish-npm.mjs (real publish package set). */
-const JS_STUBS = ['@dxo/core', '@dxo/dxo', '@dxo/lite', '@dxo/nn', '@dxo/optimizer'];
+const JS_STUBS = ['@dxo/core', '@dxo/dxo', '@dxo/lite', '@dxo/nn', '@dxo/optimizer', '@dxo/data', '@dxo/serialize', '@dxo/train'];
 
 const NATIVE_STUBS = [
     { name: '@dxo/dxo-win32-x64', os: ['win32'], cpu: ['x64'] },

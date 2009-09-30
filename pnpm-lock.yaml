@@ -14,12 +14,21 @@ importers:
       '@dxo/core':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-core
+      '@dxo/data':
+        specifier: workspace:*
+        version: link:projects/runtimes/dxo-data
       '@dxo/nn':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-nn
       '@dxo/optimizer':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-optimizer
+      '@dxo/serialize':
+        specifier: workspace:*
+        version: link:projects/runtimes/dxo-serialize
+      '@dxo/train':
+        specifier: workspace:*
+        version: link:projects/runtimes/dxo-train
       tsx:
         specifier: ^4.19.4
         version: 4.23.12
@@ -72,6 +81,12 @@ importers:
 
   projects/runtimes/dxo-darwin-x64: {}
 
+  projects/runtimes/dxo-data:
+    dependencies:
+      '@dxo/core':
+        specifier: workspace:*
+        version: link:../dxo-core
+
   projects/runtimes/dxo-linux-x64: {}
 
   projects/runtimes/dxo-lite: {}
@@ -87,6 +102,26 @@ importers:
       '@dxo/core':
         specifier: workspace:*
         version: link:../dxo-core
+
+  projects/runtimes/dxo-serialize: {}
+
+  projects/runtimes/dxo-train:
+    dependencies:
+      '@dxo/core':
+        specifier: workspace:*
+        version: link:../dxo-core
+      '@dxo/data':
+        specifier: workspace:*
+        version: link:../dxo-data
+      '@dxo/nn':
+        specifier: workspace:*
+        version: link:../dxo-nn
+      '@dxo/optimizer':
+        specifier: workspace:*
+        version: link:../dxo-optimizer
+      '@dxo/serialize':
+        specifier: workspace:*
+        version: link:../dxo-serialize
 
   projects/runtimes/dxo-win32-x64: {}
 

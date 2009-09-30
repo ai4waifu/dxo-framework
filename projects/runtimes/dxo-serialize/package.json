@@ -1,0 +1,29 @@
+{
+    "name": "@dxo/serialize",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "DXO versioned state / weight codec (developer preview, API unstable)",
+    "license": "MIT OR Apache-2.0",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json"
+    },
+    "keywords": [
+        "dxo",
+        "serialize",
+        "checkpoint",
+        "typescript"
+    ]
+}

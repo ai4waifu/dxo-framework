@@ -31,6 +31,9 @@ const JS_PACKAGES = [
     { dir: 'projects/runtimes/dxo', publishName: '@dxo/dxo' },
     { dir: 'projects/runtimes/dxo-nn', publishName: '@dxo/nn' },
     { dir: 'projects/runtimes/dxo-optimizer', publishName: '@dxo/optimizer' },
+    { dir: 'projects/runtimes/dxo-data', publishName: '@dxo/data' },
+    { dir: 'projects/runtimes/dxo-serialize', publishName: '@dxo/serialize' },
+    { dir: 'projects/runtimes/dxo-train', publishName: '@dxo/train' },
 ];
 
 function fail(msg) {
