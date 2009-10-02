@@ -12,5 +12,7 @@ publish = false
 [dependencies]
 rand = { workspace = true }
 titan-backend-cpu = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
+titan-backend-cuda = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
 titan-hal = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
+titan-kernel = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
 titan-types = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }

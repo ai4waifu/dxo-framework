@@ -2,7 +2,7 @@
 
 #![deny(missing_docs)]
 
-use dxo_core::Tensor as CoreTensor;
+use dxo_core::{DeviceKind, Tensor as CoreTensor};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
@@ -24,6 +24,12 @@ pub fn version() -> String {
 #[napi]
 pub fn backend() -> String {
     dxo_core::backend_label().to_string()
+}
+
+/// Whether Titan CUDA can open a Driver session on this machine.
+#[napi]
+pub fn cuda_available() -> bool {
+    dxo_core::cuda_available()
 }
 
 /// Set whether the current thread records autograd ops; returns previous flag.
@@ -56,6 +62,12 @@ impl Tensor {
     #[napi(getter)]
     pub fn requires_grad(&self) -> bool {
         self.inner.requires_grad()
+    }
+
+    /// Device tag (`cpu` or `cuda`).
+    #[napi(getter)]
+    pub fn device(&self) -> String {
+        self.inner.device().as_str().to_string()
     }
 
     /// Accumulated gradient as row-major f64, or `null` if absent.
@@ -110,6 +122,13 @@ impl Tensor {
     #[napi]
     pub fn detach(&self) -> Result<Tensor> {
         Ok(Tensor { inner: self.inner.detach() })
+    }
+
+    /// Move tensor to `cpu` or `cuda` (detached tensors only for CUDA in this preview).
+    #[napi]
+    pub fn to(&self, device: String) -> Result<Tensor> {
+        let kind = DeviceKind::parse(&device).map_err(map_err)?;
+        Ok(Tensor { inner: self.inner.to(kind).map_err(map_err)? })
     }
 
     /// Clear accumulated gradient.

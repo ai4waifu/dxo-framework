@@ -2,6 +2,7 @@ export interface NativeTensor {
     shape: number[];
     requiresGrad: boolean;
     grad: number[] | null;
+    device: string;
     add(other: NativeTensor): NativeTensor;
     mul(other: NativeTensor): NativeTensor;
     matmul(other: NativeTensor): NativeTensor;
@@ -10,6 +11,7 @@ export interface NativeTensor {
     relu(): NativeTensor;
     sum(): NativeTensor;
     detach(): NativeTensor;
+    to(device: string): NativeTensor;
     zeroGrad(): void;
     backward(): void;
     toArray(): number[];
@@ -18,6 +20,7 @@ export interface NativeTensor {
 export interface NativeAddon {
     backend(): string;
     version(): string;
+    cudaAvailable(): boolean;
     setGradEnabled(enabled: boolean): boolean;
     isGradEnabled(): boolean;
     tensor(data: number[], shape: number[], requiresGrad?: boolean): NativeTensor;

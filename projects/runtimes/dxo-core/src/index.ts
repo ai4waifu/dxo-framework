@@ -14,13 +14,13 @@ export interface TensorOptions {
 export type { NativeAddon, NativeTensor } from './native-types.js';
 
 /**
- * Dense float32 tensor (CPU preview).
+ * Dense float32 tensor (CPU preview + optional CUDA matmul spike).
  *
- * Contract (G3 / 0.0.4):
+ * Contract (G3 / 0.0.4+, G4 / 0.0.6 CUDA):
  * - Ops are eager; Tape records when `requiresGrad` and grad mode is enabled.
  * - `backward()` requires a scalar (`numel === 1`, usually shape `[1]`).
  * - `grad` is a row-major copy or `undefined`.
- * - Only `device: 'cpu'` is available in this slice.
+ * - Factory helpers create CPU tensors; use `.to('cuda')` on detached tensors when CUDA is available.
  */
 export class Tensor {
     readonly #handle: NativeTensor;
@@ -34,7 +34,9 @@ export class Tensor {
     }
 
     get device(): Device {
-        return 'cpu';
+        const d = this.#handle.device;
+        if (d === 'cpu' || d === 'cuda') return d;
+        throw new Error(`unexpected native device tag: ${d}`);
     }
 
     get requiresGrad(): boolean {
@@ -95,6 +97,11 @@ export class Tensor {
     /** Values only — drops requiresGrad and tape edges. */
     detach(): Tensor {
         return new Tensor(this.#handle.detach());
+    }
+
+    /** Move to `cpu` or `cuda` (CUDA requires detached tensor in this preview). */
+    to(device: 'cpu' | 'cuda'): Tensor {
+        return new Tensor(this.#handle.to(device));
     }
 
     /** Clear accumulated gradient on this leaf/intermediate slot. */
@@ -160,6 +167,11 @@ export function version(): string {
 /** Engine backend label (e.g. `titan-cpu`). */
 export function backend(): string {
     return loadNative().backend();
+}
+
+/** Whether Titan CUDA Driver API is available on this machine. */
+export function cudaAvailable(): boolean {
+    return loadNative().cudaAvailable();
 }
 
 /** Whether the current thread records autograd ops. */

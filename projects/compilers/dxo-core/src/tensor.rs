@@ -1,4 +1,4 @@
-//! CPU float32 tensor with shared storage, stride views, and eager autograd (G2).
+//! CPU float32 tensor with shared storage, stride views, eager autograd (G2), and CUDA device tags (G4).
 
 use std::fmt;
 use std::sync::Arc;
@@ -7,10 +7,41 @@ use rand::Rng;
 
 use crate::autograd::{GradFn, GradSlot, accumulate_grad, is_grad_enabled, new_grad_slot, propagate, sum_to_shape};
 use crate::broadcast::{broadcast_offset, broadcast_shapes, for_each_index};
+use crate::cuda;
 use crate::shape::{Shape, Strides, contiguous_strides, is_contiguous, numel};
 use crate::storage::Storage;
 
-/// Shape / broadcast / matmul / autograd errors surfaced to napi.
+/// Placement for tensor values (host mirror always kept; CUDA matmul uploads/downloads).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DeviceKind {
+    /// Host CPU storage.
+    Cpu,
+    /// NVIDIA CUDA (Driver API via titan-backend-cuda).
+    Cuda,
+}
+
+impl DeviceKind {
+    /// Parse `'cpu' | 'cuda'` (case-insensitive). Metal is not in this spike.
+    pub fn parse(s: &str) -> Result<Self, TensorError> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "cpu" => Ok(Self::Cpu),
+            "cuda" => Ok(Self::Cuda),
+            other => Err(TensorError::Device(format!(
+                "unknown device '{other}' (supported: cpu, cuda)"
+            ))),
+        }
+    }
+
+    /// Stable label for napi / diagnostics.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Cpu => "cpu",
+            Self::Cuda => "cuda",
+        }
+    }
+}
+
+/// Shape / broadcast / matmul / autograd / device errors surfaced to napi.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TensorError {
     /// Invalid shape or numel mismatch.
@@ -19,12 +50,14 @@ pub enum TensorError {
     Broadcast(String),
     /// Autograd graph / backward errors.
     Autograd(String),
+    /// Device placement / CUDA facade errors.
+    Device(String),
 }
 
 impl fmt::Display for TensorError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Shape(msg) | Self::Broadcast(msg) | Self::Autograd(msg) => f.write_str(msg),
+            Self::Shape(msg) | Self::Broadcast(msg) | Self::Autograd(msg) | Self::Device(msg) => f.write_str(msg),
         }
     }
 }
@@ -41,12 +74,14 @@ pub struct Tensor {
     requires_grad: bool,
     grad_slot: Option<GradSlot>,
     grad_fn: Option<Arc<dyn GradFn>>,
+    device: DeviceKind,
 }
 
 impl fmt::Debug for Tensor {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Tensor")
             .field("shape", &self.shape.0)
+            .field("device", &self.device)
             .field("requires_grad", &self.requires_grad)
             .field("has_grad_fn", &self.grad_fn.is_some())
             .finish()
@@ -111,8 +146,90 @@ impl Tensor {
         grad_slot: Option<GradSlot>,
         grad_fn: Option<Arc<dyn GradFn>>,
     ) -> Self {
+        Self::from_storage_on(storage, offset, shape, requires_grad, grad_slot, grad_fn, DeviceKind::Cpu)
+    }
+
+    fn from_storage_on(
+        storage: Storage,
+        offset: usize,
+        shape: &[usize],
+        requires_grad: bool,
+        grad_slot: Option<GradSlot>,
+        grad_fn: Option<Arc<dyn GradFn>>,
+        device: DeviceKind,
+    ) -> Self {
         let strides = contiguous_strides(shape);
-        Self { storage, offset, shape: Shape(shape.to_vec()), strides: Strides(strides), requires_grad, grad_slot, grad_fn }
+        Self {
+            storage,
+            offset,
+            shape: Shape(shape.to_vec()),
+            strides: Strides(strides),
+            requires_grad,
+            grad_slot,
+            grad_fn,
+            device,
+        }
+    }
+
+    /// Current device tag (`cpu` / `cuda`).
+    pub fn device(&self) -> DeviceKind {
+        self.device
+    }
+
+    /// Explicit device migration. CUDA path requires a usable NVIDIA driver.
+    /// Autograd leaves must be detached before moving to CUDA in this spike.
+    pub fn to(&self, device: DeviceKind) -> Result<Self, TensorError> {
+        if device == self.device {
+            return Ok(self.clone());
+        }
+        match device {
+            DeviceKind::Cpu => {
+                let data = self.to_vec();
+                Ok(Self::from_storage_on(
+                    Storage::from_vec(data),
+                    0,
+                    self.shape(),
+                    false,
+                    None,
+                    None,
+                    DeviceKind::Cpu,
+                ))
+            }
+            DeviceKind::Cuda => {
+                if self.requires_grad || self.grad_fn.is_some() {
+                    return Err(TensorError::Device(
+                        "to('cuda') requires a detached tensor without requiresGrad in this preview".into(),
+                    ));
+                }
+                if !cuda::is_available() {
+                    return Err(TensorError::Device(
+                        "CUDA unavailable (no driver/device). Build still supports cpu; gpu-matmul skips when unset."
+                            .into(),
+                    ));
+                }
+                if !self.is_contiguous() || self.offset != 0 {
+                    let data = self.to_vec();
+                    return Ok(Self::from_storage_on(
+                        Storage::from_vec(data),
+                        0,
+                        self.shape(),
+                        false,
+                        None,
+                        None,
+                        DeviceKind::Cuda,
+                    ));
+                }
+                Ok(Self::from_storage_on(
+                    self.storage.clone(),
+                    self.offset,
+                    self.shape(),
+                    false,
+                    None,
+                    None,
+                    DeviceKind::Cuda,
+                ))
+            }
+        }
     }
 
     /// Shape dimensions.
@@ -154,9 +271,9 @@ impl Tensor {
         }
     }
 
-    /// Clone values without tape / requires_grad.
+    /// Clone values without tape / requires_grad (keeps device tag).
     pub fn detach(&self) -> Self {
-        Self::from_storage(self.storage.clone(), self.offset, self.shape(), false, None, None)
+        Self::from_storage_on(self.storage.clone(), self.offset, self.shape(), false, None, None, self.device)
     }
 
     /// Titan protocol shape view.
@@ -245,7 +362,7 @@ impl Tensor {
             )));
         }
         let base = if !self.is_contiguous() {
-            Self::from_storage(Storage::from_vec(self.to_vec()), 0, shape, false, None, None)
+            Self::from_storage_on(Storage::from_vec(self.to_vec()), 0, shape, false, None, None, self.device)
         } else {
             Self {
                 storage: self.storage.clone(),
@@ -255,6 +372,7 @@ impl Tensor {
                 requires_grad: false,
                 grad_slot: None,
                 grad_fn: None,
+                device: self.device,
             }
         };
         Ok(Self::maybe_attach(base, &[self], Arc::new(ReshapeBackward { input: self.clone(), out_shape: shape.to_vec() })))
@@ -275,6 +393,7 @@ impl Tensor {
             requires_grad: false,
             grad_slot: None,
             grad_fn: None,
+            device: self.device,
         };
         Ok(Self::maybe_attach(base, &[self], Arc::new(TransposeBackward { input: self.clone() })))
     }
@@ -292,6 +411,13 @@ impl Tensor {
     }
 
     fn binary_broadcast(&self, other: &Self, op: fn(f32, f32) -> f32) -> Result<Self, TensorError> {
+        if self.device != other.device {
+            return Err(TensorError::Device(format!(
+                "broadcast op device mismatch: {} vs {}",
+                self.device.as_str(),
+                other.device.as_str()
+            )));
+        }
         let out_shape = broadcast_shapes(self.shape(), other.shape())?;
         let rank = out_shape.len();
         let mut out = vec![0.0; numel(&out_shape)?];
@@ -302,16 +428,22 @@ impl Tensor {
             out[oi] = op(self.storage.data()[li], other.storage.data()[ri]);
             oi += 1;
         });
-        Ok(Self::from_storage(Storage::from_vec(out), 0, &out_shape, false, None, None))
+        Ok(Self::from_storage_on(Storage::from_vec(out), 0, &out_shape, false, None, None, self.device))
     }
 
     /// Matrix multiply for rank-2 tensors: `[m,k] @ [k,n] -> [m,n]`.
+    /// When both operands are on `cuda`, runs titan CUDA `gemm.f32` (contiguous f32 only).
     pub fn matmul(&self, other: &Self) -> Result<Self, TensorError> {
         if self.shape().len() != 2 || other.shape().len() != 2 {
             return Err(TensorError::Shape("matmul requires rank-2 tensors".into()));
         }
-        let a = self.to_vec();
-        let b = other.to_vec();
+        if self.device != other.device {
+            return Err(TensorError::Device(format!(
+                "matmul device mismatch: {} vs {} (call .to on both)",
+                self.device.as_str(),
+                other.device.as_str()
+            )));
+        }
         let m = self.shape()[0];
         let k = self.shape()[1];
         let k2 = other.shape()[0];
@@ -319,6 +451,29 @@ impl Tensor {
         if k != k2 {
             return Err(TensorError::Shape(format!("matmul inner dims mismatch: {k} vs {k2}")));
         }
+
+        if self.device == DeviceKind::Cuda {
+            if !self.is_contiguous() || self.offset != 0 || !other.is_contiguous() || other.offset != 0 {
+                return Err(TensorError::Device(
+                    "CUDA matmul requires contiguous rank-2 inputs (offset 0)".into(),
+                ));
+            }
+            let a = self.to_vec();
+            let b = other.to_vec();
+            let out = cuda::gemm_f32(&a, m, k, &b, n)?;
+            return Ok(Self::from_storage_on(
+                Storage::from_vec(out),
+                0,
+                &[m, n],
+                false,
+                None,
+                None,
+                DeviceKind::Cuda,
+            ));
+        }
+
+        let a = self.to_vec();
+        let b = other.to_vec();
         let mut out = vec![0.0f32; m * n];
         for i in 0..m {
             for j in 0..n {
@@ -329,21 +484,21 @@ impl Tensor {
                 out[i * n + j] = sum;
             }
         }
-        let base = Self::from_storage(Storage::from_vec(out), 0, &[m, n], false, None, None);
+        let base = Self::from_storage_on(Storage::from_vec(out), 0, &[m, n], false, None, None, self.device);
         Ok(Self::maybe_attach(base, &[self, other], Arc::new(MatmulBackward { a: self.clone(), b: other.clone() })))
     }
 
     /// Element-wise ReLU.
     pub fn relu(&self) -> Self {
         let data = self.to_vec().into_iter().map(|x| x.max(0.0)).collect();
-        let base = Self::from_storage(Storage::from_vec(data), 0, self.shape(), false, None, None);
+        let base = Self::from_storage_on(Storage::from_vec(data), 0, self.shape(), false, None, None, self.device);
         Self::maybe_attach(base, &[self], Arc::new(ReluBackward { input: self.clone() }))
     }
 
     /// Sum all elements to a scalar tensor of shape `[1]`.
     pub fn sum(&self) -> Self {
         let s: f32 = self.to_vec().iter().sum();
-        let base = Self::from_storage(Storage::from_vec(vec![s]), 0, &[1], false, None, None);
+        let base = Self::from_storage_on(Storage::from_vec(vec![s]), 0, &[1], false, None, None, self.device);
         Self::maybe_attach(base, &[self], Arc::new(SumBackward { input: self.clone() }))
     }
 

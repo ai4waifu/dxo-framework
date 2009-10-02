@@ -8,7 +8,7 @@
         "build:native": "node scripts/build/napi.mjs --release",
         "build": "pnpm run build:ts && pnpm run build:native",
         "test": "pnpm run build && cargo test --release && pnpm run test:verify",
-        "test:verify": "tsx scripts/test/smoke.ts && tsx scripts/test/tensor-cpu.ts && tsx scripts/test/autograd-fd.ts && tsx scripts/test/nn-forward.ts && tsx scripts/test/mnist-linear.ts && tsx scripts/test/g3-contract.ts && tsx scripts/test/data-iter.ts && tsx scripts/test/serialize-roundtrip.ts && tsx scripts/test/trainer-loop.ts && tsx scripts/test/lite-webgpu-smoke.ts",
+        "test:verify": "tsx scripts/test/smoke.ts && tsx scripts/test/tensor-cpu.ts && tsx scripts/test/autograd-fd.ts && tsx scripts/test/nn-forward.ts && tsx scripts/test/mnist-linear.ts && tsx scripts/test/g3-contract.ts && tsx scripts/test/data-iter.ts && tsx scripts/test/serialize-roundtrip.ts && tsx scripts/test/trainer-loop.ts && tsx scripts/test/gpu-matmul.ts && tsx scripts/test/lite-webgpu-smoke.ts",
         "verify": "node scripts/verify.mjs",
         "lint": "biome check .",
         "lint:fix": "biome check --write .",

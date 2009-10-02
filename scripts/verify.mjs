@@ -17,6 +17,7 @@ const suites = {
     'data-iter': 'scripts/test/data-iter.ts',
     'serialize-roundtrip': 'scripts/test/serialize-roundtrip.ts',
     'trainer-loop': 'scripts/test/trainer-loop.ts',
+    'gpu-matmul': 'scripts/test/gpu-matmul.ts',
     'lite-webgpu-smoke': 'scripts/test/lite-webgpu-smoke.ts',
 };
 
