@@ -4,6 +4,7 @@ export type LiteProbe = {
     version: string;
     backend: string;
     webgpu: boolean;
+    titanWgpuReady: boolean;
     webglTensorBackend: false;
     tensorClass: string;
     matmulOk: boolean;
@@ -21,6 +22,7 @@ export async function probeLite(): Promise<LiteProbe> {
             version: version(),
             backend: rt.capabilities.backend,
             webgpu: rt.capabilities.webgpu,
+            titanWgpuReady: rt.capabilities.titanWgpuReady,
             webglTensorBackend: rt.capabilities.webglTensorBackend,
             tensorClass: a.constructor.name,
             matmulOk: out[0] === 1 && out[1] === 2 && out[2] === 3 && out[3] === 4,

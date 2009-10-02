@@ -1,8 +1,9 @@
 /**
- * @dxo/lite — browser/Worker WebGPU runtime facade (0.0.8 thin gate).
+ * @dxo/lite — browser/Worker runtime facade (0.0.8+ thin gate).
  *
- * Target stack: TS facade → (future) wasm-bindgen → lite-engine (Rust + wgpu) → WebGPU.
- * This slice freezes async init, capabilities, explicit CPU fallback, and a host f32 op subset.
+ * TS owns async init, capabilities, explicit CPU fallback, and Promise tensor ops only.
+ * GPU compute will load a WASM facade → dxo-core → Titan `titan-backend-wgpu` when ready.
+ * This layer never retains `GPUAdapter` / `GPUDevice` handles.
  * WebGL is never a tensor backend.
  */
 
@@ -10,23 +11,29 @@ export type FallbackMode = 'cpu' | 'error';
 export type LiteBackend = 'webgpu' | 'cpu';
 export type PowerPreference = 'low-power' | 'high-performance';
 
+/** Set true when WASM + Titan wgpu facade is wired; until then compute stays host f32. */
+export const TITAN_WGPU_READY = false;
+
 export interface CreateRuntimeOptions {
-    /** Passed to `navigator.gpu.requestAdapter` when WebGPU is available. */
+    /** Passed to `navigator.gpu.requestAdapter` for capability probe only (no device acquire). */
     powerPreference?: PowerPreference;
-    /** Reserved for future adapter feature negotiation (ignored if empty). */
+    /** Adapter must expose these features during probe (ignored if empty). */
     requiredFeatures?: readonly string[];
     /**
-     * When WebGPU is unavailable:
+     * When GPU compute is unavailable (no WebGPU, or Titan WASM not ready):
      * - `'error'` (default): throw a diagnostic Error
-     * - `'cpu'`: use host f32 Promise tensors
+     * - `'cpu'`: host f32 Promise tensors
      */
     fallback?: FallbackMode;
 }
 
 export interface LiteCapabilities {
+    /** Active compute backend. `'webgpu'` only when {@link TITAN_WGPU_READY} and WASM facade loaded. */
     backend: LiteBackend;
-    /** True only when a WebGPU adapter+device were acquired. */
+    /** True when a WebGPU adapter was probed (adapter not retained). */
     webgpu: boolean;
+    /** True when Titan wgpu WASM facade is linked and may dispatch GPU kernels. */
+    titanWgpuReady: boolean;
     /** Always false — WebGL is not a DXO tensor backend. */
     webglTensorBackend: false;
     features: readonly string[];
@@ -41,11 +48,11 @@ export interface LiteRuntime {
     tensor(data: ArrayLike<number>, shape: readonly number[]): Promise<Tensor>;
     zeros(shape: readonly number[]): Promise<Tensor>;
     ones(shape: readonly number[]): Promise<Tensor>;
-    /** Release GPU device (no-op for CPU). Safe to call more than once. */
+    /** Release runtime (no GPU handles in TS; safe to call more than once). */
     destroy(): void;
 }
 
-/** Minimal GPU* shapes so Node builds do not need `@webgpu/types`. */
+/** Minimal GPU* shapes for adapter probe — not stored on {@link LiteRuntime}. */
 interface GpuAdapterInfo {
     vendor?: string;
     architecture?: string;
@@ -56,14 +63,8 @@ interface GpuAdapterInfo {
 interface GpuAdapter {
     features: { has(name: string): boolean; values(): IterableIterator<string> };
     limits: Record<string, number>;
-    requestDevice(): Promise<GpuDevice>;
     requestAdapterInfo?: () => Promise<GpuAdapterInfo>;
     info?: GpuAdapterInfo;
-}
-
-interface GpuDevice {
-    destroy(): void;
-    createBuffer(desc: { size: number; usage: number; mappedAtCreation?: boolean }): { destroy(): void };
 }
 
 interface Gpu {
@@ -161,12 +162,10 @@ export class Tensor {
 
 class RuntimeImpl implements LiteRuntime {
     readonly capabilities: LiteCapabilities;
-    #device: GpuDevice | null;
     #destroyed = false;
 
-    constructor(capabilities: LiteCapabilities, device: GpuDevice | null) {
+    constructor(capabilities: LiteCapabilities) {
         this.capabilities = capabilities;
-        this.#device = device;
     }
 
     async tensor(data: ArrayLike<number>, shape: readonly number[]): Promise<Tensor> {
@@ -189,14 +188,7 @@ class RuntimeImpl implements LiteRuntime {
     }
 
     destroy(): void {
-        if (this.#destroyed) return;
         this.#destroyed = true;
-        try {
-            this.#device?.destroy();
-        } catch {
-            /* ignore */
-        }
-        this.#device = null;
     }
 
     #assertLive(): void {
@@ -208,6 +200,7 @@ function cpuCapabilities(): LiteCapabilities {
     return {
         backend: 'cpu',
         webgpu: false,
+        titanWgpuReady: TITAN_WGPU_READY,
         webglTensorBackend: false,
         features: [],
         limits: {},
@@ -215,10 +208,11 @@ function cpuCapabilities(): LiteCapabilities {
     };
 }
 
-async function tryWebGpu(options: CreateRuntimeOptions): Promise<{
-    capabilities: LiteCapabilities;
-    device: GpuDevice;
-} | null> {
+/**
+ * Probe WebGPU adapter metadata without acquiring or retaining a device.
+ * The adapter handle is dropped before returning.
+ */
+async function probeWebGpuCapabilities(options: CreateRuntimeOptions): Promise<LiteCapabilities | null> {
     const gpu = getGpu();
     if (!gpu) return null;
 
@@ -234,7 +228,6 @@ async function tryWebGpu(options: CreateRuntimeOptions): Promise<{
         }
     }
 
-    const device = await adapter.requestDevice();
     const features = [...adapter.features.values()];
     let adapterInfo: LiteCapabilities['adapterInfo'];
     try {
@@ -257,45 +250,63 @@ async function tryWebGpu(options: CreateRuntimeOptions): Promise<{
     }
 
     return {
-        device,
-        capabilities: {
-            backend: 'webgpu',
-            webgpu: true,
-            webglTensorBackend: false,
-            features,
-            limits,
-            dtype: { f32: true, f16: adapter.features.has('shader-f16') },
-            adapterInfo,
-        },
+        backend: TITAN_WGPU_READY ? 'webgpu' : 'cpu',
+        webgpu: true,
+        titanWgpuReady: TITAN_WGPU_READY,
+        webglTensorBackend: false,
+        features,
+        limits,
+        dtype: { f32: true, f16: adapter.features.has('shader-f16') },
+        adapterInfo,
     };
+}
+
+function titanNotReadyError(): Error {
+    return new Error(
+        "Titan wgpu WASM facade is not ready; pass { fallback: 'cpu' } for host tensors until WASM is linked. WebGL is not a DXO tensor backend.",
+    );
+}
+
+function webGpuUnavailableError(): Error {
+    return new Error(
+        "WebGPU unavailable (no navigator.gpu). Pass { fallback: 'cpu' } for host tensors, or use a WebGPU-capable browser. WebGL is not a DXO tensor backend.",
+    );
 }
 
 /**
  * Explicit async runtime bootstrap.
- * Never silently falls back to WebGL.
+ * Never silently falls back to WebGL; never retains wgpu adapter/device in TS.
  */
 export async function createRuntime(options: CreateRuntimeOptions = {}): Promise<LiteRuntime> {
     const fallback: FallbackMode = options.fallback ?? 'error';
 
+    if (TITAN_WGPU_READY) {
+        // Future: dynamic import WASM facade → dxo-core → Titan wgpu session.
+        throw new Error('Titan wgpu WASM facade hook is not implemented yet');
+    }
+
     try {
-        const web = await tryWebGpu(options);
-        if (web) return new RuntimeImpl(web.capabilities, web.device);
+        const probed = await probeWebGpuCapabilities(options);
+        if (probed) {
+            if (fallback === 'error') {
+                throw titanNotReadyError();
+            }
+            return new RuntimeImpl(probed);
+        }
     } catch (err) {
         if (fallback === 'error') throw err;
-        // fall through to CPU when fallback === 'cpu'
     }
 
     if (fallback === 'cpu') {
-        return new RuntimeImpl(cpuCapabilities(), null);
+        return new RuntimeImpl(cpuCapabilities());
     }
 
-    const gpu = getGpu();
-    if (!gpu) {
-        throw new Error(
-            "WebGPU unavailable (no navigator.gpu). Pass { fallback: 'cpu' } for host tensors, or use a WebGPU-capable browser. WebGL is not a DXO tensor backend.",
-        );
+    if (!getGpu()) {
+        throw webGpuUnavailableError();
     }
-    throw new Error("WebGPU adapter/device request failed. Pass { fallback: 'cpu' } for host tensors. WebGL is not a DXO tensor backend.");
+    throw new Error(
+        "WebGPU adapter request failed. Pass { fallback: 'cpu' } for host tensors. WebGL is not a DXO tensor backend.",
+    );
 }
 
 /** Package identity string (not npm semver). */

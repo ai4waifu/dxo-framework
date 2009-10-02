@@ -24,7 +24,7 @@
         <div><dt>matmul</dt><dd>{liteMatmul}</dd></div>
       </dl>
       <p class="dxo-home__hint">
-        Async <code>createRuntime</code> — WebGPU when available, explicit CPU fallback; never WebGL.
+        Async <code>createRuntime</code> — probes WebGPU only; host f32 until Titan WASM; never WebGL.
       </p>
     </section>
   </main>
