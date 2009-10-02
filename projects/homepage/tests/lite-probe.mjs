@@ -8,7 +8,7 @@ assert.match(v, /lite/);
 const rt = await createRuntime({ fallback: 'cpu' });
 assert.equal(rt.capabilities.webglTensorBackend, false);
 const backend = rt.capabilities.backend;
-const t = await rt.zeros([2, 2]);
+const t = rt.zeros([2, 2]);
 assert.equal(t.constructor.name, 'Tensor');
 assert.deepEqual(await t.toArray(), [0, 0, 0, 0]);
 rt.destroy();

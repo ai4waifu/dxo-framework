@@ -1,7 +1,7 @@
 /**
  * @dxo/lite — browser/Worker runtime facade (0.0.8+ thin gate).
  *
- * TS owns async init, capabilities, explicit CPU fallback, and Promise tensor ops only.
+ * TS owns async init, capabilities, explicit CPU fallback, and synchronous Tensor composition.
  * GPU compute will load a WASM facade → dxo-core → Titan `titan-backend-wgpu` when ready.
  * This layer never retains `GPUAdapter` / `GPUDevice` handles.
  * WebGL is never a tensor backend.
@@ -22,7 +22,7 @@ export interface CreateRuntimeOptions {
     /**
      * When GPU compute is unavailable (no WebGPU, or Titan WASM not ready):
      * - `'error'` (default): throw a diagnostic Error
-     * - `'cpu'`: host f32 Promise tensors
+     * - `'cpu'`: host f32 tensors with async observation barriers
      */
     fallback?: FallbackMode;
 }
@@ -45,9 +45,9 @@ export interface LiteCapabilities {
 export interface LiteRuntime {
     readonly capabilities: LiteCapabilities;
     /** Create a dense f32 tensor (row-major). */
-    tensor(data: ArrayLike<number>, shape: readonly number[]): Promise<Tensor>;
-    zeros(shape: readonly number[]): Promise<Tensor>;
-    ones(shape: readonly number[]): Promise<Tensor>;
+    tensor(data: ArrayLike<number>, shape: readonly number[]): Tensor;
+    zeros(shape: readonly number[]): Tensor;
+    ones(shape: readonly number[]): Tensor;
     /** Release runtime (no GPU handles in TS; safe to call more than once). */
     destroy(): void;
 }
@@ -120,7 +120,7 @@ function addHost(a: Float32Array, b: Float32Array): Float32Array {
     return out;
 }
 
-/** Dense float32 tensor. Ops return Promises (never pretend sync GPU). */
+/** Dense float32 tensor. Ops synchronously return composable handles; observation is async. */
 export class Tensor {
     readonly #data: Float32Array;
     readonly shape: readonly number[];
@@ -137,12 +137,12 @@ export class Tensor {
         return this.#data.length;
     }
 
-    async matmul(other: Tensor): Promise<Tensor> {
+    matmul(other: Tensor): Tensor {
         const { data, shape } = matmulHost(this.#data, this.shape, other.#data, other.shape);
         return new Tensor(data, shape, this.device);
     }
 
-    async add(other: Tensor): Promise<Tensor> {
+    add(other: Tensor): Tensor {
         if (this.shape.length !== other.shape.length || this.shape.some((d, i) => d !== other.shape[i])) {
             throw new Error(`add requires identical shapes: [${this.shape}] vs [${other.shape}]`);
         }
@@ -158,6 +158,9 @@ export class Tensor {
     async toArray(): Promise<number[]> {
         return this.toCpu();
     }
+
+    /** Wait until pending device work for this handle is complete. CPU resolves immediately. */
+    async ready(): Promise<void> {}
 }
 
 class RuntimeImpl implements LiteRuntime {
@@ -168,18 +171,18 @@ class RuntimeImpl implements LiteRuntime {
         this.capabilities = capabilities;
     }
 
-    async tensor(data: ArrayLike<number>, shape: readonly number[]): Promise<Tensor> {
+    tensor(data: ArrayLike<number>, shape: readonly number[]): Tensor {
         this.#assertLive();
         assertShape(data.length, shape);
         return new Tensor(Float32Array.from(data), shape, this.capabilities.backend);
     }
 
-    async zeros(shape: readonly number[]): Promise<Tensor> {
+    zeros(shape: readonly number[]): Tensor {
         this.#assertLive();
         return new Tensor(new Float32Array(numel(shape)), shape, this.capabilities.backend);
     }
 
-    async ones(shape: readonly number[]): Promise<Tensor> {
+    ones(shape: readonly number[]): Tensor {
         this.#assertLive();
         const n = numel(shape);
         const data = new Float32Array(n);
@@ -304,9 +307,7 @@ export async function createRuntime(options: CreateRuntimeOptions = {}): Promise
     if (!getGpu()) {
         throw webGpuUnavailableError();
     }
-    throw new Error(
-        "WebGPU adapter request failed. Pass { fallback: 'cpu' } for host tensors. WebGL is not a DXO tensor backend.",
-    );
+    throw new Error("WebGPU adapter request failed. Pass { fallback: 'cpu' } for host tensors. WebGL is not a DXO tensor backend.");
 }
 
 /** Package identity string (not npm semver). */

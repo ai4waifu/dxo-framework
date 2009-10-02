@@ -12,15 +12,15 @@ Browser / Worker runtime facade. **Not** a napi / `@dxo/core` port.
 | `TITAN_WGPU_READY` | `false` until WASM → dxo-core → Titan wgpu is linked |
 | `fallback: 'cpu' \| 'error'` | Default `'error'`; explicit host f32 path — **never WebGL** |
 | `runtime.capabilities` | `backend`, `webgpu`, `titanWgpuReady`, `webglTensorBackend: false` |
-| `Tensor` ops | `matmul` / `add` / `toCpu` return **Promises** (host f32 until Titan ready) |
+| `Tensor` ops | `matmul` / `add` synchronously return handles; `ready` / `toArray` are Promise barriers |
 
 ```typescript
 import { createRuntime } from '@dxo/lite';
 
 const rt = await createRuntime({ fallback: 'cpu' });
-const a = await rt.tensor([1, 2, 3, 4], [2, 2]);
-const b = await rt.ones([2, 2]);
-const c = await a.matmul(b);
+const a = rt.tensor([1, 2, 3, 4], [2, 2]);
+const b = rt.ones([2, 2]);
+const c = a.matmul(b);
 console.log(rt.capabilities.backend, rt.capabilities.titanWgpuReady, await c.toArray());
 rt.destroy();
 ```

@@ -3,7 +3,7 @@ import { createRuntime, version } from '@dxo/lite';
 
 /**
  * M6 / 0.0.8 thin gate: async createRuntime, capabilities, CPU fallback,
- * Promise tensor ops, and hard ban on WebGL as a tensor backend.
+ * synchronous Tensor composition, async observation barriers, and hard ban on WebGL.
  * Node CI has no WebGPU — smoke the CPU path + diagnostic error path.
  */
 
@@ -16,16 +16,17 @@ assert.equal(rt.capabilities.titanWgpuReady, false);
 assert.equal(rt.capabilities.webglTensorBackend, false);
 assert.equal(rt.capabilities.dtype.f32, true);
 
-const a = await rt.tensor([1, 2, 3, 4], [2, 2]);
-const b = await rt.tensor([5, 6, 7, 8], [2, 2]);
-const c = await a.matmul(b);
+const a = rt.tensor([1, 2, 3, 4], [2, 2]);
+const b = rt.tensor([5, 6, 7, 8], [2, 2]);
+const c = a.matmul(b);
+await c.ready();
 assert.deepEqual(await c.toArray(), [19, 22, 43, 50]);
 
-const sum = await (await rt.ones([2])).add(await rt.ones([2]));
+const sum = rt.ones([2]).add(rt.ones([2]));
 assert.deepEqual(await sum.toArray(), [2, 2]);
 
 rt.destroy();
-await assert.rejects(() => rt.tensor([1], [1]), /destroyed/);
+assert.throws(() => rt.tensor([1], [1]), /destroyed/);
 
 await assert.rejects(
     () => createRuntime({ fallback: 'error' }),
@@ -37,4 +38,4 @@ await assert.rejects(
     },
 );
 
-console.log('lite-webgpu-smoke ok: cpu fallback + Promise matmul + no-WebGL contract');
+console.log('lite-webgpu-smoke ok: sync Tensor chain + async barrier + no-WebGL contract');

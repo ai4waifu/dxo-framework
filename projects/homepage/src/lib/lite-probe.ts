@@ -14,9 +14,9 @@ export type LiteProbe = {
 export async function probeLite(): Promise<LiteProbe> {
     const rt = await createRuntime({ fallback: 'cpu' });
     try {
-        const a = await rt.tensor([1, 2, 3, 4], [2, 2]);
-        const b = await rt.tensor([1, 0, 0, 1], [2, 2]);
-        const c = await a.matmul(b);
+        const a = rt.tensor([1, 2, 3, 4], [2, 2]);
+        const b = rt.tensor([1, 0, 0, 1], [2, 2]);
+        const c = a.matmul(b);
         const out = await c.toArray();
         return {
             version: version(),
