@@ -17,6 +17,12 @@ importers:
       '@dxo/data':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-data
+      '@dxo/graph':
+        specifier: workspace:*
+        version: link:projects/runtimes/dxo-graph
+      '@dxo/inspect':
+        specifier: workspace:*
+        version: link:projects/runtimes/dxo-inspect
       '@dxo/lite':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-lite
@@ -29,9 +35,15 @@ importers:
       '@dxo/serialize':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-serialize
+      '@dxo/studio':
+        specifier: workspace:*
+        version: link:projects/runtimes/dxo-studio
       '@dxo/train':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-train
+      '@dxo/ui':
+        specifier: workspace:*
+        version: link:projects/runtimes/dxo-ui
       tsx:
         specifier: ^4.19.4
         version: 4.23.12
@@ -90,6 +102,10 @@ importers:
         specifier: workspace:*
         version: link:../dxo-core
 
+  projects/runtimes/dxo-graph: {}
+
+  projects/runtimes/dxo-inspect: {}
+
   projects/runtimes/dxo-linux-x64: {}
 
   projects/runtimes/dxo-lite: {}
@@ -108,6 +124,15 @@ importers:
 
   projects/runtimes/dxo-serialize: {}
 
+  projects/runtimes/dxo-studio:
+    dependencies:
+      '@dxo/graph':
+        specifier: workspace:*
+        version: link:../dxo-graph
+      '@dxo/inspect':
+        specifier: workspace:*
+        version: link:../dxo-inspect
+
   projects/runtimes/dxo-train:
     dependencies:
       '@dxo/core':
@@ -125,6 +150,8 @@ importers:
       '@dxo/serialize':
         specifier: workspace:*
         version: link:../dxo-serialize
+
+  projects/runtimes/dxo-ui: {}
 
   projects/runtimes/dxo-win32-x64: {}
 
