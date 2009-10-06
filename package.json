@@ -4,7 +4,7 @@
     "type": "module",
     "packageManager": "pnpm@9.15.4",
     "scripts": {
-        "build:ts": "pnpm --filter @dxo/core --filter @dxo/lite --filter @dxo/nn --filter @dxo/optimizer --filter @dxo/data --filter @dxo/serialize --filter @dxo/train --filter @dxo/inspect --filter @dxo/graph --filter @dxo/studio --filter @dxo/ui run build",
+        "build:ts": "pnpm --filter @dxo/core --filter @dxo/lite --filter @dxo/nn --filter @dxo/optimizer --filter @dxo/data --filter @dxo/serialize --filter @dxo/train --filter @dxo/inspect --filter @dxo/graph --filter @dxo/studio --filter @dxo/ui --filter @dxo/hub --filter @dxo/vision --filter @dxo/llm run build",
         "build:native": "node scripts/build/napi.mjs --release",
         "build": "pnpm run build:ts && pnpm run build:native",
         "test": "pnpm run build && cargo test --release && pnpm run test:verify",
@@ -30,14 +30,17 @@
         "@dxo/core": "workspace:*",
         "@dxo/data": "workspace:*",
         "@dxo/graph": "workspace:*",
+        "@dxo/hub": "workspace:*",
         "@dxo/inspect": "workspace:*",
         "@dxo/lite": "workspace:*",
+        "@dxo/llm": "workspace:*",
         "@dxo/nn": "workspace:*",
         "@dxo/optimizer": "workspace:*",
         "@dxo/serialize": "workspace:*",
         "@dxo/studio": "workspace:*",
         "@dxo/train": "workspace:*",
         "@dxo/ui": "workspace:*",
+        "@dxo/vision": "workspace:*",
         "tsx": "^4.19.4",
         "typescript": "^5.8.3"
     }
