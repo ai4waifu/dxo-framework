@@ -19,6 +19,7 @@ const suites = {
     'trainer-loop': 'scripts/test/trainer-loop.ts',
     'gpu-matmul': 'scripts/test/gpu-matmul.ts',
     'lite-webgpu-smoke': 'scripts/test/lite-webgpu-smoke.ts',
+    'runtime-contract-lite': 'scripts/test/runtime-contract-lite.ts',
 };
 
 if (!id || !(id in suites)) {

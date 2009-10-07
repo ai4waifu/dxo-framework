@@ -161,6 +161,12 @@ export class Tensor {
 
     /** Wait until pending device work for this handle is complete. CPU resolves immediately. */
     async ready(): Promise<void> {}
+
+    /** Scalar read when `numel === 1`. */
+    async item(): Promise<number> {
+        if (this.numel() !== 1) throw new Error(`item() requires a scalar tensor, got shape [${this.shape.join(',')}]`);
+        return this.#data[0]!;
+    }
 }
 
 class RuntimeImpl implements LiteRuntime {
