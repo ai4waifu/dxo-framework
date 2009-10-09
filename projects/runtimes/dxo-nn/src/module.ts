@@ -1,4 +1,4 @@
-import { randn, Tensor, tensor, zeros } from '@dxo/core';
+import { randnValues, Tensor, tensor, zeros } from '@dxo/core';
 
 export interface TensorStateSlice {
     shape: number[];
@@ -55,9 +55,7 @@ export class Linear extends Module {
         super();
         const rg = opts.requiresGrad ?? true;
         const scale = Math.sqrt(2 / (inFeatures + outFeatures));
-        const raw = randn([inFeatures, outFeatures])
-            .toArray()
-            .map((v) => v * scale);
+        const raw = randnValues([inFeatures, outFeatures]).map((v) => v * scale);
         this.weight = tensor(raw, [inFeatures, outFeatures], { requiresGrad: rg });
         this.bias = zeros([outFeatures], { requiresGrad: rg });
     }
@@ -73,10 +71,10 @@ export class Linear extends Module {
         this.bias = params[1]!;
     }
 
-    state(): LinearState {
+    async state(): Promise<LinearState> {
         return {
-            weight: { shape: [...this.weight.shape], data: this.weight.toArray() },
-            bias: { shape: [...this.bias.shape], data: this.bias.toArray() },
+            weight: { shape: [...this.weight.shape], data: await this.weight.toArray() },
+            bias: { shape: [...this.bias.shape], data: await this.bias.toArray() },
         };
     }
 

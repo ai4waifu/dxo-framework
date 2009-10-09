@@ -11,9 +11,9 @@ const ds = dataset(samples);
 const batches = [...batch(ds, { batchSize: 2 })];
 assert.equal(batches.length, 2);
 assert.deepEqual([...batches[0]!.x.shape], [2, 2]);
-assert.deepEqual(batches[0]!.x.toArray(), [1, 0, 0, 1]);
+assert.deepEqual(await batches[0]!.x.toArray(), [1, 0, 0, 1]);
 assert.deepEqual([...batches[0]!.y!.shape], [2, 1]);
-assert.deepEqual(batches[0]!.y!.toArray(), [1, 0]);
+assert.deepEqual(await batches[0]!.y!.toArray(), [1, 0]);
 assert.deepEqual([...batches[1]!.x.shape], [1, 2]);
 
 const dropped = [...batch(ds, { batchSize: 2, dropLast: true })];

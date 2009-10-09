@@ -18,7 +18,7 @@ model.loadState({
     bias: { shape: [1], data: [0.1] },
 });
 
-const doc = encodeLinearState(model.state());
+const doc = encodeLinearState(await model.state());
 assert.equal(doc.format, STATE_FORMAT);
 assert.equal(doc.version, STATE_VERSION);
 assert.ok(doc.tensors.weight);
@@ -32,8 +32,8 @@ assert.ok(Math.abs(round.bias.data[0]! - 0.1) < 1e-5);
 const clone = new Linear(2, 1, { requiresGrad: false });
 clone.loadState(round);
 const x = tensor([1, 2], [1, 2]);
-assert.deepEqual(clone.forward(x).toArray(), model.forward(x).toArray());
-assert.deepEqual(clone.weight.toArray(), model.weight.toArray());
+assert.deepEqual(await clone.forward(x).toArray(), await model.forward(x).toArray());
+assert.deepEqual(await clone.weight.toArray(), await model.weight.toArray());
 
 const packed = packTensors({ a: { shape: [2], data: [3, 4] } });
 assert.deepEqual(unpackTensors(packed).a!.data, [3, 4]);

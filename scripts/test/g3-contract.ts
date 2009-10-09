@@ -12,7 +12,7 @@ assert.equal(isGradEnabled(), true);
     fc.weight = tensor([-2], [1, 1]);
     fc.bias = tensor([0], [1]);
     const out = fc.forward(tensor([1], [1, 1]));
-    assert.equal(out.toArray()[0], -2);
+    assert.equal((await out.toArray())[0], -2);
 }
 
 // Relu is explicit.
@@ -21,7 +21,7 @@ assert.equal(isGradEnabled(), true);
     (net.layers[0] as Linear).weight = tensor([-2], [1, 1]);
     (net.layers[0] as Linear).bias = tensor([0], [1]);
     const out = net.forward(tensor([1], [1, 1]));
-    assert.equal(out.toArray()[0], 0);
+    assert.equal((await out.toArray())[0], 0);
 }
 
 // withoutGrad restores flag.
@@ -51,14 +51,14 @@ assert.equal(isGradEnabled(), true);
     assert.deepEqual([...loss.shape], [1]);
     loss.backward();
     assert.ok(model.weight.grad);
-    const before = model.weight.toArray().slice();
+    const before = (await model.weight.toArray()).slice();
     const opt = new SGD(0.1);
-    const updated = opt.step(model.parameters());
+    const updated = await opt.step(model.parameters());
     assert.equal(updated.length, 2);
     assert.equal(updated[0]!.requiresGrad, true);
     assert.notEqual(updated[0], model.weight);
     model.loadParameters(updated);
-    assert.notDeepEqual(model.weight.toArray(), before);
+    assert.notDeepEqual(await model.weight.toArray(), before);
 }
 
 // backward rejects non-scalars (contract).

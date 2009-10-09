@@ -20,6 +20,7 @@ const suites = {
     'gpu-matmul': 'scripts/test/gpu-matmul.ts',
     'lite-webgpu-smoke': 'scripts/test/lite-webgpu-smoke.ts',
     'runtime-contract-lite': 'scripts/test/runtime-contract-lite.ts',
+    'runtime-contract-core': 'scripts/test/runtime-contract-core.ts',
 };
 
 if (!id || !(id in suites)) {

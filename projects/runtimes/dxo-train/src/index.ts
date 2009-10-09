@@ -123,12 +123,12 @@ export class Trainer {
                 this.model.zeroGrad();
                 const pred = this.model.forward(batch.x);
                 const loss = this.lossFn(pred, batch.y);
-                const value = loss.toArray()[0];
-                if (value === undefined || !Number.isFinite(value)) {
+                const value = await loss.item();
+                if (!Number.isFinite(value)) {
                     throw new Error(`non-finite loss at epoch ${epoch} step ${globalStep + 1}: ${value}`);
                 }
                 loss.backward();
-                this.model.loadParameters(this.optimizer.step(this.model.parameters()));
+                this.model.loadParameters(await this.optimizer.step(this.model.parameters()));
 
                 globalStep += 1;
                 epochSteps += 1;
@@ -145,7 +145,7 @@ export class Trainer {
 
             const shouldCheckpoint = epoch % this.checkpointEvery === 0 || epoch === this.epochs;
             if (shouldCheckpoint) {
-                const state = this.model.state();
+                const state = await this.model.state();
                 yield {
                     type: 'checkpoint',
                     epoch,

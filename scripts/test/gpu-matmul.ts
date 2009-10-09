@@ -20,12 +20,14 @@ const c = a.matmul(b);
 assert.equal(c.device, 'cuda');
 assert.deepEqual([...c.shape], [2, 2]);
 
-for (let i = 0; i < cpuRef.toArray().length; i += 1) {
-    assert.ok(Math.abs(c.toArray()[i]! - cpuRef.toArray()[i]!) < 1e-4, `index ${i}`);
+const cpuArr = await cpuRef.toArray();
+const gpuArr = await c.toArray();
+for (let i = 0; i < cpuArr.length; i += 1) {
+    assert.ok(Math.abs(gpuArr[i]! - cpuArr[i]!) < 1e-4, `index ${i}`);
 }
 
 const back = c.to('cpu');
 assert.equal(back.device, 'cpu');
-assert.ok(Math.abs(back.toArray()[0]! - 19) < 1e-4);
+assert.ok(Math.abs((await back.toArray())[0]! - 19) < 1e-4);
 
 console.log(`gpu-matmul ok: version=${v}, cuda matmul matches cpu reference`);

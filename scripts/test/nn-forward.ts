@@ -20,7 +20,7 @@ const sample = tensor([1, 2], [1, 2]);
 const out = fc.forward(sample);
 assert.deepEqual([...out.shape], [1, 3]);
 assert.deepEqual(
-    out.toArray().map((n) => Math.round(n * 1000) / 1000),
+    (await out.toArray()).map((n) => Math.round(n * 1000) / 1000),
     [1.1, 2.2, 0.3],
 );
 
@@ -58,19 +58,21 @@ const batch = tensor(
 const logits = mlp.forward(batch);
 assert.deepEqual([...logits.shape], [2, 1]);
 assert.deepEqual(
-    logits.toArray().map((n) => Math.round(n * 100) / 100),
+    (await logits.toArray()).map((n) => Math.round(n * 100) / 100),
     [1, 1],
 );
 
-const saved = fc.state();
+const saved = await fc.state();
 fc.loadState({
     weight: { shape: [2, 3], data: [0, 0, 0, 0, 0, 0] },
     bias: { shape: [3], data: [0, 0, 0] },
 });
 const zeroed = fc.forward(sample);
-assert.ok(zeroed.toArray().every((n) => n === 0));
+assert.ok((await zeroed.toArray()).every((n) => n === 0));
 fc.loadState(saved);
 const restored = fc.forward(sample);
-assert.deepEqual(restored.toArray(), out.toArray());
+assert.deepEqual(await restored.toArray(), await out.toArray());
 
-console.log(`nn-forward ok: linear=${out.toArray()}, mlp=${logits.toArray()}`);
+const outArr = await out.toArray();
+const logitsArr = await logits.toArray();
+console.log(`nn-forward ok: linear=${outArr}, mlp=${logitsArr}`);

@@ -33,12 +33,12 @@ model.loadState({
 const opt = new SGD(0.1);
 const { x, y } = makeBatch(n);
 
-function forwardLoss(): { value: number; backward: () => void } {
+async function forwardLoss(): Promise<{ value: number; backward: () => void }> {
     model.zeroGrad();
     const pred = model.forward(x);
     const diff = pred.sub(y);
     const loss = diff.mul(diff).mean();
-    const value = loss.toArray()[0]!;
+    const value = await loss.item();
     return {
         value,
         backward: () => {
@@ -47,19 +47,19 @@ function forwardLoss(): { value: number; backward: () => void } {
     };
 }
 
-const first = forwardLoss();
+const first = await forwardLoss();
 const loss0 = first.value;
 first.backward();
-model.loadParameters(opt.step(model.parameters()));
+model.loadParameters(await opt.step(model.parameters()));
 
 for (let step = 1; step < 80; step++) {
-    const turn = forwardLoss();
+    const turn = await forwardLoss();
     assert.ok(Number.isFinite(turn.value), `non-finite loss at step ${step}: ${turn.value}`);
     turn.backward();
-    model.loadParameters(opt.step(model.parameters()));
+    model.loadParameters(await opt.step(model.parameters()));
 }
 
-const loss1 = forwardLoss().value;
+const loss1 = (await forwardLoss()).value;
 assert.ok(loss0 > 1e-4, `initial loss too small: ${loss0}`);
 assert.ok(Number.isFinite(loss1), `final loss non-finite: ${loss1}`);
 assert.ok(loss1 < loss0 * 0.5, `loss did not drop enough: ${loss0} -> ${loss1}`);

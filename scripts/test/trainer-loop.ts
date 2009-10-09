@@ -68,8 +68,8 @@ assert.equal(lastCk.document.version, STATE_VERSION);
 
 const restored = new Linear(2, 1, { requiresGrad: false });
 restored.loadState(decodeLinearState(lastCk.document));
-assert.deepEqual(restored.weight.toArray(), model.weight.toArray());
-assert.deepEqual(restored.bias.toArray(), model.bias.toArray());
+assert.deepEqual(await restored.weight.toArray(), await model.weight.toArray());
+assert.deepEqual(await restored.bias.toArray(), await model.bias.toArray());
 
 // Abort mid-run
 const model2 = new Linear(2, 1);

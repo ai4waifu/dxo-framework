@@ -114,12 +114,23 @@ export class Tensor {
         this.#handle.backward();
     }
 
-    toFloat32Array(): Float32Array {
-        return Float32Array.from(this.#handle.toArray());
+    /** CPU preview: resolves immediately once host values are available. */
+    async ready(): Promise<void> {}
+
+    toFloat32Array(): Promise<Float32Array> {
+        return Promise.resolve(Float32Array.from(this.#handle.toArray()));
     }
 
-    toArray(): number[] {
+    async toArray(): Promise<number[]> {
         return this.#handle.toArray();
+    }
+
+    async item(): Promise<number> {
+        if (this.numel() !== 1) {
+            throw new Error(`item() requires a scalar tensor, got shape [${this.shape.join(',')}]`);
+        }
+        const values = await this.toArray();
+        return values[0]!;
     }
 }
 
@@ -158,6 +169,11 @@ export function randn(shape: readonly number[], options: TensorOptions = {}): Te
     assertCpu(options);
     const native = loadNative();
     return new Tensor(native.randn([...shape], options.requiresGrad ?? false));
+}
+
+/** Host draw for sync init paths (e.g. Linear weight init). */
+export function randnValues(shape: readonly number[]): number[] {
+    return loadNative().randn([...shape], false).toArray();
 }
 
 export function version(): string {

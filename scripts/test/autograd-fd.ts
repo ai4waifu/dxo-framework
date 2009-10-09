@@ -10,14 +10,14 @@ function almostEqual(a: number[], b: number[], tol = 5e-2): void {
     }
 }
 
-function finiteDiff(data: number[], lossAt: (x: number[]) => number, eps = 1e-3): number[] {
+async function finiteDiff(data: number[], lossAt: (x: number[]) => Promise<number>, eps = 1e-3): Promise<number[]> {
     const out = new Array<number>(data.length);
     for (let i = 0; i < data.length; i++) {
         const xp = data.slice();
         const xm = data.slice();
         xp[i]! += eps;
         xm[i]! -= eps;
-        out[i] = (lossAt(xp) - lossAt(xm)) / (2 * eps);
+        out[i] = ((await lossAt(xp)) - (await lossAt(xm))) / (2 * eps);
     }
     return out;
 }
@@ -30,21 +30,11 @@ function finiteDiff(data: number[], lossAt: (x: number[]) => number, eps = 1e-3)
     const w = tensor(wData, [2, 2], { requiresGrad: true });
     const y = x.matmul(w).sum();
     y.backward();
-    const fdX = finiteDiff(
-        xData,
-        (d) =>
-            tensor(d, [2, 2])
-                .matmul(tensor(wData, [2, 2]))
-                .sum()
-                .toArray()[0]!,
+    const fdX = await finiteDiff(xData, async (d) =>
+        (await tensor(d, [2, 2]).matmul(tensor(wData, [2, 2])).sum().item()),
     );
-    const fdW = finiteDiff(
-        wData,
-        (d) =>
-            tensor(xData, [2, 2])
-                .matmul(tensor(d, [2, 2]))
-                .sum()
-                .toArray()[0]!,
+    const fdW = await finiteDiff(wData, async (d) =>
+        (await tensor(xData, [2, 2]).matmul(tensor(d, [2, 2])).sum().item()),
     );
     almostEqual(x.grad!, fdX);
     almostEqual(w.grad!, fdW);
@@ -59,15 +49,15 @@ function finiteDiff(data: number[], lossAt: (x: number[]) => number, eps = 1e-3)
     const scale = tensor([2, 2, 2, 2], [2, 2]);
     const y = x.add(b).mul(scale).relu().sum();
     y.backward();
-    const fdX = finiteDiff(
+    const fdX = await finiteDiff(
         xData,
-        (d) =>
-            tensor(d, [2, 2])
+        async (d) =>
+            await tensor(d, [2, 2])
                 .add(tensor(bData, [2]))
                 .mul(scale)
                 .relu()
                 .sum()
-                .toArray()[0]!,
+                .item(),
     );
     almostEqual(x.grad!, fdX, 8e-2);
 }
