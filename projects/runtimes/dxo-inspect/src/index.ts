@@ -1,40 +1,22 @@
 /**
- * Placeholder protocol surface for U1 (`studio-run-smoke`).
- * No VMZ dependency. Append-only run store lands in a later slice.
+ * @dxo/inspect — Run / metric / artifact / profile protocols (v0).
  */
 
-export const INSPECT_PROTOCOL = 'dxo-inspect' as const;
-export const INSPECT_PROTOCOL_VERSION = 0 as const;
+export {
+    INSPECT_PROTOCOL,
+    INSPECT_PROTOCOL_VERSION,
+    inspectVersion,
+    type ArtifactKindV0,
+    type ArtifactV0,
+    type InspectEventV0,
+    type MetricV0,
+    type ProfileSpan,
+    type ProfileTraceV0,
+    type RunMetaV0,
+    type RunStatus,
+} from './schemas.js';
 
-export type ScalarMetric = {
-    name: string;
-    value: number;
-    step?: number;
-    wallTimeMs?: number;
-};
-
-export type RunEvent =
-    | { type: 'run/start'; runId: string; wallTimeMs: number; meta?: Record<string, unknown> }
-    | { type: 'run/end'; runId: string; wallTimeMs: number; status: 'ok' | 'cancelled' | 'error' }
-    | { type: 'metric/scalar'; runId: string; metric: ScalarMetric }
-    | { type: 'artifact/ref'; runId: string; name: string; kind: string; uri: string }
-    | { type: 'log'; runId: string; level: 'info' | 'warn' | 'error'; message: string };
-
-export type ProfileSpan = {
-    name: string;
-    category: 'op' | 'kernel' | 'transfer' | 'readback' | 'other';
-    startMs: number;
-    endMs: number;
-    meta?: Record<string, unknown>;
-};
-
-export type ProfileTrace = {
-    format: 'dxo-profile';
-    version: 0;
-    spans: ProfileSpan[];
-};
-
-/** Package identity for smoke / tooling. */
-export function inspectVersion(): string {
-    return `${INSPECT_PROTOCOL}@${INSPECT_PROTOCOL_VERSION}`;
-}
+export { RunRecorder, defaultRunsRoot, listRuns, readEvents, readRunMeta } from './store.js';
+export type { RunRecorderOptions, RunSummary } from './store.js';
+export { recordTrainIter, trainEventToInspectEvents } from './train-adapter.js';
+export type { RecordTrainIterOptions, TrainEventLike } from './train-adapter.js';
