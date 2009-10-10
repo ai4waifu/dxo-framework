@@ -31,16 +31,14 @@ export type ModelGraphV0 = {
     edges: GraphEdge[];
 };
 
-export function emptyModelGraph(view: GraphViewKind = 'module'): ModelGraphV0 {
-    return {
-        format: MODEL_GRAPH_FORMAT,
-        version: MODEL_GRAPH_VERSION,
-        view,
-        nodes: [],
-        edges: [],
-    };
-}
-
 export function graphVersion(): string {
     return `${MODEL_GRAPH_FORMAT}@${MODEL_GRAPH_VERSION}`;
 }
+
+export {
+    emptyModelGraph,
+    moduleGraphFromLinear,
+    moduleGraphFromModule,
+    moduleGraphFromSequential,
+    serializeModelGraph,
+} from './module-graph.js';

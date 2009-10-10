@@ -17,5 +17,8 @@
     "scripts": {
         "build": "tsc -p tsconfig.json"
     },
+    "dependencies": {
+        "@dxo/nn": "workspace:*"
+    },
     "keywords": ["dxo", "graph", "model", "netron", "typescript"]
 }

@@ -21,6 +21,7 @@ const suites = {
     'lite-webgpu-smoke': 'scripts/test/lite-webgpu-smoke.ts',
     'runtime-contract-lite': 'scripts/test/runtime-contract-lite.ts',
     'runtime-contract-core': 'scripts/test/runtime-contract-core.ts',
+    'model-graph': 'scripts/test/model-graph.ts',
 };
 
 if (!id || !(id in suites)) {
