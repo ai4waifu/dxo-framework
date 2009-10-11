@@ -21,5 +21,8 @@
         "@dxo/graph": "workspace:*",
         "@dxo/inspect": "workspace:*"
     },
+    "devDependencies": {
+        "@types/node": "^22.15.0"
+    },
     "keywords": ["dxo", "studio", "tensorboard", "vmz", "typescript"]
 }

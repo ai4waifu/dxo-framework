@@ -111,11 +111,19 @@ importers:
         specifier: workspace:*
         version: link:../dxo-core
 
-  projects/runtimes/dxo-graph: {}
+  projects/runtimes/dxo-graph:
+    dependencies:
+      '@dxo/nn':
+        specifier: workspace:*
+        version: link:../dxo-nn
 
   projects/runtimes/dxo-hub: {}
 
-  projects/runtimes/dxo-inspect: {}
+  projects/runtimes/dxo-inspect:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
 
   projects/runtimes/dxo-linux-x64: {}
 
@@ -145,6 +153,10 @@ importers:
       '@dxo/inspect':
         specifier: workspace:*
         version: link:../dxo-inspect
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
 
   projects/runtimes/dxo-train:
     dependencies:
