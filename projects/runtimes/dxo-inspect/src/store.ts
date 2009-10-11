@@ -110,7 +110,6 @@ export class RunRecorder {
 
     async close(status: Exclude<RunStatus, 'running'>, error?: string): Promise<void> {
         if (this.#closed) return;
-        this.#closed = true;
         const endedAtMs = nowMs();
         this.#meta = { ...this.#meta, status, endedAtMs };
         await writeFile(path.join(this.runPath, META_FILE), `${JSON.stringify(this.#meta, null, 2)}\n`, 'utf8');
@@ -121,6 +120,7 @@ export class RunRecorder {
             status,
             error,
         });
+        this.#closed = true;
     }
 }
 
