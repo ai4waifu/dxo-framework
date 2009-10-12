@@ -30,6 +30,7 @@ function json(res: import('node:http').ServerResponse, status: number, body: unk
     res.writeHead(status, {
         'content-type': 'application/json; charset=utf-8',
         'content-length': Buffer.byteLength(text),
+        'access-control-allow-origin': '*',
     });
     res.end(text);
 }

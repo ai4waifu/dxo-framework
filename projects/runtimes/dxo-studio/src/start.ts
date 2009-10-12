@@ -1,4 +1,5 @@
 import { spawn, type ChildProcess } from 'node:child_process';
+import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createInspectApiServer, type InspectApiServer, type InspectApiServerOptions } from './api-server.js';
@@ -34,6 +35,11 @@ function spawnVmzDev(apiUrl: string, port?: number): ChildProcess {
     });
 }
 
+async function writeStudioApiBootstrap(apiUrl: string): Promise<void> {
+    const out = path.join(studioAppRoot, 'public', 'dxo-studio-api.js');
+    await writeFile(out, `window.__DXO_STUDIO_API__=${JSON.stringify(apiUrl)};\n`, 'utf8');
+}
+
 /**
  * Start loopback inspect API and optionally the VMZ Studio dev app.
  * Binds API to 127.0.0.1 by default.
@@ -48,6 +54,7 @@ export async function startStudio(options: StartStudioOptions = {}): Promise<Stu
     const uiEnabled = options.ui !== false;
     let ui: ChildProcess | undefined;
     if (uiEnabled) {
+        await writeStudioApiBootstrap(api.url);
         ui = spawnVmzDev(api.url, options.uiPort);
     }
 

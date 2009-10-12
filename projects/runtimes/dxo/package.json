@@ -13,6 +13,7 @@
         "README.md"
     ],
     "dependencies": {
-        "@dxo/core": "workspace:*"
+        "@dxo/core": "workspace:*",
+        "@dxo/studio": "workspace:*"
     }
 }
