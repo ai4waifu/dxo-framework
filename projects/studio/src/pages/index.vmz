@@ -1,0 +1,58 @@
+<template>
+  <main class="studio">
+    <header class="studio__header">
+      <a class="studio__brand" href="/"><strong>DXO Studio</strong></a>
+      <nav>
+        <a href="/">Runs</a>
+      </nav>
+    </header>
+
+    <section class="studio__panel">
+      <h1>Runs</h1>
+      <p class="studio__hint">Append-only inspect store — refresh reloads history after the trainer exits.</p>
+      <p class="studio__status">{status}</p>
+      <ul class="studio__list">
+        <li each={runs} as="run" key={run.runId}>
+          <a href={`/runs/${run.runId}`}>{runLabel(run)}</a>
+          <span class="studio__badge">{run.meta.status}</span>
+          <span class="studio__meta">{formatTime(run.meta.startedAtMs)}</span>
+        </li>
+      </ul>
+    </section>
+  </main>
+</template>
+
+<script client>
+import { apiGet } from '../lib/api.ts';
+
+export default class RunsPage {
+    status = 'loading…';
+    runs = [];
+
+    runLabel(run) {
+        return run.meta?.label ?? run.runId;
+    }
+
+    formatTime(ms) {
+        try {
+            return new Date(ms).toLocaleString();
+        } catch {
+            return String(ms);
+        }
+    }
+
+    async onMount() {
+        try {
+            const data = await apiGet('/api/runs');
+            this.runs = data.runs ?? [];
+            this.status =
+                this.runs.length === 0
+                    ? 'No runs yet. Train with inspect RunRecorder, then refresh.'
+                    : `${this.runs.length} run(s)`;
+        } catch (err) {
+            this.status = err instanceof Error ? err.message : String(err);
+            this.runs = [];
+        }
+    }
+}
+</script>

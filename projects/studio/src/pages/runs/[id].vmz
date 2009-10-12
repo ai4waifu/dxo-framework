@@ -1,0 +1,105 @@
+<template>
+  <main class="studio">
+    <header class="studio__header">
+      <a class="studio__brand" href="/"><strong>DXO Studio</strong></a>
+      <nav>
+        <a href="/">Runs</a>
+      </nav>
+    </header>
+
+    <section class="studio__panel">
+      <h1>Run {runId}</h1>
+      <p class="studio__status">{status}</p>
+
+      <h2>Metrics</h2>
+      <table class="studio__table">
+        <thead>
+          <tr><th>name</th><th>step</th><th>value</th></tr>
+        </thead>
+        <tbody>
+          <tr each={metrics} as="m" key={metricKey(m)}>
+            <td>{m.name}</td>
+            <td>{m.step ?? '—'}</td>
+            <td>{formatValue(m.value)}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Training events</h2>
+      <ul class="studio__list studio__list--compact">
+        <li each={trainEvents} as="e" key={eventKey(e)}><code>{e.type}</code> {summarize(e)}</li>
+      </ul>
+
+      <h2>Checkpoints</h2>
+      <ul class="studio__list">
+        <li each={checkpoints} as="c" key={c.uri}><code>{c.name}</code> · {c.uri}</li>
+      </ul>
+
+      <h2>Model graph</h2>
+      <pre class="studio__pre">{graphText}</pre>
+    </section>
+  </main>
+</template>
+
+<script client>
+import { apiGet } from '../lib/api.ts';
+
+export default class RunDetailPage {
+    runId = '';
+    status = 'loading…';
+    metrics = [];
+    trainEvents = [];
+    checkpoints = [];
+    graphText = '(none)';
+
+    metricKey(m) {
+        return `${m.name}:${m.step ?? ''}:${m.wallTimeMs ?? ''}`;
+    }
+
+    eventKey(e) {
+        return `${e.type}:${e.wallTimeMs ?? ''}:${e.step ?? ''}:${e.epoch ?? ''}`;
+    }
+
+    formatValue(v) {
+        return Number(v).toFixed(6);
+    }
+
+    summarize(e) {
+        if (e.type === 'train/batch') return `epoch=${e.epoch} step=${e.step} loss=${e.loss}`;
+        if (e.type === 'train/epoch_end') return `epoch=${e.epoch} meanLoss=${e.meanLoss}`;
+        if (e.type === 'run/end') return `status=${e.status}`;
+        return '';
+    }
+
+    async onMount() {
+        const parts = location.pathname.split('/').filter(Boolean);
+        this.runId = parts[1] ?? '';
+        if (!this.runId) {
+            this.status = 'missing run id';
+            return;
+        }
+        try {
+            const [metaRes, metricsRes, eventsRes, ckRes] = await Promise.all([
+                apiGet(`/api/runs/${encodeURIComponent(this.runId)}/meta`),
+                apiGet(`/api/runs/${encodeURIComponent(this.runId)}/metrics`),
+                apiGet(`/api/runs/${encodeURIComponent(this.runId)}/events`),
+                apiGet(`/api/runs/${encodeURIComponent(this.runId)}/checkpoints`),
+            ]);
+            this.status = metaRes.meta?.status ?? 'unknown';
+            this.metrics = metricsRes.metrics ?? [];
+            this.trainEvents = (eventsRes.events ?? []).filter(
+                (e) => String(e.type).startsWith('train/') || e.type === 'run/start' || e.type === 'run/end',
+            );
+            this.checkpoints = ckRes.checkpoints ?? [];
+            try {
+                const g = await apiGet(`/api/runs/${encodeURIComponent(this.runId)}/model-graph`);
+                this.graphText = JSON.stringify(g.graph, null, 2);
+            } catch {
+                this.graphText = '(no model-graph artifact)';
+            }
+        } catch (err) {
+            this.status = err instanceof Error ? err.message : String(err);
+        }
+    }
+}
+</script>

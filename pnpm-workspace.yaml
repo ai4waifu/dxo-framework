@@ -1,3 +1,4 @@
 packages:
   - 'projects/runtimes/*'
   - 'projects/homepage'
+  - 'projects/studio'

@@ -78,6 +78,9 @@ importers:
       '@dxo/core':
         specifier: workspace:*
         version: link:../dxo-core
+      '@dxo/studio':
+        specifier: workspace:*
+        version: link:../dxo-studio
 
   projects/runtimes/dxo-core:
     optionalDependencies:
@@ -181,6 +184,16 @@ importers:
   projects/runtimes/dxo-vision: {}
 
   projects/runtimes/dxo-win32-x64: {}
+
+  projects/studio:
+    dependencies:
+      '@vmz/core':
+        specifier: ^0.1.12
+        version: 0.1.12
+    devDependencies:
+      '@vmz/vmz':
+        specifier: ^0.1.12
+        version: 0.1.12(typescript@5.9.3)
 
 packages:
 
