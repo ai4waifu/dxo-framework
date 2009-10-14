@@ -34,7 +34,10 @@ const JS_PACKAGES = [
     { dir: 'projects/runtimes/dxo-data', publishName: '@dxo/data' },
     { dir: 'projects/runtimes/dxo-serialize', publishName: '@dxo/serialize' },
     { dir: 'projects/runtimes/dxo-train', publishName: '@dxo/train' },
-    // Workspace-only stubs (hub/vision/llm/inspect/graph/studio/ui) are not published here.
+    { dir: 'projects/runtimes/dxo-inspect', publishName: '@dxo/inspect' },
+    { dir: 'projects/runtimes/dxo-graph', publishName: '@dxo/graph' },
+    { dir: 'projects/runtimes/dxo-studio', publishName: '@dxo/studio' },
+    // Workspace-only stubs (hub/vision/llm/ui) are not published here.
 ];
 
 function fail(msg) {

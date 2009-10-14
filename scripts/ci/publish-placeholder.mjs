@@ -67,8 +67,20 @@ function loadLocalEnv(filePath) {
 const localEnv = loadLocalEnv(ENV_PATH);
 
 /** Keep in sync with scripts/ci/publish-npm.mjs (real publish package set). */
-const JS_STUBS = ['@dxo/core', '@dxo/dxo', '@dxo/lite', '@dxo/nn', '@dxo/optimizer', '@dxo/data', '@dxo/serialize', '@dxo/train'];
-// Domain / UI workspace stubs (@dxo/hub|vision|llm|inspect|graph|studio|ui) stay out of placeholder OIDC.
+const JS_STUBS = [
+    '@dxo/core',
+    '@dxo/dxo',
+    '@dxo/lite',
+    '@dxo/nn',
+    '@dxo/optimizer',
+    '@dxo/data',
+    '@dxo/serialize',
+    '@dxo/train',
+    '@dxo/inspect',
+    '@dxo/graph',
+    '@dxo/studio',
+];
+// Domain workspace stubs (@dxo/hub|vision|llm|ui) stay out of placeholder OIDC.
 
 const NATIVE_STUBS = [
     { name: '@dxo/dxo-win32-x64', os: ['win32'], cpu: ['x64'] },
