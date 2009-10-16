@@ -5,7 +5,7 @@
 
 use std::sync::{Arc, Mutex, OnceLock};
 
-use titan_backend_cuda::{gemm_f32_abi, CudaCompiler, CudaDriver, GemmF32Descriptor};
+use titan_backend_cuda::{CudaCompiler, CudaDriver, GemmF32Descriptor, gemm_f32_abi};
 use titan_hal::{BackendDriver, DeviceSession, LaunchGeometry};
 use titan_kernel::{BasicBlock, BlockId, KernelAbi, KernelArg, KernelModule};
 use titan_types::{BackendId, DType, DeviceId, KernelId};
@@ -43,9 +43,7 @@ fn cuda_session() -> Result<Arc<dyn DeviceSession>, TensorError> {
         if devices.is_empty() {
             return Err("no CUDA devices enumerated".into());
         }
-        driver
-            .open(DeviceId { backend: BackendId::Cuda, ordinal: 0 })
-            .map_err(|e| e.to_string())
+        driver.open(DeviceId { backend: BackendId::Cuda, ordinal: 0 }).map_err(|e| e.to_string())
     });
     match cached {
         Ok(s) => Ok(s.clone()),
@@ -72,12 +70,8 @@ fn cached_gemm(session: &Arc<dyn DeviceSession>) -> Result<CachedGemm, TensorErr
     let artifact = CudaCompiler
         .compile_artifact(&gemm_ir(abi.clone()), &abi, fp)
         .map_err(|e| TensorError::Device(format!("CUDA gemm compile: {e}")))?;
-    let cached = CachedGemm {
-        fingerprint_key: key,
-        bytes: artifact.ptx().to_vec(),
-        abi,
-        metadata: artifact.metadata().clone(),
-    };
+    let cached =
+        CachedGemm { fingerprint_key: key, bytes: artifact.ptx().to_vec(), abi, metadata: artifact.metadata().clone() };
     *guard = Some(CachedGemm {
         fingerprint_key: cached.fingerprint_key.clone(),
         bytes: cached.bytes.clone(),
@@ -95,10 +89,7 @@ fn f32_from_bytes(bytes: &[u8]) -> Result<Vec<f32>, TensorError> {
     if bytes.len() % 4 != 0 {
         return Err(TensorError::Device("CUDA download length not multiple of 4".into()));
     }
-    Ok(bytes
-        .chunks_exact(4)
-        .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
-        .collect())
+    Ok(bytes.chunks_exact(4).map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect())
 }
 
 /// Contiguous row-major f32 GEMM on CUDA: `A[m,k] @ B[k,n] -> C[m,n]`.
@@ -144,69 +135,30 @@ pub fn gemm_f32(lhs: &[f32], m: usize, k: usize, rhs: &[f32], n: usize) -> Resul
     let rhs_bytes = f32_bytes(rhs);
     let out_bytes_len = m * n * 4;
 
-    let lhs_buf = session
-        .allocate(lhs_bytes.len(), 4)
-        .map_err(|e| TensorError::Device(format!("CUDA allocate lhs: {e}")))?;
-    let rhs_buf = session
-        .allocate(rhs_bytes.len(), 4)
-        .map_err(|e| TensorError::Device(format!("CUDA allocate rhs: {e}")))?;
-    let out_buf = session
-        .allocate(out_bytes_len, 4)
-        .map_err(|e| TensorError::Device(format!("CUDA allocate out: {e}")))?;
+    let lhs_buf = session.allocate(lhs_bytes.len(), 4).map_err(|e| TensorError::Device(format!("CUDA allocate lhs: {e}")))?;
+    let rhs_buf = session.allocate(rhs_bytes.len(), 4).map_err(|e| TensorError::Device(format!("CUDA allocate rhs: {e}")))?;
+    let out_buf = session.allocate(out_bytes_len, 4).map_err(|e| TensorError::Device(format!("CUDA allocate out: {e}")))?;
 
-    let stream = session
-        .create_stream()
-        .map_err(|e| TensorError::Device(format!("CUDA stream: {e}")))?;
+    let stream = session.create_stream().map_err(|e| TensorError::Device(format!("CUDA stream: {e}")))?;
     let up_l = session
         .upload(stream.as_ref(), lhs_buf.as_ref(), &lhs_bytes)
         .map_err(|e| TensorError::Device(format!("CUDA upload lhs: {e}")))?;
-    session
-        .wait(up_l.as_ref())
-        .map_err(|e| TensorError::Device(format!("CUDA wait lhs: {e}")))?;
+    session.wait(up_l.as_ref()).map_err(|e| TensorError::Device(format!("CUDA wait lhs: {e}")))?;
     let up_r = session
         .upload(stream.as_ref(), rhs_buf.as_ref(), &rhs_bytes)
         .map_err(|e| TensorError::Device(format!("CUDA upload rhs: {e}")))?;
-    session
-        .wait(up_r.as_ref())
-        .map_err(|e| TensorError::Device(format!("CUDA wait rhs: {e}")))?;
+    session.wait(up_r.as_ref()).map_err(|e| TensorError::Device(format!("CUDA wait rhs: {e}")))?;
 
     let compiled = cached_gemm(&session)?;
     let args = compiled
         .abi
         .encode(&[
-            KernelArg::Buffer {
-                slot: 0,
-                dtype: DType::F32,
-                writable: false,
-                alignment: 4,
-                buffer: lhs_buf.clone(),
-            },
-            KernelArg::Buffer {
-                slot: 1,
-                dtype: DType::F32,
-                writable: false,
-                alignment: 4,
-                buffer: rhs_buf.clone(),
-            },
-            KernelArg::Buffer {
-                slot: 2,
-                dtype: DType::F32,
-                writable: true,
-                alignment: 4,
-                buffer: out_buf.clone(),
-            },
-            KernelArg::Scalar {
-                dtype: DType::I32,
-                bytes: (m_u as i32).to_le_bytes().to_vec(),
-            },
-            KernelArg::Scalar {
-                dtype: DType::I32,
-                bytes: (n_u as i32).to_le_bytes().to_vec(),
-            },
-            KernelArg::Scalar {
-                dtype: DType::I32,
-                bytes: (k_u as i32).to_le_bytes().to_vec(),
-            },
+            KernelArg::Buffer { slot: 0, dtype: DType::F32, writable: false, alignment: 4, buffer: lhs_buf.clone() },
+            KernelArg::Buffer { slot: 1, dtype: DType::F32, writable: false, alignment: 4, buffer: rhs_buf.clone() },
+            KernelArg::Buffer { slot: 2, dtype: DType::F32, writable: true, alignment: 4, buffer: out_buf.clone() },
+            KernelArg::Scalar { dtype: DType::I32, bytes: (m_u as i32).to_le_bytes().to_vec() },
+            KernelArg::Scalar { dtype: DType::I32, bytes: (n_u as i32).to_le_bytes().to_vec() },
+            KernelArg::Scalar { dtype: DType::I32, bytes: (k_u as i32).to_le_bytes().to_vec() },
         ])
         .map_err(|e| TensorError::Device(format!("CUDA abi encode: {e}")))?;
 
@@ -222,17 +174,13 @@ pub fn gemm_f32(lhs: &[f32], m: usize, k: usize, rhs: &[f32], n: usize) -> Resul
     let event = session
         .launch(stream.as_ref(), kernel.as_ref(), &args, &geometry)
         .map_err(|e| TensorError::Device(format!("CUDA launch: {e}")))?;
-    session
-        .wait(event.as_ref())
-        .map_err(|e| TensorError::Device(format!("CUDA wait launch: {e}")))?;
+    session.wait(event.as_ref()).map_err(|e| TensorError::Device(format!("CUDA wait launch: {e}")))?;
 
     let mut out_bytes = vec![0u8; out_bytes_len];
     let down = session
         .download(stream.as_ref(), out_buf.as_ref(), &mut out_bytes)
         .map_err(|e| TensorError::Device(format!("CUDA download: {e}")))?;
-    session
-        .wait(down.as_ref())
-        .map_err(|e| TensorError::Device(format!("CUDA wait download: {e}")))?;
+    session.wait(down.as_ref()).map_err(|e| TensorError::Device(format!("CUDA wait download: {e}")))?;
 
     f32_from_bytes(&out_bytes)
 }

@@ -26,9 +26,7 @@ impl DeviceKind {
         match s.trim().to_ascii_lowercase().as_str() {
             "cpu" => Ok(Self::Cpu),
             "cuda" => Ok(Self::Cuda),
-            other => Err(TensorError::Device(format!(
-                "unknown device '{other}' (supported: cpu, cuda)"
-            ))),
+            other => Err(TensorError::Device(format!("unknown device '{other}' (supported: cpu, cuda)"))),
         }
     }
 
@@ -185,15 +183,7 @@ impl Tensor {
         match device {
             DeviceKind::Cpu => {
                 let data = self.to_vec();
-                Ok(Self::from_storage_on(
-                    Storage::from_vec(data),
-                    0,
-                    self.shape(),
-                    false,
-                    None,
-                    None,
-                    DeviceKind::Cpu,
-                ))
+                Ok(Self::from_storage_on(Storage::from_vec(data), 0, self.shape(), false, None, None, DeviceKind::Cpu))
             }
             DeviceKind::Cuda => {
                 if self.requires_grad || self.grad_fn.is_some() {
@@ -203,8 +193,7 @@ impl Tensor {
                 }
                 if !cuda::is_available() {
                     return Err(TensorError::Device(
-                        "CUDA unavailable (no driver/device). Build still supports cpu; gpu-matmul skips when unset."
-                            .into(),
+                        "CUDA unavailable (no driver/device). Build still supports cpu; gpu-matmul skips when unset.".into(),
                     ));
                 }
                 if !self.is_contiguous() || self.offset != 0 {
@@ -219,15 +208,7 @@ impl Tensor {
                         DeviceKind::Cuda,
                     ));
                 }
-                Ok(Self::from_storage_on(
-                    self.storage.clone(),
-                    self.offset,
-                    self.shape(),
-                    false,
-                    None,
-                    None,
-                    DeviceKind::Cuda,
-                ))
+                Ok(Self::from_storage_on(self.storage.clone(), self.offset, self.shape(), false, None, None, DeviceKind::Cuda))
             }
         }
     }
@@ -454,22 +435,12 @@ impl Tensor {
 
         if self.device == DeviceKind::Cuda {
             if !self.is_contiguous() || self.offset != 0 || !other.is_contiguous() || other.offset != 0 {
-                return Err(TensorError::Device(
-                    "CUDA matmul requires contiguous rank-2 inputs (offset 0)".into(),
-                ));
+                return Err(TensorError::Device("CUDA matmul requires contiguous rank-2 inputs (offset 0)".into()));
             }
             let a = self.to_vec();
             let b = other.to_vec();
             let out = cuda::gemm_f32(&a, m, k, &b, n)?;
-            return Ok(Self::from_storage_on(
-                Storage::from_vec(out),
-                0,
-                &[m, n],
-                false,
-                None,
-                None,
-                DeviceKind::Cuda,
-            ));
+            return Ok(Self::from_storage_on(Storage::from_vec(out), 0, &[m, n], false, None, None, DeviceKind::Cuda));
         }
 
         let a = self.to_vec();
