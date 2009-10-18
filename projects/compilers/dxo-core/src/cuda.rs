@@ -33,7 +33,7 @@ fn gemm_ir(abi: KernelAbi) -> KernelModule {
 
 /// Whether a Titan CUDA session can be opened on this machine.
 pub fn is_available() -> bool {
-    matches!(cuda_session(), Ok(_))
+    cuda_session().is_ok()
 }
 
 fn cuda_session() -> Result<Arc<dyn DeviceSession>, TensorError> {
