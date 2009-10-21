@@ -13,9 +13,19 @@
             "default": "./dist/index.js"
         }
     },
-    "files": ["dist", "README.md"],
+    "files": [
+        "dist",
+        "README.md"
+    ],
     "scripts": {
         "build": "tsc -p tsconfig.json"
     },
-    "keywords": ["dxo", "hub", "huggingface", "modelscope", "artifact", "typescript"]
+    "keywords": [
+        "dxo",
+        "hub",
+        "huggingface",
+        "modelscope",
+        "artifact",
+        "typescript"
+    ]
 }

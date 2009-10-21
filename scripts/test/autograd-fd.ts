@@ -30,11 +30,21 @@ async function finiteDiff(data: number[], lossAt: (x: number[]) => Promise<numbe
     const w = tensor(wData, [2, 2], { requiresGrad: true });
     const y = x.matmul(w).sum();
     y.backward();
-    const fdX = await finiteDiff(xData, async (d) =>
-        (await tensor(d, [2, 2]).matmul(tensor(wData, [2, 2])).sum().item()),
+    const fdX = await finiteDiff(
+        xData,
+        async (d) =>
+            await tensor(d, [2, 2])
+                .matmul(tensor(wData, [2, 2]))
+                .sum()
+                .item(),
     );
-    const fdW = await finiteDiff(wData, async (d) =>
-        (await tensor(xData, [2, 2]).matmul(tensor(d, [2, 2])).sum().item()),
+    const fdW = await finiteDiff(
+        wData,
+        async (d) =>
+            await tensor(xData, [2, 2])
+                .matmul(tensor(d, [2, 2]))
+                .sum()
+                .item(),
     );
     almostEqual(x.grad!, fdX);
     almostEqual(w.grad!, fdW);

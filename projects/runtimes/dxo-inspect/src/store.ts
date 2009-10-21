@@ -1,10 +1,10 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readdir, readFile, writeFile, appendFile } from 'node:fs/promises';
+import { appendFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
+    type ArtifactKindV0,
     INSPECT_PROTOCOL,
     INSPECT_PROTOCOL_VERSION,
-    type ArtifactKindV0,
     type InspectEventV0,
     type RunMetaV0,
     type RunStatus,

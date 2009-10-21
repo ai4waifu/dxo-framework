@@ -13,12 +13,21 @@
             "default": "./dist/index.js"
         }
     },
-    "files": ["dist", "README.md"],
+    "files": [
+        "dist",
+        "README.md"
+    ],
     "scripts": {
         "build": "tsc -p tsconfig.json"
     },
     "devDependencies": {
         "@types/node": "^22.15.0"
     },
-    "keywords": ["dxo", "inspect", "metrics", "profiler", "typescript"]
+    "keywords": [
+        "dxo",
+        "inspect",
+        "metrics",
+        "profiler",
+        "typescript"
+    ]
 }

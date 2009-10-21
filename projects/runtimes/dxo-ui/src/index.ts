@@ -23,9 +23,7 @@ export function defineModelApp(def: ModelAppDefinition): ModelApp {
         kind: 'placeholder',
         title,
         async serve() {
-            throw new Error(
-                `@dxo/ui defineModelApp('${title}').serve() is a placeholder; VMZ serve lands in a later slice`,
-            );
+            throw new Error(`@dxo/ui defineModelApp('${title}').serve() is a placeholder; VMZ serve lands in a later slice`);
         },
     };
 }

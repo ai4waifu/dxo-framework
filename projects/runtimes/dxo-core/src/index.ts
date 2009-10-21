@@ -173,7 +173,9 @@ export function randn(shape: readonly number[], options: TensorOptions = {}): Te
 
 /** Host draw for sync init paths (e.g. Linear weight init). */
 export function randnValues(shape: readonly number[]): number[] {
-    return loadNative().randn([...shape], false).toArray();
+    return loadNative()
+        .randn([...shape], false)
+        .toArray();
 }
 
 export function version(): string {

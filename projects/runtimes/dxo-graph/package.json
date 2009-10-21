@@ -13,12 +13,21 @@
             "default": "./dist/index.js"
         }
     },
-    "files": ["dist", "README.md"],
+    "files": [
+        "dist",
+        "README.md"
+    ],
     "scripts": {
         "build": "tsc -p tsconfig.json"
     },
     "dependencies": {
         "@dxo/nn": "workspace:*"
     },
-    "keywords": ["dxo", "graph", "model", "netron", "typescript"]
+    "keywords": [
+        "dxo",
+        "graph",
+        "model",
+        "netron",
+        "typescript"
+    ]
 }

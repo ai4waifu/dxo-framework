@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { batch, dataset } from '@dxo/data';
 import { moduleGraphFromModule, serializeModelGraph } from '@dxo/graph';
-import { recordTrainIter, readEvents, readRunMeta } from '@dxo/inspect';
+import { readEvents, readRunMeta, recordTrainIter } from '@dxo/inspect';
 import { Linear } from '@dxo/nn';
 import { SGD } from '@dxo/optimizer';
 import { createInspectApiServer } from '@dxo/studio';

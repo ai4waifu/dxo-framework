@@ -1,14 +1,8 @@
-import { createServer, type Server } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { createServer, type Server } from 'node:http';
 import path from 'node:path';
-import {
-    defaultRunsRoot,
-    listRuns,
-    readEvents,
-    readRunMeta,
-    type RunSummary,
-} from '@dxo/inspect';
 import type { ArtifactV0, InspectEventV0, MetricV0 } from '@dxo/inspect';
+import { defaultRunsRoot, listRuns, type RunSummary, readEvents, readRunMeta } from '@dxo/inspect';
 
 export type InspectApiServerOptions = {
     host?: string;
@@ -155,9 +149,7 @@ async function handleRequest(
 }
 
 /** Loopback HTTP API over the append-only inspect run store. */
-export async function createInspectApiServer(
-    options: InspectApiServerOptions = {},
-): Promise<InspectApiServer> {
+export async function createInspectApiServer(options: InspectApiServerOptions = {}): Promise<InspectApiServer> {
     const host = options.host ?? '127.0.0.1';
     const port = options.port ?? 0;
     const runsRoot = options.runsRoot ?? defaultRunsRoot();

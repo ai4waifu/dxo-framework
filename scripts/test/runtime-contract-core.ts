@@ -1,4 +1,4 @@
-import { tensor, zeros, ones } from '@dxo/core';
+import { ones, tensor, zeros } from '@dxo/core';
 import { type ContractRuntime, runTensorRuntimeContract } from '../contracts/tensor-runtime.js';
 
 await runTensorRuntimeContract(async (): Promise<ContractRuntime> => {

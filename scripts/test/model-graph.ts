@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { Linear, Relu, Sequential } from '@dxo/nn';
 import { moduleGraphFromModule, moduleGraphFromSequential } from '@dxo/graph';
+import { Linear, Relu, Sequential } from '@dxo/nn';
 
 const linear = new Linear(4, 2, { requiresGrad: false });
 const lg = moduleGraphFromModule(linear);

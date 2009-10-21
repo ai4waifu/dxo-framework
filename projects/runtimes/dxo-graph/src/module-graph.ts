@@ -1,13 +1,6 @@
 import type { Module } from '@dxo/nn';
 import { Linear, Relu, Sequential } from '@dxo/nn';
-import {
-    MODEL_GRAPH_FORMAT,
-    MODEL_GRAPH_VERSION,
-    type GraphEdge,
-    type GraphNode,
-    type GraphViewKind,
-    type ModelGraphV0,
-} from './index.js';
+import { type GraphEdge, type GraphNode, type GraphViewKind, MODEL_GRAPH_FORMAT, MODEL_GRAPH_VERSION, type ModelGraphV0 } from './index.js';
 
 export function emptyModelGraph(view: GraphViewKind = 'module'): ModelGraphV0 {
     return {
