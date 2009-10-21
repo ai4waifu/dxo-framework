@@ -1,4 +1,4 @@
-//! Eager Define-by-Run tape helpers (G2).
+//! Eager Define-by-Run tape helpers.
 //!
 //! Grad enablement uses a thread-local scope stack so `without_grad` restores
 //! the previous flag after the closure; it is not a permanent process global.
@@ -118,27 +118,4 @@ pub fn propagate(parent: &Tensor, grad_output: &[f32]) -> Result<(), TensorError
         accumulate_grad(slot, grad_output)?;
     }
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn without_grad_restores_flag() {
-        assert!(is_grad_enabled());
-        without_grad(|| {
-            assert!(!is_grad_enabled());
-        });
-        assert!(is_grad_enabled());
-    }
-
-    #[test]
-    fn sum_to_shape_bias() {
-        let out_shape = [2, 2];
-        let target = [2];
-        let gy = [1.0, 2.0, 3.0, 4.0];
-        let reduced = sum_to_shape(&gy, &out_shape, &target).unwrap();
-        assert_eq!(reduced, vec![4.0, 6.0]);
-    }
 }

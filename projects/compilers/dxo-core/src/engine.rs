@@ -1,4 +1,4 @@
-//! Titan-backed CPU engine facade (G1 phase-1).
+//! Titan-backed CPU engine facade.
 //!
 //! Host tensors in this slice still use shared CPU storage; the session proves
 //! the Titan HAL boundary is wired for later device-buffer uploads.
@@ -23,17 +23,4 @@ pub fn cpu_session() -> Arc<dyn DeviceSession> {
 /// Stable backend label surfaced to diagnostics.
 pub const fn backend_label() -> &'static str {
     "titan-cpu"
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn cpu_session_opens_once() {
-        let a = cpu_session();
-        let b = cpu_session();
-        assert_eq!(a.device(), b.device());
-        assert_eq!(a.device().backend, BackendId::Cpu);
-    }
 }

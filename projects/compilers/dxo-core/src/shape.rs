@@ -64,13 +64,3 @@ pub fn is_contiguous(shape: &[usize], strides: &[i64]) -> bool {
     }
     contiguous_strides(shape) == strides
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn contiguous_strides_row_major() {
-        assert_eq!(contiguous_strides(&[2, 3]), vec![3, 1]);
-    }
-}

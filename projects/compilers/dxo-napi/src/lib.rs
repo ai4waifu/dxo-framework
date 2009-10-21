@@ -1,6 +1,10 @@
 //! Node N-API bindings for DXO (`version`, CPU `Tensor`, eager autograd).
 
-#![deny(missing_docs)]
+#![warn(missing_docs)]
+#![warn(missing_debug_implementations)]
+#![allow(unsafe_code)] // `tensor_f32` reads Node `Buffer` bytes as f32 via a validated slice view.
+
+use std::fmt;
 
 use dxo_core::{DeviceKind, Tensor as CoreTensor};
 use napi::bindgen_prelude::*;
@@ -48,6 +52,12 @@ pub fn is_grad_enabled() -> bool {
 #[napi]
 pub struct Tensor {
     inner: CoreTensor,
+}
+
+impl fmt::Debug for Tensor {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Tensor").field("inner", &self.inner).finish()
+    }
 }
 
 #[napi]
@@ -202,6 +212,7 @@ pub fn tensor_f32(data: Buffer, shape: Vec<u32>, requires_grad: Option<bool>) ->
         return Err(Error::from_reason("tensor_f32 buffer byte length must be a multiple of 4"));
     }
     let f32_len = data.len() / 4;
+    // SAFETY: length is a multiple of four; `Buffer` outlives this call and `as_ptr` is valid for `f32_len` elements.
     let slice = unsafe { std::slice::from_raw_parts(data.as_ptr() as *const f32, f32_len) };
     Ok(Tensor {
         inner: CoreTensor::from_vec_grad(slice.to_vec(), shape_to_usize(shape), requires_grad.unwrap_or(false))

@@ -1,4 +1,4 @@
-//! Titan CUDA facade (G4 / 0.0.6 spike).
+//! Titan CUDA facade for contiguous f32 GEMM.
 //!
 //! Compiles without the CUDA Toolkit (Driver API via `libloading`). Runtime
 //! availability depends on a loaded NVIDIA driver and at least one device.
@@ -183,36 +183,4 @@ pub fn gemm_f32(lhs: &[f32], m: usize, k: usize, rhs: &[f32], n: usize) -> Resul
     session.wait(down.as_ref()).map_err(|e| TensorError::Device(format!("CUDA wait download: {e}")))?;
 
     f32_from_bytes(&out_bytes)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn gemm_matches_cpu_when_cuda_present() {
-        if !is_available() {
-            eprintln!("SKIP: CUDA Driver API unavailable");
-            return;
-        }
-        let m = 2usize;
-        let k = 3usize;
-        let n = 2usize;
-        let lhs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
-        let rhs = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
-        let out = gemm_f32(&lhs, m, k, &rhs, n).expect("cuda gemm");
-        let mut expected = vec![0.0f32; m * n];
-        for i in 0..m {
-            for j in 0..n {
-                let mut sum = 0.0f32;
-                for p in 0..k {
-                    sum += lhs[i * k + p] * rhs[p * n + j];
-                }
-                expected[i * n + j] = sum;
-            }
-        }
-        for (i, (a, e)) in out.iter().zip(expected.iter()).enumerate() {
-            assert!((a - e).abs() < 1e-4, "index {i}: cuda={a} cpu={e}");
-        }
-    }
 }

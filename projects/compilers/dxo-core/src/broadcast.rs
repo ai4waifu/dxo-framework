@@ -54,14 +54,3 @@ pub fn for_each_index(shape: &[usize], mut f: impl FnMut(&[usize])) {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn broadcast_bias() {
-        let out = broadcast_shapes(&[2, 2], &[2]).unwrap();
-        assert_eq!(out, vec![2, 2]);
-    }
-}

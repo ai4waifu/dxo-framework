@@ -19,8 +19,18 @@ dxo-core = { path = "projects/compilers/dxo-core" }
 rand = "0.9"
 napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"
+titan-backend-cpu = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
+titan-backend-cuda = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
+titan-hal = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
+titan-kernel = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
+titan-types = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
 
 [profile.release]
 lto = true
 codegen-units = 1
 panic = "abort"
+
+[workspace.lints.rust]
+missing_docs = "deny"
+missing_debug_implementations = "warn"
+unsafe_code = "warn"

@@ -13,6 +13,9 @@ publish = false
 crate-type = ["cdylib"]
 name = "dxo_napi"
 
+[lints]
+workspace = true
+
 [dependencies]
 dxo-core.workspace = true
 napi.workspace = true
