@@ -1,0 +1,12 @@
+{
+  "name": "@dxo/skills",
+  "version": "0.0.0",
+  "description": "Agent-first onboarding helpers for DXO Framework",
+  "type": "module",
+  "bin": {
+    "dxo-skills": "./bin/dxo-skills.mjs"
+  },
+  "files": ["bin", "README.md", "LICENSE"],
+  "license": "MIT OR Apache-2.0",
+  "engines": { "node": ">=20" }
+}
