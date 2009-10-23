@@ -1,16 +1,19 @@
 # 🤖 @dxo/skills
 
-Agent-first onboarding helper for DXO Framework. It prints a repository-aware prompt that asks an AI coding agent to
-read the workspace rules and design source before changing implementation code.
+Agent Skills for downstream users who ask an AI coding agent to build with DXO. The bundle teaches an agent how to install
+DXO packages, choose the right runtime, and write prompts that stay within the published preview contract.
 
 ## 🚀 Try with npx
 
 ```bash
-npx @dxo/skills prompt
+npx skills add ai4waifu/dxo-framework --skill dxo
 ```
 
-The package is intentionally small and has no runtime dependencies. It does not install Codex skills itself; use your
-agent's skill installer for that step, then use the generated prompt to start a DXO task.
+If your agent supports npm package skill sources, install this package and copy the bundled `skills/dxo` directory into
+your agent's skill directory.
+
+The package is intentionally small and has no runtime dependencies. It is for downstream project work, not DXO
+Framework contributor workflows.
 
 ## 🧪 Local development
 
