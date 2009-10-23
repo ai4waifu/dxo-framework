@@ -1,4 +1,4 @@
-# @dxo/homepage
+# 🏠 @dxo/homepage
 
 DXO 产品首页（VMZ 静态站），页面与 Node 脚本中探测 `@dxo/lite`。
 

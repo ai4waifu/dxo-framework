@@ -1,4 +1,4 @@
-# @dxo/llm
+# 💬 @dxo/llm
 
 **Workspace stub — not on npm publish / placeholder OIDC lists.**
 

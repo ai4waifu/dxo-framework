@@ -1,4 +1,4 @@
-# @dxo/hub
+# 🧭 @dxo/hub
 
 **Workspace stub — not on npm publish / placeholder OIDC lists.**
 

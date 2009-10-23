@@ -1,4 +1,4 @@
-# @dxo/studio-app
+# 🖥️ @dxo/studio-app
 
 Local VMZ workbench for DXO training runs. Started by `dxo studio` (loopback).
 

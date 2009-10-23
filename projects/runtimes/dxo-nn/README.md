@@ -1,4 +1,4 @@
-# @dxo/nn
+# 🧱 @dxo/nn
 
 **Developer preview — API unstable (`0.0.x`).**
 

@@ -1,4 +1,4 @@
-# @dxo/train
+# 🏋️ @dxo/train
 
 **Developer preview — API unstable (`0.0.x`).**
 

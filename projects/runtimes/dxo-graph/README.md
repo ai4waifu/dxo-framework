@@ -1,4 +1,4 @@
-# @dxo/graph
+# 🕸️ @dxo/graph
 
 **Placeholder — developer preview, API unstable.**
 

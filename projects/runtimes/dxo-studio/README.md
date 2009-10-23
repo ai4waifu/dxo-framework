@@ -1,4 +1,4 @@
-# @dxo/studio
+# 🖥️ @dxo/studio
 
 **Placeholder — developer preview, API unstable.**
 

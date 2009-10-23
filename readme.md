@@ -1,6 +1,17 @@
-# DXO Framework
+# 🧠 DXO Framework
 
-**Developer preview** — API unstable (`0.0.x`). TypeScript-first deep learning for Node.js: Rust engine, napi-rs bindings.
+**TypeScript-first deep learning for Node.js.** DXO combines a Rust/Titan engine with napi-rs bindings and a small, composable TypeScript surface. This repository is an early developer preview; APIs are unstable while the runtime contracts settle.
+
+[![CI](https://github.com/ai4waifu/dxo-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/ai4waifu/dxo-framework/actions/workflows/ci.yml) `0.0.x` · MIT OR Apache-2.0
+
+## ✨ What is included
+
+- Eager CPU tensors and scalar autograd in `@dxo/core`
+- TypeScript modules, optimizers, datasets, serialization, and a CPU training loop
+- An explicit browser/Worker facade in `@dxo/lite` (WebGPU probing; no WebGL tensor backend)
+- Rust native bindings with platform packages selected through npm optional dependencies
+
+GPU, model-zoo, serving, and Studio features are still being built. Check each package README for its exact contract.
 
 ## Quick start
 

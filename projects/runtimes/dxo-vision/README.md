@@ -1,4 +1,4 @@
-# @dxo/vision
+# 👁️ @dxo/vision
 
 **Workspace stub — not on npm publish / placeholder OIDC lists.**
 

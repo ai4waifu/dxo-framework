@@ -1,4 +1,4 @@
-# @dxo/inspect
+# 🔍 @dxo/inspect
 
 **Placeholder — developer preview, API unstable.**
 

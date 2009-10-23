@@ -1,4 +1,4 @@
-# @dxo/serialize
+# 💾 @dxo/serialize
 
 **Developer preview — API unstable (`0.0.x`).**
 

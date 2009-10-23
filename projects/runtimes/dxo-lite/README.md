@@ -1,4 +1,4 @@
-# @dxo/lite
+# 🌐 @dxo/lite
 
 **Developer preview — API unstable (`0.0.x`).**
 

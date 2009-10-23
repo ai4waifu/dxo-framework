@@ -1,4 +1,4 @@
-# @dxo/ui
+# 🎛️ @dxo/ui
 
 **Placeholder — developer preview, API unstable.**
 
