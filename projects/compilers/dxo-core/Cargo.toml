@@ -15,7 +15,13 @@ workspace = true
 [dependencies]
 rand = { workspace = true }
 titan-backend-cpu = { workspace = true }
+# INTERIM: device session open only — remove when titan-runtime exposes open_cuda_primary().
 titan-backend-cuda = { workspace = true }
-titan-hal = { workspace = true }
-titan-kernel = { workspace = true }
+titan-graph = { workspace = true }
+titan-runtime = { workspace = true }
+titan-tensor = { workspace = true }
 titan-types = { workspace = true }
+titan-hal = { workspace = true }
+
+[features]
+default = []

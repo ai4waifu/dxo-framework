@@ -9,7 +9,7 @@ default-members = ["projects/compilers/dxo-core"]
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "Apache-2.0"
 authors = ["DXO Contributors"]
 repository = "https://github.com/ai4waifu/dxo-framework"
 rust-version = "1.77"
@@ -21,8 +21,10 @@ napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"
 titan-backend-cpu = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
 titan-backend-cuda = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
+titan-graph = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
 titan-hal = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
-titan-kernel = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
+titan-runtime = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
+titan-tensor = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
 titan-types = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }
 
 [profile.release]
