@@ -4,7 +4,7 @@
     "private": true,
     "type": "module",
     "description": "DXO run / metric / artifact / profile event protocols (placeholder, API unstable)",
-    "license": "MIT OR Apache-2.0",
+    "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {

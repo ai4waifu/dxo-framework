@@ -1,8 +1,14 @@
 {
-  "name": "@dxo/skills",
-  "version": "0.0.0",
-  "description": "Agent Skills for downstream DXO users",
-  "files": ["skills", "README.md", "LICENSE"],
-  "license": "MIT OR Apache-2.0",
-  "engines": { "node": ">=20" }
+    "name": "@dxo/skills",
+    "version": "0.0.0",
+    "description": "Agent Skills for downstream DXO users",
+    "files": [
+        "skills",
+        "README.md",
+        "LICENSE"
+    ],
+    "license": "Apache-2.0",
+    "engines": {
+        "node": ">=20"
+    }
 }

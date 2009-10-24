@@ -3,8 +3,8 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO model graph IR â€” module / execution / kernel views (placeholder, API unstable)",
-    "license": "MIT OR Apache-2.0",
+    "description": "DXO model graph IR â€?module / execution / kernel views (placeholder, API unstable)",
+    "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {

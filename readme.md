@@ -5,7 +5,7 @@ composable TypeScript surface. This repository is an early developer preview; AP
 contracts settle.
 
 [![CI](https://github.com/ai4waifu/dxo-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/ai4waifu/dxo-framework/actions/workflows/ci.yml)
-`0.0.x` · MIT OR Apache-2.0
+`0.0.x` · Apache-2.0
 
 ## 🤖 Agent-first quick start
 
@@ -120,4 +120,4 @@ pnpm verify -- lite-webgpu-smoke
 
 ## License
 
-MIT OR Apache-2.0
+Apache-2.0

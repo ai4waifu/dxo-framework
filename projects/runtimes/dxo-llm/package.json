@@ -4,7 +4,7 @@
     "private": true,
     "type": "module",
     "description": "DXO language-model / tokenizer surface (workspace stub, not published)",
-    "license": "MIT OR Apache-2.0",
+    "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {
