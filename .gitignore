@@ -3,9 +3,11 @@
 thumbs.db
 
 # IDE
+.agents/
+.cursor/
 .vscode/
-.vs/
 .idea/
+.vs/
 *.iml
 
 # Node
