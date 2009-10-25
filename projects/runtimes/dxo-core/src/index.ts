@@ -4,6 +4,8 @@ import type { NativeTensor } from './native-types.js';
 
 export type Device = 'cpu' | 'cuda' | 'metal';
 
+export type DType = 'f32' | 'f16' | 'bf16' | 'i64' | 'bool';
+
 export type TensorData = number[] | Float32Array;
 
 export interface TensorOptions {
@@ -43,6 +45,17 @@ export class Tensor {
         return this.#handle.requiresGrad;
     }
 
+    get dtype(): DType {
+        const d = this.#handle.dtype;
+        if (d === 'f32' || d === 'f16' || d === 'bf16' || d === 'i64' || d === 'bool') return d;
+        return 'f32';
+    }
+
+    /** Native handle for inter-op calls within `@dxo/core`. */
+    get nativeHandle(): NativeTensor {
+        return this.#handle;
+    }
+
     /** Accumulated gradient (row-major), or `undefined` if absent. */
     get grad(): number[] | undefined {
         return this.#handle.grad ?? undefined;
@@ -57,9 +70,17 @@ export class Tensor {
         return new Tensor(this.#handle.add(other.#handle));
     }
 
-    /** `this - other` via add/mul (broadcast-aware). */
+    /** `this - other` (broadcast-aware). */
     sub(other: Tensor): Tensor {
-        return this.add(other.mul(tensor([-1], [1])));
+        return new Tensor(this.#handle.sub(other.#handle));
+    }
+
+    neg(): Tensor {
+        return new Tensor(this.#handle.neg());
+    }
+
+    div(other: Tensor): Tensor {
+        return new Tensor(this.#handle.div(other.#handle));
     }
 
     mul(other: Tensor): Tensor {
@@ -89,9 +110,35 @@ export class Tensor {
 
     /** Mean of all elements → scalar tensor of shape `[1]`. */
     mean(): Tensor {
-        const n = this.numel();
-        if (n === 0) throw new Error('mean of empty tensor');
-        return this.sum().mul(tensor([1 / n], [1]));
+        return new Tensor(this.#handle.mean());
+    }
+
+    max(): Tensor {
+        return new Tensor(this.#handle.maxAll());
+    }
+
+    softmax(): Tensor {
+        return new Tensor(this.#handle.softmax());
+    }
+
+    logSoftmax(): Tensor {
+        return new Tensor(this.#handle.logSoftmax());
+    }
+
+    narrow(dim: number, start: number, len: number): Tensor {
+        return new Tensor(this.#handle.narrow(dim, start, len));
+    }
+
+    conv2d(weight: Tensor, bias: Tensor | null, stride: number, padding: number): Tensor {
+        return new Tensor(this.#handle.conv2d(weight.nativeHandle, bias ? bias.nativeHandle : null, stride, padding));
+    }
+
+    maxPool2d(kernel: number, stride: number, padding: number): Tensor {
+        return new Tensor(this.#handle.maxPool2d(kernel, stride, padding));
+    }
+
+    batchNorm2d(gamma: Tensor, beta: Tensor, eps = 1e-5): Tensor {
+        return new Tensor(this.#handle.batchNorm2d(gamma.nativeHandle, beta.nativeHandle, eps));
     }
 
     /** Values only — drops requiresGrad and tape edges. */

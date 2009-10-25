@@ -8,10 +8,12 @@ use rand::Rng;
 use crate::autograd::{GradFn, GradSlot, accumulate_grad, is_grad_enabled, new_grad_slot, propagate, sum_to_shape};
 use crate::broadcast::{broadcast_offset, broadcast_shapes, for_each_index};
 use crate::cuda;
+use crate::dtype::DType;
 use crate::shape::{Shape, Strides, contiguous_strides, is_contiguous, numel};
 use crate::storage::Storage;
 
-/// Placement for tensor values (host mirror always kept; CUDA matmul uploads/downloads).
+/// Placement for tensor values. CPU tensors use host storage; CUDA matmul uses
+/// Titan runtime dispatch with explicit readback (host mirror spike — not device-resident yet).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeviceKind {
     /// Host CPU storage.
@@ -73,6 +75,7 @@ pub struct Tensor {
     grad_slot: Option<GradSlot>,
     grad_fn: Option<Arc<dyn GradFn>>,
     device: DeviceKind,
+    dtype: DType,
 }
 
 impl fmt::Debug for Tensor {
@@ -80,6 +83,7 @@ impl fmt::Debug for Tensor {
         f.debug_struct("Tensor")
             .field("shape", &self.shape.0)
             .field("device", &self.device)
+            .field("dtype", &self.dtype)
             .field("requires_grad", &self.requires_grad)
             .field("has_grad_fn", &self.grad_fn.is_some())
             .finish_non_exhaustive()
@@ -147,7 +151,7 @@ impl Tensor {
         Self::from_storage_on(storage, offset, shape, requires_grad, grad_slot, grad_fn, DeviceKind::Cpu)
     }
 
-    fn from_storage_on(
+    pub(crate) fn from_storage_on(
         storage: Storage,
         offset: usize,
         shape: &[usize],
@@ -166,7 +170,13 @@ impl Tensor {
             grad_slot,
             grad_fn,
             device,
+            dtype: DType::F32,
         }
+    }
+
+    /// Logical dtype tag.
+    pub fn dtype(&self) -> DType {
+        self.dtype
     }
 
     /// Current device tag (`cpu` / `cuda`).
@@ -322,7 +332,7 @@ impl Tensor {
         });
     }
 
-    fn maybe_attach(mut out: Self, parents: &[&Self], grad_fn: Arc<dyn GradFn>) -> Self {
+    pub(crate) fn maybe_attach(mut out: Self, parents: &[&Self], grad_fn: Arc<dyn GradFn>) -> Self {
         let track = is_grad_enabled() && parents.iter().any(|p| p.requires_grad);
         if track {
             out.requires_grad = true;
@@ -354,6 +364,7 @@ impl Tensor {
                 grad_slot: None,
                 grad_fn: None,
                 device: self.device,
+                dtype: self.dtype,
             }
         };
         Ok(Self::maybe_attach(base, &[self], Arc::new(ReshapeBackward { input: self.clone(), out_shape: shape.to_vec() })))
@@ -375,6 +386,7 @@ impl Tensor {
             grad_slot: None,
             grad_fn: None,
             device: self.device,
+            dtype: self.dtype,
         };
         Ok(Self::maybe_attach(base, &[self], Arc::new(TransposeBackward { input: self.clone() })))
     }
@@ -391,7 +403,7 @@ impl Tensor {
         Ok(Self::maybe_attach(out, &[self, other], Arc::new(MulBackward { a: self.clone(), b: other.clone() })))
     }
 
-    fn binary_broadcast(&self, other: &Self, op: fn(f32, f32) -> f32) -> Result<Self, TensorError> {
+    pub(crate) fn binary_broadcast(&self, other: &Self, op: fn(f32, f32) -> f32) -> Result<Self, TensorError> {
         if self.device != other.device {
             return Err(TensorError::Device(format!(
                 "broadcast op device mismatch: {} vs {}",

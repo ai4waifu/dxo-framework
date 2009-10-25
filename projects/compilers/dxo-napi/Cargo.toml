@@ -1,4 +1,4 @@
-[package]
+﻿[package]
 name = "dxo-napi"
 version.workspace = true
 edition.workspace = true
