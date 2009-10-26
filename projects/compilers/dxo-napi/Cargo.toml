@@ -18,6 +18,7 @@ workspace = true
 
 [dependencies]
 dxo-core.workspace = true
+dxo-studio.workspace = true
 napi.workspace = true
 napi-derive.workspace = true
 

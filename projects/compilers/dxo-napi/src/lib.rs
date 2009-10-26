@@ -146,13 +146,13 @@ impl Tensor {
         Ok(Tensor { inner: self.inner.div(&other.inner).map_err(map_err)? })
     }
 
-    /// Mean of all elements â†?scalar `[1]`.
+    /// Mean of all elements â†’ scalar `[1]`.
     #[napi]
     pub fn mean(&self) -> Result<Tensor> {
         Ok(Tensor { inner: self.inner.mean() })
     }
 
-    /// Max of all elements â†?scalar `[1]`.
+    /// Max of all elements â†’ scalar `[1]`.
     #[napi]
     pub fn max_all(&self) -> Result<Tensor> {
         Ok(Tensor { inner: self.inner.max_all() })
@@ -311,3 +311,63 @@ pub fn tensor_f32(data: Buffer, shape: Vec<u32>, requires_grad: Option<bool>) ->
     })
 }
 
+/// Options for the loopback inspect HTTP API (`@dxo/studio`).
+#[napi(object)]
+pub struct InspectApiServerOptions {
+    pub host: Option<String>,
+    pub port: Option<u16>,
+    pub runs_root: Option<String>,
+}
+
+/// Bound inspect HTTP server (Rust `dxo-studio`).
+#[napi]
+pub struct InspectApiServerHandle {
+    inner: Option<dxo_studio::InspectApiServer>,
+}
+
+#[napi]
+impl InspectApiServerHandle {
+    fn server(&self) -> Result<&dxo_studio::InspectApiServer> {
+        self.inner.as_ref().ok_or_else(|| Error::from_reason("inspect API server already closed"))
+    }
+
+    #[napi(getter)]
+    pub fn host(&self) -> Result<String> {
+        Ok(self.server()?.host.clone())
+    }
+
+    #[napi(getter)]
+    pub fn port(&self) -> Result<u16> {
+        Ok(self.server()?.port)
+    }
+
+    #[napi(getter)]
+    pub fn url(&self) -> Result<String> {
+        Ok(self.server()?.url.clone())
+    }
+
+    #[napi(getter)]
+    pub fn runs_root(&self) -> Result<String> {
+        Ok(self.server()?.runs_root.display().to_string())
+    }
+
+    #[napi]
+    pub fn close(&mut self) {
+        if let Some(server) = self.inner.take() {
+            server.close();
+        }
+    }
+}
+
+/// Start loopback inspect HTTP API backed by the on-disk run store.
+#[napi]
+pub fn create_inspect_api_server(options: InspectApiServerOptions) -> Result<InspectApiServerHandle> {
+    let runs_root = options.runs_root.map(std::path::PathBuf::from).unwrap_or_else(dxo_studio::default_runs_root);
+    let inner = dxo_studio::InspectApiServer::bind(dxo_studio::InspectApiOptions {
+        host: options.host.unwrap_or_else(|| "127.0.0.1".into()),
+        port: options.port.unwrap_or(4310),
+        runs_root,
+    })
+    .map_err(|err| Error::from_reason(err.to_string()))?;
+    Ok(InspectApiServerHandle { inner: Some(inner) })
+}
