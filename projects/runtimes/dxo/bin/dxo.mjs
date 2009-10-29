@@ -9,10 +9,12 @@ function printHelp() {
 
 Usage:
   dxo version
-  dxo studio [--port <apiPort>] [--ui-port <uiPort>] [--runs-dir <path>] [--api-only]
+  dxo studio [--port <apiPort>] [--webui-port <port>] [--runs-dir <path>] [--api-only]
 
-  studio  Start local Studio workbench (loopback).
+  studio  VMZ watch serve + loopback inspect API (browser).
+          Desktop GUI: double-click dxo-studio.exe (Tauri).
           API default: http://127.0.0.1:4310
+          WebUI default: http://127.0.0.1:5173 (VMZ dev)
 `);
 }
 
@@ -35,7 +37,8 @@ if (cmd === 'help' || cmd === '-h' || cmd === '--help') {
 if (cmd === 'studio') {
     const { startStudio } = await import('@dxo/studio');
     const port = Number(flagValue('--port') ?? 4310);
-    const uiPort = flagValue('--ui-port') ? Number(flagValue('--ui-port')) : undefined;
+    const webuiPort = flagValue('--webui-port') ? Number(flagValue('--webui-port')) : undefined;
+    const legacyUiPort = flagValue('--ui-port') ? Number(flagValue('--ui-port')) : undefined;
     const runsDir = flagValue('--runs-dir');
     const apiOnly = args.includes('--api-only');
 
@@ -43,14 +46,14 @@ if (cmd === 'studio') {
         host: '127.0.0.1',
         port,
         runsRoot: runsDir,
-        ui: !apiOnly,
-        uiPort,
+        webui: !apiOnly,
+        webuiPort: webuiPort ?? legacyUiPort,
     });
 
     console.log(`dxo studio API ${studio.url}`);
     console.log(`runs root: ${studio.runsRoot}`);
-    if (!apiOnly) {
-        console.log('UI: vmz dev (projects/studio) — set window.__DXO_STUDIO_API__ if API port differs');
+    if (studio.webuiUrl) {
+        console.log(`WebUI (VMZ watch): ${studio.webuiUrl}`);
     }
 
     const shutdown = async () => {

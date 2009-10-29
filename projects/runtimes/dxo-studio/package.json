@@ -3,8 +3,8 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO training / model workbench (VMZ app placeholder, API unstable)",
-    "license": "MIT OR Apache-2.0",
+    "description": "DXO training workbench — VMZ WebUI + launcher; desktop GUI is dxo-studio.exe",
+    "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {
@@ -15,23 +15,34 @@
     },
     "files": [
         "dist",
+        "src",
+        "public",
+        "designs",
+        "vmz.config.ts",
         "README.md"
     ],
     "scripts": {
-        "build": "tsc -p tsconfig.json"
+        "build": "tsc -p tsconfig.json",
+        "build:ui": "vmz build --release --profile static .",
+        "dev": "vmz dev .",
+        "check": "vmz check ."
     },
     "dependencies": {
+        "@dxo/core": "workspace:*",
         "@dxo/graph": "workspace:*",
-        "@dxo/inspect": "workspace:*"
+        "@dxo/inspect": "workspace:*",
+        "@vmz/core": "^0.1.12"
     },
     "devDependencies": {
-        "@types/node": "^22.15.0"
+        "@types/node": "^22.15.0",
+        "@vmz/vmz": "^0.1.12"
     },
     "keywords": [
         "dxo",
         "studio",
         "tensorboard",
         "vmz",
+        "tauri",
         "typescript"
     ]
 }

@@ -1,0 +1,91 @@
+<template>
+  <main class="studio">
+    <header class="studio__header">
+      <a class="studio__brand" href="/"><strong>DXO Studio</strong></a>
+      <nav class="studio__nav">
+        <a href="/">Runs</a>
+        <a href="/compare">Compare</a>
+        <a href="/playground">Playground</a>
+      </nav>
+    </header>
+
+    <section class="studio__panel studio__upload">
+      <h1>Image playground</h1>
+      <p class="studio__hint">
+        Upload an image to a loopback `@dxo/ui` model app (`defineModelApp`). Start serve separately on {appBase}.
+      </p>
+      <p class="studio__status">{status}</p>
+
+      <label class="studio__file">
+        <span>Image file</span>
+        <input type="file" accept="image/*" onChange={onFile} />
+      </label>
+
+      <button class="studio__btn" onClick={predict} disabled={!file}>Predict</button>
+      <button class="studio__btn studio__btn--ghost" onClick={cancel} disabled={!busy}>Cancel</button>
+
+      <div if={previewUrl} class="studio__preview">
+        <img src={previewUrl} alt="upload preview" />
+      </div>
+
+      <pre class="studio__pre" if={resultText}>{resultText}</pre>
+    </section>
+  </main>
+</template>
+
+<script client>
+import { modelAppBase } from '../lib/api.ts';
+
+export default class PlaygroundPage {
+    status = 'ready';
+    appBase = modelAppBase();
+    file = null;
+    previewUrl = '';
+    resultText = '';
+    busy = false;
+    #controller = null;
+
+    onFile(e) {
+        const input = e.target;
+        const f = input?.files?.[0];
+        this.file = f ?? null;
+        if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+        this.previewUrl = f ? URL.createObjectURL(f) : '';
+        this.resultText = '';
+    }
+
+    async predict() {
+        if (!this.file) return;
+        this.#controller?.abort();
+        this.#controller = new AbortController();
+        this.busy = true;
+        this.status = 'predicting…';
+        this.resultText = '';
+        try {
+            const form = new FormData();
+            form.append('image', this.file);
+            const res = await fetch(`${this.appBase}/run`, {
+                method: 'POST',
+                body: form,
+                signal: this.#controller.signal,
+            });
+            if (!res.ok) throw new Error(`model app ${res.status}`);
+            const body = await res.json();
+            this.resultText = JSON.stringify(body, null, 2);
+            this.status = 'done';
+        } catch (err) {
+            if (err instanceof Error && err.name === 'AbortError') {
+                this.status = 'cancelled';
+            } else {
+                this.status = err instanceof Error ? err.message : String(err);
+            }
+        } finally {
+            this.busy = false;
+        }
+    }
+
+    cancel() {
+        this.#controller?.abort();
+    }
+}
+</script>

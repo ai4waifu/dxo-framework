@@ -1,0 +1,117 @@
+<template>
+  <main class="studio">
+    <header class="studio__header">
+      <a class="studio__brand" href="/"><strong>DXO Studio</strong></a>
+      <nav class="studio__nav">
+        <a href="/">Runs</a>
+        <a href="/compare">Compare</a>
+        <a href="/playground">Playground</a>
+      </nav>
+    </header>
+
+    <section class="studio__panel">
+      <h1>Compare runs</h1>
+      <p class="studio__hint">Select two or more runs to overlay scalar metrics.</p>
+      <p class="studio__status">{status}</p>
+
+      <ul class="studio__list studio__pick-list">
+        <li each={runs} as="run" key={run.runId}>
+          <label>
+            <input type="checkbox" checked={isSelected(run.runId)} onChange={() => toggleRun(run.runId)} />
+            {runLabel(run)}
+            <span class="studio__badge">{run.meta.status}</span>
+          </label>
+        </li>
+      </ul>
+
+      <button class="studio__btn" onClick={loadCompare} disabled={selected.length < 2}>Compare</button>
+
+      <div class="studio__compare" if={compareRows.length > 0}>
+        <h2>Metric overlay</h2>
+        <table class="studio__table">
+          <thead>
+            <tr>
+              <th>run</th>
+              <th>metric</th>
+              <th>step</th>
+              <th>value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr each={compareRows} as="row" key={row.key}>
+              <td>{row.runLabel}</td>
+              <td>{row.name}</td>
+              <td>{row.step}</td>
+              <td>{row.value}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</template>
+
+<script client>
+import { apiGet } from '../lib/api.ts';
+
+export default class ComparePage {
+    status = 'loading…';
+    runs = [];
+    selected = [];
+    compareRows = [];
+
+    runLabel(run) {
+        return run.meta?.label ?? run.runId;
+    }
+
+    isSelected(runId) {
+        return this.selected.includes(runId);
+    }
+
+    toggleRun(runId) {
+        if (this.selected.includes(runId)) {
+            this.selected = this.selected.filter((id) => id !== runId);
+        } else {
+            this.selected = [...this.selected, runId];
+        }
+    }
+
+    async onMount() {
+        try {
+            const data = await apiGet('/api/runs');
+            this.runs = data.runs ?? [];
+            this.selected = this.runs.slice(0, Math.min(2, this.runs.length)).map((r) => r.runId);
+            this.status = `${this.runs.length} run(s) available`;
+        } catch (err) {
+            this.status = err instanceof Error ? err.message : String(err);
+        }
+    }
+
+    async loadCompare() {
+        if (this.selected.length < 2) return;
+        this.status = 'loading compare…';
+        try {
+            const q = encodeURIComponent(this.selected.join(','));
+            const data = await apiGet(`/api/compare?runs=${q}`);
+            const rows = [];
+            for (const s of data.series ?? []) {
+                const label = s.meta?.label ?? s.runId;
+                for (const m of s.metrics ?? []) {
+                    rows.push({
+                        key: `${s.runId}:${m.name}:${m.step}`,
+                        runLabel: label,
+                        name: m.name,
+                        step: m.step ?? '—',
+                        value: Number(m.value).toFixed(6),
+                    });
+                }
+            }
+            this.compareRows = rows;
+            this.status = rows.length ? `${rows.length} metric point(s)` : 'no metrics in selected runs';
+        } catch (err) {
+            this.status = err instanceof Error ? err.message : String(err);
+            this.compareRows = [];
+        }
+    }
+}
+</script>

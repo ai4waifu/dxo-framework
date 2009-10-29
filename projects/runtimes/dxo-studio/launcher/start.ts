@@ -5,19 +5,19 @@ import { fileURLToPath } from 'node:url';
 import { createInspectApiServer, type InspectApiServer, type InspectApiServerOptions } from './api-server.js';
 
 export type StartStudioOptions = InspectApiServerOptions & {
-    /** Start the VMZ dev server for `projects/studio`. Default true. */
-    ui?: boolean;
-    /** VMZ dev port; 0 picks a free port when supported. */
-    uiPort?: number;
+    /** Start VMZ watch serve for browser WebUI. Default true. */
+    webui?: boolean;
+    /** VMZ dev port; omit to auto-pick from 5173. */
+    webuiPort?: number;
 };
 
 export type StudioProcess = InspectApiServer & {
-    ui?: ChildProcess;
+    webui?: ChildProcess;
+    webuiUrl?: string;
     closeAll: () => Promise<void>;
 };
 
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const studioAppRoot = path.resolve(packageRoot, '../../studio');
 
 function spawnVmzDev(apiUrl: string, port?: number): ChildProcess {
     const env = {
@@ -27,8 +27,12 @@ function spawnVmzDev(apiUrl: string, port?: number): ChildProcess {
     };
     const isWin = process.platform === 'win32';
     const cmd = isWin ? 'pnpm.cmd' : 'pnpm';
-    return spawn(cmd, ['exec', 'vmz', 'dev', '.'], {
-        cwd: studioAppRoot,
+    const args = ['exec', 'vmz', 'dev', '.'];
+    if (port) {
+        args.push('--port', String(port));
+    }
+    return spawn(cmd, args, {
+        cwd: packageRoot,
         env,
         stdio: 'inherit',
         shell: isWin,
@@ -36,13 +40,13 @@ function spawnVmzDev(apiUrl: string, port?: number): ChildProcess {
 }
 
 async function writeStudioApiBootstrap(apiUrl: string): Promise<void> {
-    const out = path.join(studioAppRoot, 'public', 'dxo-studio-api.js');
+    const out = path.join(packageRoot, 'public', 'dxo-studio-api.js');
     await writeFile(out, `window.__DXO_STUDIO_API__=${JSON.stringify(apiUrl)};\n`, 'utf8');
 }
 
 /**
- * Start loopback inspect API and optionally the VMZ Studio dev app.
- * Binds API to 127.0.0.1 by default.
+ * `dxo studio`: Rust inspect API + VMZ watch serve → open in browser.
+ * Desktop GUI is `dxo-studio.exe` (Tauri), not this path.
  */
 export async function startStudio(options: StartStudioOptions = {}): Promise<StudioProcess> {
     const api = await createInspectApiServer({
@@ -51,21 +55,26 @@ export async function startStudio(options: StartStudioOptions = {}): Promise<Stu
         runsRoot: options.runsRoot,
     });
 
-    const uiEnabled = options.ui !== false;
-    let ui: ChildProcess | undefined;
-    if (uiEnabled) {
+    const webuiEnabled = options.webui !== false;
+    let webui: ChildProcess | undefined;
+    let webuiUrl: string | undefined;
+
+    if (webuiEnabled) {
         await writeStudioApiBootstrap(api.url);
-        ui = spawnVmzDev(api.url, options.uiPort);
+        webui = spawnVmzDev(api.url, options.webuiPort);
+        webuiUrl = options.webuiPort
+            ? `http://127.0.0.1:${options.webuiPort}`
+            : 'http://127.0.0.1:5173 (VMZ default; check terminal if port differs)';
     }
 
     const closeAll = async (): Promise<void> => {
-        if (ui && !ui.killed) {
-            ui.kill();
+        if (webui && !webui.killed) {
+            webui.kill();
         }
         await api.close();
     };
 
-    return { ...api, ui, closeAll };
+    return { ...api, webui, webuiUrl, closeAll };
 }
 
 /** @deprecated Use {@link startStudio}. */

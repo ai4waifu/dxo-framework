@@ -148,18 +148,29 @@ importers:
 
   projects/runtimes/dxo-serialize: {}
 
+  projects/runtimes/dxo-skills: {}
+
   projects/runtimes/dxo-studio:
     dependencies:
+      '@dxo/core':
+        specifier: workspace:*
+        version: link:../dxo-core
       '@dxo/graph':
         specifier: workspace:*
         version: link:../dxo-graph
       '@dxo/inspect':
         specifier: workspace:*
         version: link:../dxo-inspect
+      '@vmz/core':
+        specifier: ^0.1.12
+        version: 0.1.12
     devDependencies:
       '@types/node':
         specifier: ^22.15.0
         version: 22.20.1
+      '@vmz/vmz':
+        specifier: ^0.1.12
+        version: 0.1.12(typescript@5.9.3)
 
   projects/runtimes/dxo-train:
     dependencies:
@@ -179,21 +190,15 @@ importers:
         specifier: workspace:*
         version: link:../dxo-serialize
 
-  projects/runtimes/dxo-ui: {}
+  projects/runtimes/dxo-ui:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
 
   projects/runtimes/dxo-vision: {}
 
   projects/runtimes/dxo-win32-x64: {}
-
-  projects/studio:
-    dependencies:
-      '@vmz/core':
-        specifier: ^0.1.12
-        version: 0.1.12
-    devDependencies:
-      '@vmz/vmz':
-        specifier: ^0.1.12
-        version: 0.1.12(typescript@5.9.3)
 
 packages:
 

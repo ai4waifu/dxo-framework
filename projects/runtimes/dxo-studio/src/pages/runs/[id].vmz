@@ -2,8 +2,10 @@
   <main class="studio">
     <header class="studio__header">
       <a class="studio__brand" href="/"><strong>DXO Studio</strong></a>
-      <nav>
+      <nav class="studio__nav">
         <a href="/">Runs</a>
+        <a href="/compare">Compare</a>
+        <a href="/playground">Playground</a>
       </nav>
     </header>
 
@@ -25,6 +27,32 @@
         </tbody>
       </table>
 
+      <h2>Confusion matrix</h2>
+      <p class="studio__hint" if={!hasMatrix}>No confusion-matrix artifact.</p>
+      <table class="studio__table studio__matrix" if={hasMatrix}>
+        <thead>
+          <tr>
+            <th></th>
+            <th each={matrixLabels} as="lbl" key={lbl}>{lbl}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr each={matrixRows} as="row" key={row.label}>
+            <th>{row.label}</th>
+            <td each={row.cells} as="cell" key={cell.key} class={cellClass(cell.value)}>{cell.value}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Image samples</h2>
+      <p class="studio__hint" if={samples.length === 0}>No image-samples artifact.</p>
+      <ul class="studio__samples" if={samples.length > 0}>
+        <li each={samples} as="s" key={s.uri}>
+          <img src={s.src} alt={s.caption} />
+          <span class="studio__meta">{s.caption}</span>
+        </li>
+      </ul>
+
       <h2>Training events</h2>
       <ul class="studio__list studio__list--compact">
         <li each={trainEvents} as="e" key={eventKey(e)}><code>{e.type}</code> {summarize(e)}</li>
@@ -42,7 +70,7 @@
 </template>
 
 <script client>
-import { apiGet } from '../lib/api.ts';
+import { apiGet, fileUrl } from '../../lib/api.ts';
 
 export default class RunDetailPage {
     runId = '';
@@ -51,6 +79,10 @@ export default class RunDetailPage {
     trainEvents = [];
     checkpoints = [];
     graphText = '(none)';
+    hasMatrix = false;
+    matrixLabels = [];
+    matrixRows = [];
+    samples = [];
 
     metricKey(m) {
         return `${m.name}:${m.step ?? ''}:${m.wallTimeMs ?? ''}`;
@@ -64,11 +96,46 @@ export default class RunDetailPage {
         return Number(v).toFixed(6);
     }
 
+    cellClass(v) {
+        const n = Number(v);
+        if (n >= 5) return 'studio__cell--hot';
+        if (n >= 2) return 'studio__cell--warm';
+        return '';
+    }
+
     summarize(e) {
         if (e.type === 'train/batch') return `epoch=${e.epoch} step=${e.step} loss=${e.loss}`;
         if (e.type === 'train/epoch_end') return `epoch=${e.epoch} meanLoss=${e.meanLoss}`;
         if (e.type === 'run/end') return `status=${e.status}`;
         return '';
+    }
+
+    buildMatrix(data) {
+        const labels = data.labels ?? [];
+        const matrix = data.matrix ?? [];
+        this.matrixLabels = labels;
+        this.matrixRows = labels.map((label, i) => ({
+            label,
+            cells: (matrix[i] ?? []).map((value, j) => ({
+                key: `${i}:${j}`,
+                value,
+            })),
+        }));
+        this.hasMatrix = labels.length > 0;
+    }
+
+    buildSamples(data) {
+        const list = data.samples ?? [];
+        this.samples = list.map((s) => {
+            const parts = [];
+            if (s.label !== undefined) parts.push(`label=${s.label}`);
+            if (s.pred !== undefined) parts.push(`pred=${s.pred}`);
+            return {
+                uri: s.uri,
+                src: fileUrl(this.runId, s.uri),
+                caption: parts.join(' · ') || s.uri,
+            };
+        });
     }
 
     async onMount() {
@@ -96,6 +163,18 @@ export default class RunDetailPage {
                 this.graphText = JSON.stringify(g.graph, null, 2);
             } catch {
                 this.graphText = '(no model-graph artifact)';
+            }
+            try {
+                const cm = await apiGet(`/api/runs/${encodeURIComponent(this.runId)}/confusion-matrix`);
+                this.buildMatrix(cm.confusionMatrix ?? cm);
+            } catch {
+                this.hasMatrix = false;
+            }
+            try {
+                const imgs = await apiGet(`/api/runs/${encodeURIComponent(this.runId)}/image-samples`);
+                this.buildSamples(imgs.imageSamples ?? imgs);
+            } catch {
+                this.samples = [];
             }
         } catch (err) {
             this.status = err instanceof Error ? err.message : String(err);

@@ -2,8 +2,10 @@
   <main class="studio">
     <header class="studio__header">
       <a class="studio__brand" href="/"><strong>DXO Studio</strong></a>
-      <nav>
+      <nav class="studio__nav">
         <a href="/">Runs</a>
+        <a href="/compare">Compare</a>
+        <a href="/playground">Playground</a>
       </nav>
     </header>
 
