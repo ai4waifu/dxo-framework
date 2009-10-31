@@ -1,0 +1,23 @@
+{
+    "$schema": "https://schema.tauri.app/config/2",
+    "productName": "DXO Studio",
+    "version": "0.1.0",
+    "identifier": "dev.dxo.studio",
+    "build": {
+        "beforeDevCommand": "pnpm --dir ../../../runtimes/dxo-studio exec vmz dev --port 5173 .",
+        "devUrl": "http://localhost:5173",
+        "beforeBuildCommand": "pnpm --dir ../../../runtimes/dxo-studio exec vmz build --release --profile static .",
+        "frontendDist": "../../../runtimes/dxo-studio/dist"
+    },
+    "app": {
+        "windows": [],
+        "security": {
+            "csp": null
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": "all",
+        "icon": []
+    }
+}

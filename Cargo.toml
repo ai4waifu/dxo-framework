@@ -4,6 +4,7 @@ members = [
     "projects/compilers/dxo-core",
     "projects/compilers/dxo-napi",
     "projects/compilers/dxo-studio",
+    "projects/compilers/dxo-studio-tauri",
 ]
 default-members = ["projects/compilers/dxo-core"]
 
