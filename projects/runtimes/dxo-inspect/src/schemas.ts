@@ -21,7 +21,22 @@ export type MetricV0 = {
     wallTimeMs: number;
 };
 
-export type ArtifactKindV0 = 'checkpoint' | 'state' | 'other';
+export type ArtifactKindV0 = 'checkpoint' | 'state' | 'image-samples' | 'confusion-matrix' | 'other';
+
+export type ImageSampleV0 = {
+    uri: string;
+    label?: number | string;
+    pred?: number | string;
+};
+
+export type ImageSamplesArtifactV0 = {
+    samples: ImageSampleV0[];
+};
+
+export type ConfusionMatrixArtifactV0 = {
+    labels: string[];
+    matrix: number[][];
+};
 
 export type ArtifactV0 = {
     name: string;

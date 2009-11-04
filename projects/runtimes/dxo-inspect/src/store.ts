@@ -3,6 +3,8 @@ import { appendFile, mkdir, readdir, readFile, writeFile } from 'node:fs/promise
 import path from 'node:path';
 import {
     type ArtifactKindV0,
+    type ConfusionMatrixArtifactV0,
+    type ImageSamplesArtifactV0,
     INSPECT_PROTOCOL,
     INSPECT_PROTOCOL_VERSION,
     type InspectEventV0,
@@ -89,9 +91,14 @@ export class RunRecorder {
 
     /** Write artifact bytes and emit artifact/ref. Returns relative URI under run dir. */
     async writeArtifact(name: string, kind: ArtifactKindV0, body: string): Promise<string> {
+        return this.writeArtifactBytes(name, kind, Buffer.from(body, 'utf8'));
+    }
+
+    async writeArtifactBytes(name: string, kind: ArtifactKindV0, body: Buffer): Promise<string> {
         const rel = path.join(ARTIFACTS_DIR, name);
         const abs = path.join(this.runPath, rel);
-        await writeFile(abs, body, 'utf8');
+        await mkdir(path.dirname(abs), { recursive: true });
+        await writeFile(abs, body);
         const digest = createHash('sha256').update(body).digest('hex');
         await this.append({
             type: 'artifact/ref',
@@ -106,6 +113,14 @@ export class RunRecorder {
             },
         });
         return rel;
+    }
+
+    async writeConfusionMatrix(data: ConfusionMatrixArtifactV0): Promise<string> {
+        return this.writeArtifact('confusion-matrix.json', 'confusion-matrix', JSON.stringify(data, null, 2));
+    }
+
+    async writeImageSamples(data: ImageSamplesArtifactV0): Promise<string> {
+        return this.writeArtifact('image-samples.json', 'image-samples', JSON.stringify(data, null, 2));
     }
 
     async close(status: Exclude<RunStatus, 'running'>, error?: string): Promise<void> {

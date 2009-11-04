@@ -5,6 +5,9 @@
 export {
     type ArtifactKindV0,
     type ArtifactV0,
+    type ConfusionMatrixArtifactV0,
+    type ImageSampleV0,
+    type ImageSamplesArtifactV0,
     INSPECT_PROTOCOL,
     INSPECT_PROTOCOL_VERSION,
     type InspectEventV0,
