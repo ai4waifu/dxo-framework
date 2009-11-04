@@ -23,6 +23,8 @@ const suites = {
     'runtime-contract-core': 'scripts/test/runtime-contract-core.ts',
     'model-graph': 'scripts/test/model-graph.ts',
     'studio-run-smoke': 'scripts/test/studio-run-smoke.ts',
+    'studio-ui-wave2': 'scripts/test/studio-ui-wave2.ts',
+    'model-app-image': 'scripts/test/model-app-image.ts',
 };
 
 if (!id || !(id in suites)) {

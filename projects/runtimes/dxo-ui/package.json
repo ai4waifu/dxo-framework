@@ -3,8 +3,8 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO model-app builders (Gradio-like placeholder, API unstable)",
-    "license": "MIT OR Apache-2.0",
+    "description": "DXO model-app builders (defineModelApp + loopback serve)",
+    "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {
@@ -19,6 +19,9 @@
     ],
     "scripts": {
         "build": "tsc -p tsconfig.json"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.0"
     },
     "keywords": [
         "dxo",
