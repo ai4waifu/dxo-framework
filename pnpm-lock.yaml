@@ -130,7 +130,17 @@ importers:
 
   projects/runtimes/dxo-linux-x64: {}
 
-  projects/runtimes/dxo-lite: {}
+  projects/runtimes/dxo-lite:
+    dependencies:
+      '@dxo/lite-unknown-wasm32':
+        specifier: workspace:*
+        version: link:../dxo-lite-unknown-wasm32
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+
+  projects/runtimes/dxo-lite-unknown-wasm32: {}
 
   projects/runtimes/dxo-llm: {}
 

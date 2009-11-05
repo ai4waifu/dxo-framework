@@ -5,6 +5,7 @@ members = [
     "projects/compilers/dxo-napi",
     "projects/compilers/dxo-studio",
     "projects/compilers/dxo-studio-tauri",
+    "projects/compilers/dxo-lite-wasm",
 ]
 default-members = ["projects/compilers/dxo-core"]
 
@@ -19,7 +20,7 @@ rust-version = "1.77"
 [workspace.dependencies]
 dxo-core = { path = "projects/compilers/dxo-core" }
 dxo-studio = { path = "projects/compilers/dxo-studio" }
-rand = "0.9"
+rand = "0.10.2"
 napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"
 titan-backend-cpu = { git = "https://github.com/ai4waifu/titan.rs.git", branch = "dev" }

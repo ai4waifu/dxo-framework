@@ -1,0 +1,27 @@
+[package]
+name = "dxo-lite-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "WASM ABI bridge for @dxo/lite (wasm-bindgen → future dxo-core adapter)"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+name = "dxo_lite"
+
+[lints]
+workspace = true
+
+[dependencies]
+wasm-bindgen = "0.2"
+
+# INTERIM: self-contained f32 kernels until dxo-core can target wasm32
+# (native CUDA/titan deps excluded). Real path: dxo-lite-wasm → dxo-core → Titan wgpu.
+
+[package.metadata.wasm-pack.profile.release]
+# Avoid downloading binaryen (often blocked); ship unoptimized wasm for local/dev.
+wasm-opt = false

@@ -1,0 +1,29 @@
+{
+    "name": "@dxo/lite-unknown-wasm32",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "Internal WASM artifact for @dxo/lite (glue + .wasm; not a public API)",
+    "license": "Apache-2.0",
+    "main": "./dist/dxo_lite.js",
+    "types": "./dist/dxo_lite.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/dxo_lite.d.ts",
+            "default": "./dist/dxo_lite.js"
+        },
+        "./dxo_lite_bg.wasm": "./dist/dxo_lite_bg.wasm"
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "node ../../../scripts/build/lite-wasm.mjs"
+    },
+    "keywords": [
+        "dxo",
+        "wasm",
+        "internal"
+    ]
+}

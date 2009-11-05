@@ -6,7 +6,8 @@
     "scripts": {
         "build:ts": "pnpm --filter @dxo/core --filter @dxo/lite --filter @dxo/nn --filter @dxo/optimizer --filter @dxo/data --filter @dxo/serialize --filter @dxo/train --filter @dxo/inspect --filter @dxo/graph --filter @dxo/studio --filter @dxo/ui --filter @dxo/hub --filter @dxo/vision --filter @dxo/llm run build",
         "build:native": "node scripts/build/napi.mjs --release",
-        "build": "pnpm run build:ts && pnpm run build:native",
+        "build:lite-wasm": "node scripts/build/lite-wasm.mjs",
+        "build": "pnpm run build:lite-wasm && pnpm run build:ts && pnpm run build:native",
         "test": "pnpm run build && cargo test --release && pnpm run test:verify",
         "test:verify": "tsx scripts/test/smoke.ts && tsx scripts/test/tensor-cpu.ts && tsx scripts/test/autograd-fd.ts && tsx scripts/test/nn-forward.ts && tsx scripts/test/mnist-linear.ts && tsx scripts/test/g3-contract.ts && tsx scripts/test/data-iter.ts && tsx scripts/test/serialize-roundtrip.ts && tsx scripts/test/trainer-loop.ts && tsx scripts/test/gpu-matmul.ts && tsx scripts/test/lite-webgpu-smoke.ts && tsx scripts/test/runtime-contract-lite.ts && tsx scripts/test/runtime-contract-core.ts && tsx scripts/test/model-graph.ts && tsx scripts/test/studio-run-smoke.ts",
         "verify": "node scripts/verify.mjs",
@@ -18,10 +19,10 @@
         "placeholder": "node scripts/ci/publish-placeholder.mjs",
         "placeholder:publish": "node scripts/ci/publish-placeholder.mjs publish",
         "placeholder:trust": "node scripts/ci/publish-placeholder.mjs trust",
-        "homepage": "pnpm install && pnpm run build:ts && pnpm --filter @dxo/homepage build",
+        "homepage": "pnpm install && pnpm run build:lite-wasm && pnpm run build:ts && node scripts/build/stage-homepage-wasm.mjs && pnpm --filter @dxo/homepage build",
         "homepage:check": "pnpm --filter @dxo/homepage check",
-        "homepage:build": "pnpm --filter @dxo/homepage build",
-        "homepage:dev": "pnpm --filter @dxo/homepage dev",
+        "homepage:build": "node scripts/build/stage-homepage-wasm.mjs --force && pnpm --filter @dxo/homepage build",
+        "homepage:dev": "node scripts/build/stage-homepage-wasm.mjs --force && pnpm --filter @dxo/homepage dev",
         "homepage:preview": "pnpm --filter @dxo/homepage preview",
         "homepage:test:lite": "pnpm --filter @dxo/homepage test:lite"
     },
