@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO WebGPU/WASM runtime â€?createRuntime + CPU fallback (developer preview, API unstable)",
+    "description": "DXO WebGPU/WASM runtime - createRuntime + CPU fallback (developer preview, API unstable)",
     "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -19,5 +19,11 @@
     ],
     "scripts": {
         "build": "tsc -p tsconfig.json"
+    },
+    "dependencies": {
+        "@dxo/lite-unknown-wasm32": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.0"
     }
 }

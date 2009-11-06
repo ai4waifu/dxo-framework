@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
 import { createRuntime, version } from '@dxo/lite';
 
-const v = version();
-assert.equal(typeof v, 'string');
-assert.match(v, /lite/);
+assert.match(version(), /lite/);
 
 const rt = await createRuntime({ fallback: 'cpu' });
-assert.equal(rt.capabilities.webglTensorBackend, false);
-const backend = rt.capabilities.backend;
-const t = rt.zeros([2, 2]);
-assert.equal(t.constructor.name, 'Tensor');
-assert.deepEqual(await t.toArray(), [0, 0, 0, 0]);
-rt.destroy();
+assert.equal(rt.capabilities.backend, 'cpu');
+assert.ok(rt.capabilities.wasm, 'build lite-unknown-wasm32 first (pnpm build:lite-wasm)');
+const wasmVersion = rt.capabilities.wasm.version;
 
-console.log(`lite-probe ok: version=${v}, backend=${backend}`);
+const a = rt.tensor([1, 2, 3, 4], [2, 2]);
+const id = rt.tensor([1, 0, 0, 1], [2, 2]);
+const out = await a.matmul(id).toArray();
+assert.deepEqual(out, [1, 2, 3, 4]);
+
+rt.destroy();
+console.log(`lite-probe ok: version=${version()}, wasm=${wasmVersion}`);

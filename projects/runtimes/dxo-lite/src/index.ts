@@ -1,8 +1,8 @@
 /**
- * @dxo/lite — browser/Worker runtime facade (0.0.8+ thin gate).
+ * @dxo/lite — browser/Worker runtime facade.
  *
  * TS owns async init, capabilities, explicit CPU fallback, and synchronous Tensor composition.
- * GPU compute will load a WASM facade → dxo-core → Titan `titan-backend-wgpu` when ready.
+ * Interim path loads `@dxo/lite-unknown-wasm32` f32 kernels (not Titan wgpu yet).
  * This layer never retains `GPUAdapter` / `GPUDevice` handles.
  * WebGL is never a tensor backend.
  */
@@ -11,7 +11,7 @@ export type FallbackMode = 'cpu' | 'error';
 export type LiteBackend = 'webgpu' | 'cpu';
 export type PowerPreference = 'low-power' | 'high-performance';
 
-/** Set true when WASM + Titan wgpu facade is wired; until then compute stays host f32. */
+/** Set true when WASM + Titan wgpu facade is wired; until then compute stays host f32 (± interim WASM). */
 export const TITAN_WGPU_READY = false;
 
 export interface CreateRuntimeOptions {
@@ -25,6 +25,16 @@ export interface CreateRuntimeOptions {
      * - `'cpu'`: host f32 tensors with async observation barriers
      */
     fallback?: FallbackMode;
+    /**
+     * Interim `@dxo/lite-unknown-wasm32` load options.
+     * Pass `url` in browsers when the `.wasm` is served from a known public path
+     * (e.g. homepage `/dxo_lite_bg.wasm`).
+     */
+    wasm?: {
+        url?: string | URL;
+        /** Skip loading the interim WASM package (pure JS host kernels). */
+        disable?: boolean;
+    };
 }
 
 export interface LiteCapabilities {
@@ -36,6 +46,8 @@ export interface LiteCapabilities {
     titanWgpuReady: boolean;
     /** Always false — WebGL is not a DXO tensor backend. */
     webglTensorBackend: false;
+    /** Interim host-f32 WASM kernels from `@dxo/lite-unknown-wasm32`, if loaded. */
+    wasm?: { version: string; interimHostF32: boolean };
     features: readonly string[];
     limits: Readonly<Record<string, number>>;
     dtype: { readonly f32: true; readonly f16: boolean };
@@ -51,6 +63,19 @@ export interface LiteRuntime {
     /** Release runtime (no GPU handles in TS; safe to call more than once). */
     destroy(): void;
 }
+
+type WasmKernels = {
+    matmulF32: (
+        a: Float32Array,
+        aRows: number,
+        aCols: number,
+        b: Float32Array,
+        bCols: number,
+    ) => Float32Array;
+    addF32: (a: Float32Array, b: Float32Array) => Float32Array;
+    version: () => string;
+    isInterimHostF32: () => boolean;
+};
 
 /** Minimal GPU* shapes for adapter probe — not stored on {@link LiteRuntime}. */
 interface GpuAdapterInfo {
@@ -87,15 +112,12 @@ function assertShape(dataLen: number, shape: readonly number[]): void {
     }
 }
 
-function matmulHost(
+function matmulJs(
     a: Float32Array,
     aShape: readonly number[],
     b: Float32Array,
     bShape: readonly number[],
-): {
-    data: Float32Array;
-    shape: number[];
-} {
+): { data: Float32Array; shape: number[] } {
     if (aShape.length !== 2 || bShape.length !== 2) {
         throw new Error('lite matmul requires rank-2 tensors');
     }
@@ -113,22 +135,78 @@ function matmulHost(
     return { data: out, shape: [m, n] };
 }
 
-function addHost(a: Float32Array, b: Float32Array): Float32Array {
+function addJs(a: Float32Array, b: Float32Array): Float32Array {
     if (a.length !== b.length) throw new Error(`add length mismatch: ${a.length} vs ${b.length}`);
     const out = new Float32Array(a.length);
     for (let i = 0; i < a.length; i++) out[i] = a[i]! + b[i]!;
     return out;
 }
 
+function matmulWith(
+    kernels: WasmKernels | null,
+    a: Float32Array,
+    aShape: readonly number[],
+    b: Float32Array,
+    bShape: readonly number[],
+): { data: Float32Array; shape: number[] } {
+    if (aShape.length !== 2 || bShape.length !== 2) {
+        throw new Error('lite matmul requires rank-2 tensors');
+    }
+    const [m, k] = aShape as [number, number];
+    const [k2, n] = bShape as [number, number];
+    if (k !== k2) throw new Error(`matmul inner dim mismatch: ${k} vs ${k2}`);
+    if (kernels) {
+        return { data: kernels.matmulF32(a, m, k, b, n), shape: [m, n] };
+    }
+    return matmulJs(a, aShape, b, bShape);
+}
+
+function addWith(kernels: WasmKernels | null, a: Float32Array, b: Float32Array): Float32Array {
+    if (kernels) return kernels.addF32(a, b);
+    return addJs(a, b);
+}
+
+async function loadWasmKernels(options?: CreateRuntimeOptions['wasm']): Promise<WasmKernels | null> {
+    if (options?.disable) return null;
+    try {
+        const mod = await import('@dxo/lite-unknown-wasm32');
+        const init = mod.default;
+        if (options?.url) {
+            await init({ module_or_path: options.url });
+        } else if (typeof process !== 'undefined' && process.versions?.node) {
+            const { readFile } = await import('node:fs/promises');
+            const { createRequire } = await import('node:module');
+            const { dirname, join } = await import('node:path');
+            const require = createRequire(import.meta.url);
+            // Resolve entry `dist/dxo_lite.js` — wasm sits beside it (not via package.json export).
+            const entryJs = require.resolve('@dxo/lite-unknown-wasm32');
+            const wasmPath = join(dirname(entryJs), 'dxo_lite_bg.wasm');
+            await init({ module_or_path: await readFile(wasmPath) });
+        } else {
+            await init();
+        }
+        return {
+            matmulF32: mod.matmulF32,
+            addF32: mod.addF32,
+            version: mod.version,
+            isInterimHostF32: mod.isInterimHostF32,
+        };
+    } catch {
+        return null;
+    }
+}
+
 /** Dense float32 tensor. Ops synchronously return composable handles; observation is async. */
 export class Tensor {
     readonly #data: Float32Array;
+    readonly #kernels: WasmKernels | null;
     readonly shape: readonly number[];
     readonly device: LiteBackend;
 
     /** @internal */
-    constructor(data: Float32Array, shape: readonly number[], device: LiteBackend) {
+    constructor(data: Float32Array, shape: readonly number[], device: LiteBackend, kernels: WasmKernels | null) {
         this.#data = data;
+        this.#kernels = kernels;
         this.shape = Object.freeze([...shape]);
         this.device = device;
     }
@@ -138,15 +216,15 @@ export class Tensor {
     }
 
     matmul(other: Tensor): Tensor {
-        const { data, shape } = matmulHost(this.#data, this.shape, other.#data, other.shape);
-        return new Tensor(data, shape, this.device);
+        const { data, shape } = matmulWith(this.#kernels, this.#data, this.shape, other.#data, other.shape);
+        return new Tensor(data, shape, this.device, this.#kernels);
     }
 
     add(other: Tensor): Tensor {
         if (this.shape.length !== other.shape.length || this.shape.some((d, i) => d !== other.shape[i])) {
             throw new Error(`add requires identical shapes: [${this.shape}] vs [${other.shape}]`);
         }
-        return new Tensor(addHost(this.#data, other.#data), this.shape, this.device);
+        return new Tensor(addWith(this.#kernels, this.#data, other.#data), this.shape, this.device, this.#kernels);
     }
 
     /** Explicit host readback (copy). */
@@ -171,21 +249,23 @@ export class Tensor {
 
 class RuntimeImpl implements LiteRuntime {
     readonly capabilities: LiteCapabilities;
+    readonly #kernels: WasmKernels | null;
     #destroyed = false;
 
-    constructor(capabilities: LiteCapabilities) {
+    constructor(capabilities: LiteCapabilities, kernels: WasmKernels | null) {
         this.capabilities = capabilities;
+        this.#kernels = kernels;
     }
 
     tensor(data: ArrayLike<number>, shape: readonly number[]): Tensor {
         this.#assertLive();
         assertShape(data.length, shape);
-        return new Tensor(Float32Array.from(data), shape, this.capabilities.backend);
+        return new Tensor(Float32Array.from(data), shape, this.capabilities.backend, this.#kernels);
     }
 
     zeros(shape: readonly number[]): Tensor {
         this.#assertLive();
-        return new Tensor(new Float32Array(numel(shape)), shape, this.capabilities.backend);
+        return new Tensor(new Float32Array(numel(shape)), shape, this.capabilities.backend, this.#kernels);
     }
 
     ones(shape: readonly number[]): Tensor {
@@ -193,7 +273,7 @@ class RuntimeImpl implements LiteRuntime {
         const n = numel(shape);
         const data = new Float32Array(n);
         data.fill(1);
-        return new Tensor(data, shape, this.capabilities.backend);
+        return new Tensor(data, shape, this.capabilities.backend, this.#kernels);
     }
 
     destroy(): void {
@@ -205,12 +285,13 @@ class RuntimeImpl implements LiteRuntime {
     }
 }
 
-function cpuCapabilities(): LiteCapabilities {
+function cpuCapabilities(wasm?: LiteCapabilities['wasm']): LiteCapabilities {
     return {
         backend: 'cpu',
         webgpu: false,
         titanWgpuReady: TITAN_WGPU_READY,
         webglTensorBackend: false,
+        wasm,
         features: [],
         limits: {},
         dtype: { f32: true, f16: false },
@@ -282,12 +363,24 @@ function webGpuUnavailableError(): Error {
     );
 }
 
+function withWasmCap(base: LiteCapabilities, kernels: WasmKernels | null): LiteCapabilities {
+    if (!kernels) return base;
+    return {
+        ...base,
+        wasm: {
+            version: kernels.version(),
+            interimHostF32: kernels.isInterimHostF32(),
+        },
+    };
+}
+
 /**
  * Explicit async runtime bootstrap.
  * Never silently falls back to WebGL; never retains wgpu adapter/device in TS.
  */
 export async function createRuntime(options: CreateRuntimeOptions = {}): Promise<LiteRuntime> {
     const fallback: FallbackMode = options.fallback ?? 'error';
+    const kernels = await loadWasmKernels(options.wasm);
 
     if (TITAN_WGPU_READY) {
         // Future: dynamic import WASM facade → dxo-core → Titan wgpu session.
@@ -300,14 +393,14 @@ export async function createRuntime(options: CreateRuntimeOptions = {}): Promise
             if (fallback === 'error') {
                 throw titanNotReadyError();
             }
-            return new RuntimeImpl(probed);
+            return new RuntimeImpl(withWasmCap(probed, kernels), kernels);
         }
     } catch (err) {
         if (fallback === 'error') throw err;
     }
 
     if (fallback === 'cpu') {
-        return new RuntimeImpl(cpuCapabilities());
+        return new RuntimeImpl(withWasmCap(cpuCapabilities(), kernels), kernels);
     }
 
     if (!getGpu()) {
