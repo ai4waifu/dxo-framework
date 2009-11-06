@@ -4,6 +4,7 @@
       <a class="dxo-home__brand" href="/"><strong>DXO</strong></a>
       <nav class="dxo-home__nav">
         <a href="/lite">@dxo/lite</a>
+        <a href="/playground">Playground</a>
       </nav>
     </header>
 
@@ -20,11 +21,13 @@
       <dl>
         <div><dt>version</dt><dd>{liteVersion}</dd></div>
         <div><dt>backend</dt><dd>{liteBackend}</dd></div>
+        <div><dt>wasm</dt><dd>{liteWasm}</dd></div>
         <div><dt>Tensor</dt><dd>{liteTensorClass}</dd></div>
         <div><dt>matmul</dt><dd>{liteMatmul}</dd></div>
       </dl>
       <p class="dxo-home__hint">
         Async <code>createRuntime</code> — probes WebGPU only; host f32 until Titan WASM; never WebGL.
+        Try the interactive <a href="/playground">playground</a>.
       </p>
     </section>
   </main>
@@ -36,6 +39,7 @@ import { probeLite } from '../lib/lite-probe.ts';
 export default class IndexPage {
     liteVersion = '…';
     liteBackend = '…';
+    liteWasm = '…';
     liteTensorClass = '…';
     liteMatmul = '…';
 
@@ -43,6 +47,7 @@ export default class IndexPage {
         const probe = await probeLite();
         this.liteVersion = probe.version;
         this.liteBackend = probe.backend;
+        this.liteWasm = probe.wasmVersion;
         this.liteTensorClass = probe.tensorClass;
         this.liteMatmul = probe.matmulOk ? 'ok' : 'fail';
     }

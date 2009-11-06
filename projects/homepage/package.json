@@ -3,9 +3,11 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO marketing homepage â€?VMZ frontend with @dxo/lite smoke surface",
+    "description": "DXO marketing homepage - VMZ frontend with @dxo/lite smoke surface",
     "scripts": {
         "check": "vmz check .",
+        "predev": "node ../../scripts/build/stage-homepage-wasm.mjs",
+        "prebuild": "node ../../scripts/build/stage-homepage-wasm.mjs",
         "build": "vmz build --release --profile static . && node ../../scripts/build/homepage-cdn.mjs",
         "dev": "vmz dev .",
         "preview": "vmz serve --profile static .",

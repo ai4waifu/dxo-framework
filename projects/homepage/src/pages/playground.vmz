@@ -1,0 +1,171 @@
+<template>
+  <main class="dxo-play">
+    <header class="dxo-home__header">
+      <a class="dxo-home__brand" href="/"><strong>DXO</strong></a>
+      <nav class="dxo-home__nav">
+        <a href="/">Home</a>
+        <a href="/lite">@dxo/lite</a>
+        <a href="/playground" aria-current="page">Playground</a>
+      </nav>
+    </header>
+
+    <h1>@dxo/lite playground</h1>
+    <p class="dxo-play__lede">
+      Interactive browser demo via <code>createRuntime</code>. Kernels come from
+      <code>@dxo/lite-unknown-wasm32</code> when <code>/dxo_lite_bg.wasm</code> is available
+      (<code>pnpm build:lite-wasm</code> · <code>pnpm homepage:dev</code>).
+    </p>
+
+    <section class="dxo-home__card">
+      <h2>Runtime</h2>
+      <p class="dxo-play__status">{status}</p>
+      <dl>
+        <div><dt>lite</dt><dd>{liteVersion}</dd></div>
+        <div><dt>backend</dt><dd>{backend}</dd></div>
+        <div><dt>wasm</dt><dd>{wasmVersion}</dd></div>
+        <div><dt>interimHostF32</dt><dd>{wasmInterim}</dd></div>
+        <div><dt>webgpu probe</dt><dd>{webgpu}</dd></div>
+      </dl>
+    </section>
+
+    <section class="dxo-home__card dxo-play__ops">
+      <h2>2×2 f32 ops</h2>
+      <label class="dxo-play__field">
+        <span>A (row-major · 4 numbers)</span>
+        <input type="text" value={aText} onInput={onA} spellcheck="false" autocomplete="off" />
+      </label>
+      <label class="dxo-play__field">
+        <span>B</span>
+        <input type="text" value={bText} onInput={onB} spellcheck="false" autocomplete="off" />
+      </label>
+      <div class="dxo-play__actions">
+        <button type="button" class="dxo-play__btn" onClick={runMatmul}>matmul</button>
+        <button type="button" class="dxo-play__btn dxo-play__btn--ghost" onClick={runAdd}>add</button>
+        <button type="button" class="dxo-play__btn dxo-play__btn--ghost" onClick={loadIdentity}>A·I demo</button>
+        <button type="button" class="dxo-play__btn dxo-play__btn--ghost" onClick={loadOnes}>ones</button>
+      </div>
+      <pre class="dxo-play__out">{result}</pre>
+    </section>
+  </main>
+</template>
+
+<script client>
+import { openHomepageRuntime, version } from '../lib/lite-probe.ts';
+
+function parseNums(text) {
+    return text
+        .trim()
+        .split(/[\s,]+/)
+        .filter(Boolean)
+        .map((s) => Number(s));
+}
+
+function formatMatrix(out) {
+    return `[${out[0]}, ${out[1]}]\n[${out[2]}, ${out[3]}]`;
+}
+
+export default class PlaygroundPage {
+    status = 'booting…';
+    liteVersion = '';
+    backend = '';
+    wasmVersion = '';
+    wasmInterim = '';
+    webgpu = '';
+    aText = '1, 2, 3, 4';
+    bText = '1, 0, 0, 1';
+    result = 'Run matmul or add after the runtime is ready.';
+    #rt = null;
+
+    onA(e) {
+        this.aText = e.target?.value ?? this.aText;
+    }
+
+    onB(e) {
+        this.bText = e.target?.value ?? this.bText;
+    }
+
+    async onMount() {
+        try {
+            this.#rt = await openHomepageRuntime();
+            this.liteVersion = version();
+            this.backend = this.#rt.capabilities.backend;
+            this.webgpu = String(this.#rt.capabilities.webgpu);
+            const wasm = this.#rt.capabilities.wasm;
+            this.wasmVersion = wasm?.version ?? '(not loaded — run pnpm build:lite-wasm)';
+            this.wasmInterim = String(wasm?.interimHostF32 ?? false);
+            this.status = wasm ? 'ready · WASM f32 kernels' : 'ready · JS host kernels (WASM missing)';
+        } catch (err) {
+            this.status = err instanceof Error ? err.message : String(err);
+            this.result = 'createRuntime failed — check console / wasm staging.';
+        }
+    }
+
+    onDestroy() {
+        this.#rt?.destroy();
+        this.#rt = null;
+    }
+
+    loadIdentity() {
+        this.aText = '1, 2, 3, 4';
+        this.bText = '1, 0, 0, 1';
+        this.result = '';
+    }
+
+    loadOnes() {
+        this.aText = '1, 1, 1, 1';
+        this.bText = '1, 1, 1, 1';
+        this.result = '';
+    }
+
+    #parsePair() {
+        const aData = parseNums(this.aText);
+        const bData = parseNums(this.bText);
+        if (
+            aData.length !== 4 ||
+            bData.length !== 4 ||
+            aData.some((n) => Number.isNaN(n)) ||
+            bData.some((n) => Number.isNaN(n))
+        ) {
+            return null;
+        }
+        return { aData, bData };
+    }
+
+    async runMatmul() {
+        if (!this.#rt) return;
+        const pair = this.#parsePair();
+        if (!pair) {
+            this.result = 'need 4 finite numbers for each of A and B (2×2)';
+            return;
+        }
+        try {
+            const a = this.#rt.tensor(pair.aData, [2, 2]);
+            const b = this.#rt.tensor(pair.bData, [2, 2]);
+            const c = a.matmul(b);
+            await c.ready();
+            const out = await c.toArray();
+            this.result = `matmul  [2,2] × [2,2] → [2,2]\n${formatMatrix(out)}`;
+        } catch (err) {
+            this.result = err instanceof Error ? err.message : String(err);
+        }
+    }
+
+    async runAdd() {
+        if (!this.#rt) return;
+        const pair = this.#parsePair();
+        if (!pair) {
+            this.result = 'need 4 finite numbers for each of A and B';
+            return;
+        }
+        try {
+            const a = this.#rt.tensor(pair.aData, [2, 2]);
+            const b = this.#rt.tensor(pair.bData, [2, 2]);
+            const c = a.add(b);
+            const out = await c.toArray();
+            this.result = `add  [2,2] + [2,2] → [2,2]\n${formatMatrix(out)}`;
+        } catch (err) {
+            this.result = err instanceof Error ? err.message : String(err);
+        }
+    }
+}
+</script>

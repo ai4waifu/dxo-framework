@@ -64,4 +64,20 @@ for (const rel of relPaths) {
     copyRel(rel);
 }
 
+/** Browser playground fetches `/dxo_lite_bg.wasm` from site root. */
+const wasmName = 'dxo_lite_bg.wasm';
+const wasmFromPublic = path.join(ROOT, 'projects/homepage/public', wasmName);
+const wasmFromDist = path.join(distDir, wasmName);
+const wasmSrc = fs.existsSync(wasmFromDist)
+    ? wasmFromDist
+    : fs.existsSync(wasmFromPublic)
+      ? wasmFromPublic
+      : null;
+if (wasmSrc) {
+    fs.copyFileSync(wasmSrc, path.join(cdnDir, wasmName));
+    relPaths.add(wasmName);
+} else {
+    console.warn(`homepage-cdn: missing ${wasmName} (run stage-homepage-wasm / build:lite-wasm)`);
+}
+
 console.log(`homepage-cdn: staged ${relPaths.size} path(s) → ${cdnDir}`);

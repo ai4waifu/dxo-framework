@@ -4,6 +4,7 @@
       <a class="dxo-home__brand" href="/"><strong>DXO</strong></a>
       <nav class="dxo-home__nav">
         <a href="/">Home</a>
+        <a href="/playground">Playground</a>
       </nav>
     </header>
 
@@ -17,6 +18,7 @@
       <dl>
         <div><dt>version()</dt><dd>{liteVersion}</dd></div>
         <div><dt>capabilities.backend</dt><dd>{liteBackend}</dd></div>
+        <div><dt>wasm</dt><dd>{liteWasm}</dd></div>
         <div><dt>webgpu</dt><dd>{liteWebgpu}</dd></div>
         <div><dt>titanWgpuReady</dt><dd>{liteTitanReady}</dd></div>
         <div><dt>webglTensorBackend</dt><dd>{liteWebgl}</dd></div>
@@ -38,6 +40,7 @@ import { probeLite } from '../lib/lite-probe.ts';
 export default class LiteTestPage {
     liteVersion = '';
     liteBackend = '';
+    liteWasm = '';
     liteWebgpu = '';
     liteTitanReady = '';
     liteWebgl = '';
@@ -48,6 +51,7 @@ export default class LiteTestPage {
         const probe = await probeLite();
         this.liteVersion = probe.version;
         this.liteBackend = probe.backend;
+        this.liteWasm = probe.wasmVersion;
         this.liteWebgpu = String(probe.webgpu);
         this.liteTitanReady = String(probe.titanWgpuReady);
         this.liteWebgl = String(probe.webglTensorBackend);

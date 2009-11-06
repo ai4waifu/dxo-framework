@@ -1,16 +1,16 @@
 # 🏠 @dxo/homepage
 
-DXO 产品首页（VMZ 静态站），页面与 Node 脚本中探测 `@dxo/lite`。
+DXO 产品首页（VMZ 静态站），含 `@dxo/lite` probe 与 **Playground**。
 
 ## 命令
 
 仓库根目录：
 
 ```bash
-pnpm homepage              # install + build + stage dist/cdn（CF Pages 同款）
-pnpm homepage:test:lite    # Node 侧 @dxo/lite 合同
-pnpm homepage:dev          # 本地开发
-pnpm homepage:preview      # 预览 static 产物
+pnpm build:lite-wasm       # 编译 @dxo/lite-unknown-wasm32（本地测 playground 必做）
+pnpm homepage:dev          # --force 重建 wasm → public/，再 vmz dev
+pnpm homepage              # install + wasm + TS + 静态构建
+pnpm homepage:test:lite    # Node 侧 @dxo/lite 合同（需已 build:lite-wasm）
 ```
 
 `projects/homepage` 内：
@@ -22,11 +22,20 @@ pnpm build
 
 - `/` — 首页 + lite probe 卡片
 - `/lite` — `@dxo/lite` 详细测试面
+- `/playground` — 浏览器 matmul/add 交互（读 `/dxo_lite_bg.wasm`）
+
+本地测 playground 前必须：
+
+```bash
+pnpm build:lite-wasm
+# 或直接 pnpm homepage:dev（会自动 stage）
+```
 
 构建产物：
 
 - `dist/` — VMZ 完整构建树（开发/诊断）
 - `dist/cdn/` — **静态托管根**（仅 HTML、assets、robots、sitemap、404）
+- `public/dxo_lite_bg.wasm` — 由 `stage-homepage-wasm` 从 lite-unknown-wasm32 复制
 
 ## Cloudflare Pages
 
@@ -52,5 +61,5 @@ pnpm build
 
 | 包 | 来源 |
 |----|------|
-| `@dxo/lite` | workspace |
+| `@dxo/lite` | workspace（依赖 `@dxo/lite-unknown-wasm32`） |
 | `@vmz/core` / `@vmz/vmz` | npm |
