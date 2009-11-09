@@ -13,6 +13,7 @@ mod ops;
 mod shape;
 mod storage;
 mod tensor;
+mod transformer;
 
 pub use autograd::{is_grad_enabled, set_grad_enabled, without_grad};
 pub use cuda::is_available as cuda_available;

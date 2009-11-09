@@ -199,6 +199,63 @@ impl Tensor {
         Ok(Tensor { inner: self.inner.batch_norm2d(&gamma.inner, &beta.inner, eps.unwrap_or(1e-5) as f32).map_err(map_err)? })
     }
 
+    /// LayerNorm over the last dimension.
+    #[napi]
+    pub fn layer_norm(&self, weight: &Tensor, bias: &Tensor, eps: Option<f64>) -> Result<Tensor> {
+        Ok(Tensor {
+            inner: self
+                .inner
+                .layer_norm(&weight.inner, &bias.inner, eps.unwrap_or(1e-5) as f32)
+                .map_err(map_err)?,
+        })
+    }
+
+    /// Batch matmul `[B,M,K] @ [B,K,N]`.
+    #[napi]
+    pub fn bmm(&self, other: &Tensor) -> Result<Tensor> {
+        Ok(Tensor { inner: self.inner.bmm(&other.inner).map_err(map_err)? })
+    }
+
+    /// Swap the last two axes.
+    #[napi]
+    pub fn transpose_last(&self) -> Result<Tensor> {
+        Ok(Tensor { inner: self.inner.transpose_last().map_err(map_err)? })
+    }
+
+    /// Swap two axes.
+    #[napi]
+    pub fn transpose_dims(&self, dim0: u32, dim1: u32) -> Result<Tensor> {
+        Ok(Tensor {
+            inner: self.inner.transpose_dims(dim0 as usize, dim1 as usize).map_err(map_err)?,
+        })
+    }
+
+    /// Scaled dot-product attention; `q/k/v` are `[B,H,T,D]` (`self` = q).
+    #[napi]
+    pub fn scaled_dot_product_attention(
+        &self,
+        k: &Tensor,
+        v: &Tensor,
+        causal: Option<bool>,
+    ) -> Result<Tensor> {
+        Ok(Tensor {
+            inner: CoreTensor::scaled_dot_product_attention(
+                &self.inner,
+                &k.inner,
+                &v.inner,
+                causal.unwrap_or(false),
+            )
+            .map_err(map_err)?,
+        })
+    }
+
+    /// Retag logical dtype without changing host f32 payload.
+    #[napi]
+    pub fn cast_dtype(&self, dtype: String) -> Result<Tensor> {
+        let d = dxo_core::DType::parse(&dtype).map_err(|e| Error::from_reason(e))?;
+        Ok(Tensor { inner: self.inner.cast_dtype(d) })
+    }
+
     /// Sum all elements to a scalar tensor of shape `[1]`.
     #[napi]
     pub fn sum(&self) -> Result<Tensor> {
@@ -242,6 +299,12 @@ impl Tensor {
 pub fn cat(tensors: Vec<&Tensor>, dim: u32) -> Result<Tensor> {
     let owned: Vec<CoreTensor> = tensors.iter().map(|t| t.inner.clone()).collect();
     Ok(Tensor { inner: CoreTensor::cat(&owned, dim as usize).map_err(map_err)? })
+}
+
+/// Gather embedding rows: `weight` `[vocab, dim]`, `indices` integer ids (as f32 storage).
+#[napi]
+pub fn embedding(weight: &Tensor, indices: &Tensor) -> Result<Tensor> {
+    Ok(Tensor { inner: CoreTensor::embedding(&weight.inner, &indices.inner).map_err(map_err)? })
 }
 
 /// Stack tensors along new dimension `dim`.

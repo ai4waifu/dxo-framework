@@ -3,7 +3,7 @@
 use std::fmt;
 use std::sync::Arc;
 
-use rand::Rng;
+use rand::RngExt;
 
 use crate::autograd::{GradFn, GradSlot, accumulate_grad, is_grad_enabled, new_grad_slot, propagate, sum_to_shape};
 use crate::broadcast::{broadcast_offset, broadcast_shapes, for_each_index};
@@ -177,6 +177,11 @@ impl Tensor {
     /// Logical dtype tag.
     pub fn dtype(&self) -> DType {
         self.dtype
+    }
+
+    /// Retag logical dtype (host payload stays f32 in this preview).
+    pub fn set_dtype(&mut self, dtype: DType) {
+        self.dtype = dtype;
     }
 
     /// Current device tag (`cpu` / `cuda`).
