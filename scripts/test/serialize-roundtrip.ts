@@ -4,8 +4,10 @@ import { Linear } from '@dxo/nn';
 import {
     decodeJson,
     decodeLinearState,
+    decodeSafetensors,
     encodeJson,
     encodeLinearState,
+    encodeSafetensors,
     packTensors,
     STATE_FORMAT,
     STATE_VERSION,
@@ -41,4 +43,16 @@ assert.deepEqual(unpackTensors(packed).a!.data, [3, 4]);
 assert.throws(() => decodeJson(JSON.stringify({ format: 'nope', version: 1, tensors: {} })));
 assert.throws(() => decodeJson(JSON.stringify({ format: STATE_FORMAT, version: 99, tensors: {} })));
 
-console.log('serialize-roundtrip ok: Linear state JSON v1');
+const stBytes = encodeSafetensors({
+    weight: round.weight,
+    bias: round.bias,
+});
+const stRound = decodeSafetensors(stBytes);
+assert.deepEqual(stRound.weight!.data, round.weight.data);
+assert.deepEqual(stRound.bias!.data, round.bias.data);
+assert.deepEqual(stRound.weight!.shape, [2, 1]);
+
+const fromUnaligned = decodeSafetensors(Uint8Array.from(stBytes));
+assert.deepEqual(fromUnaligned.weight!.data, round.weight.data);
+
+console.log('serialize-roundtrip ok (json + safetensors F32)');

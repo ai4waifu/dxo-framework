@@ -103,6 +103,12 @@ export function decodeJson(text: string): StateDocument {
     return doc;
 }
 
+export {
+    decodeSafetensors,
+    encodeSafetensors,
+    type SafetensorSlice,
+} from './safetensors.js';
+
 function assertDocument(doc: StateDocument): asserts doc is StateDocumentV1 {
     if (!doc || typeof doc !== 'object') throw new Error('invalid state document');
     if (doc.format !== STATE_FORMAT) throw new Error(`unexpected format '${String((doc as { format?: string }).format)}'`);

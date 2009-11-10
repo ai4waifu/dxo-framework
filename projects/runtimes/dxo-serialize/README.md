@@ -12,6 +12,7 @@ Versioned module / tensor state codec for DXO. No Node FS dependency — encode 
 | `packTensors` / `unpackTensors` | Named `{ shape, data }` blobs |
 | `encodeLinearState` / `decodeLinearState` | Interop with `@dxo/nn` `Linear.state()` |
 | `encodeJson` / `decodeJson` | UTF-8 JSON document |
+| `encodeSafetensors` / `decodeSafetensors` | HF safetensors binary (F32 v0) |
 
 ```typescript
 import { encodeJson, encodeLinearState, decodeJson, decodeLinearState } from '@dxo/serialize';

@@ -156,7 +156,11 @@ importers:
         specifier: workspace:*
         version: link:../dxo-core
 
-  projects/runtimes/dxo-serialize: {}
+  projects/runtimes/dxo-serialize:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
 
   projects/runtimes/dxo-skills: {}
 
