@@ -1,2 +1,13 @@
-export type { LinearState, TensorStateSlice } from './module.js';
-export { Linear, Module, Relu, relu, Sequential } from './module.js';
+export type { EmbeddingState, LayerNormState, LinearState, TensorStateSlice } from './module.js';
+export {
+    Embedding,
+    LayerNorm,
+    Linear,
+    Module,
+    MultiheadAttention,
+    Relu,
+    relu,
+    Sequential,
+    TinyTransformer,
+    TransformerBlock,
+} from './module.js';

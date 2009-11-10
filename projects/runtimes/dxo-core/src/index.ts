@@ -141,6 +141,36 @@ export class Tensor {
         return new Tensor(this.#handle.batchNorm2d(gamma.nativeHandle, beta.nativeHandle, eps));
     }
 
+    /** LayerNorm over the last dimension. */
+    layerNorm(weight: Tensor, bias: Tensor, eps = 1e-5): Tensor {
+        return new Tensor(this.#handle.layerNorm(weight.nativeHandle, bias.nativeHandle, eps));
+    }
+
+    /** Batch matmul `[B,M,K] @ [B,K,N]`. */
+    bmm(other: Tensor): Tensor {
+        return new Tensor(this.#handle.bmm(other.nativeHandle));
+    }
+
+    /** Swap the last two axes. */
+    transposeLast(): Tensor {
+        return new Tensor(this.#handle.transposeLast());
+    }
+
+    /** Swap two axes. */
+    transposeDims(dim0: number, dim1: number): Tensor {
+        return new Tensor(this.#handle.transposeDims(dim0, dim1));
+    }
+
+    /** Scaled dot-product attention; `this`/`k`/`v` are `[B,H,T,D]`. */
+    scaledDotProductAttention(k: Tensor, v: Tensor, causal = false): Tensor {
+        return new Tensor(this.#handle.scaledDotProductAttention(k.nativeHandle, v.nativeHandle, causal));
+    }
+
+    /** Retag logical dtype without changing host f32 payload. */
+    castDtype(dtype: DType): Tensor {
+        return new Tensor(this.#handle.castDtype(dtype));
+    }
+
     /** Values only — drops requiresGrad and tape edges. */
     detach(): Tensor {
         return new Tensor(this.#handle.detach());
@@ -216,6 +246,11 @@ export function randn(shape: readonly number[], options: TensorOptions = {}): Te
     assertCpu(options);
     const native = loadNative();
     return new Tensor(native.randn([...shape], options.requiresGrad ?? false));
+}
+
+/** Gather embedding rows: `weight` `[vocab, dim]`, `indices` integer ids. */
+export function embedding(weight: Tensor, indices: Tensor): Tensor {
+    return new Tensor(loadNative().embedding(weight.nativeHandle, indices.nativeHandle));
 }
 
 /** Host draw for sync init paths (e.g. Linear weight init). */

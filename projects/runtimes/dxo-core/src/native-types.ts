@@ -24,6 +24,12 @@ export interface NativeTensor {
     conv2d(weight: NativeTensor, bias: NativeTensor | null, stride: number, padding: number): NativeTensor;
     maxPool2d(kernel: number, stride: number, padding: number): NativeTensor;
     batchNorm2d(gamma: NativeTensor, beta: NativeTensor, eps?: number): NativeTensor;
+    layerNorm(weight: NativeTensor, bias: NativeTensor, eps?: number): NativeTensor;
+    bmm(other: NativeTensor): NativeTensor;
+    transposeLast(): NativeTensor;
+    transposeDims(dim0: number, dim1: number): NativeTensor;
+    scaledDotProductAttention(k: NativeTensor, v: NativeTensor, causal?: boolean): NativeTensor;
+    castDtype(dtype: string): NativeTensor;
     detach(): NativeTensor;
     to(device: string): NativeTensor;
     zeroGrad(): void;
@@ -44,4 +50,5 @@ export interface NativeAddon {
     randn(shape: number[], requiresGrad?: boolean): NativeTensor;
     cat(tensors: NativeTensor[], dim: number): NativeTensor;
     stack(tensors: NativeTensor[], dim: number): NativeTensor;
+    embedding(weight: NativeTensor, indices: NativeTensor): NativeTensor;
 }
