@@ -26,6 +26,7 @@ const suites = {
     'studio-ui-wave2': 'scripts/test/studio-ui-wave2.ts',
     'model-app-image': 'scripts/test/model-app-image.ts',
     'framework-core-transformer': 'scripts/test/framework-core-transformer.ts',
+    'model-runtime-text': 'scripts/test/model-runtime-text.ts',
 };
 
 if (!id || !(id in suites)) {

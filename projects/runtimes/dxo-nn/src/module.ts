@@ -316,4 +316,66 @@ export class TinyTransformer extends Module {
         }
         return this.head.forward(this.lnF.forward(x));
     }
+
+    /** Flat named tensors for safetensors / checkpoint (stable keys). */
+    async state(): Promise<Record<string, TensorStateSlice>> {
+        const out: Record<string, TensorStateSlice> = {};
+        const put = async (key: string, t: Tensor) => {
+            out[key] = { shape: [...t.shape], data: await t.toArray() };
+        };
+        await put('tok_embed.weight', this.tokEmbed.weight);
+        await put('pos_embed.weight', this.posEmbed.weight);
+        for (let i = 0; i < this.blocks.length; i++) {
+            const block = this.blocks[i]!;
+            const p = `blocks.${i}`;
+            await put(`${p}.ln1.weight`, block.ln1.weight);
+            await put(`${p}.ln1.bias`, block.ln1.bias);
+            await put(`${p}.attn.qkv.weight`, block.attn.qkv.weight);
+            await put(`${p}.attn.qkv.bias`, block.attn.qkv.bias);
+            await put(`${p}.attn.proj.weight`, block.attn.proj.weight);
+            await put(`${p}.attn.proj.bias`, block.attn.proj.bias);
+            await put(`${p}.ln2.weight`, block.ln2.weight);
+            await put(`${p}.ln2.bias`, block.ln2.bias);
+            await put(`${p}.fc1.weight`, block.fc1.weight);
+            await put(`${p}.fc1.bias`, block.fc1.bias);
+            await put(`${p}.fc2.weight`, block.fc2.weight);
+            await put(`${p}.fc2.bias`, block.fc2.bias);
+        }
+        await put('ln_f.weight', this.lnF.weight);
+        await put('ln_f.bias', this.lnF.bias);
+        await put('head.weight', this.head.weight);
+        await put('head.bias', this.head.bias);
+        return out;
+    }
+
+    loadState(saved: Record<string, TensorStateSlice>, opts: { requiresGrad?: boolean } = {}): void {
+        const rg = opts.requiresGrad ?? true;
+        const take = (key: string): Tensor => {
+            const slice = saved[key];
+            if (!slice) throw new Error(`TinyTransformer.loadState: missing '${key}'`);
+            return tensor(slice.data, slice.shape, { requiresGrad: rg });
+        };
+        this.tokEmbed.weight = take('tok_embed.weight');
+        this.posEmbed.weight = take('pos_embed.weight');
+        for (let i = 0; i < this.blocks.length; i++) {
+            const block = this.blocks[i]!;
+            const p = `blocks.${i}`;
+            block.ln1.weight = take(`${p}.ln1.weight`);
+            block.ln1.bias = take(`${p}.ln1.bias`);
+            block.attn.qkv.weight = take(`${p}.attn.qkv.weight`);
+            block.attn.qkv.bias = take(`${p}.attn.qkv.bias`);
+            block.attn.proj.weight = take(`${p}.attn.proj.weight`);
+            block.attn.proj.bias = take(`${p}.attn.proj.bias`);
+            block.ln2.weight = take(`${p}.ln2.weight`);
+            block.ln2.bias = take(`${p}.ln2.bias`);
+            block.fc1.weight = take(`${p}.fc1.weight`);
+            block.fc1.bias = take(`${p}.fc1.bias`);
+            block.fc2.weight = take(`${p}.fc2.weight`);
+            block.fc2.bias = take(`${p}.fc2.bias`);
+        }
+        this.lnF.weight = take('ln_f.weight');
+        this.lnF.bias = take('ln_f.bias');
+        this.head.weight = take('head.weight');
+        this.head.bias = take('head.bias');
+    }
 }

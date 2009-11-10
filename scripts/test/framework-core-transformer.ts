@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import { embedding, tensor, withoutGrad } from '@dxo/core';
 import { Embedding, LayerNorm, TinyTransformer } from '@dxo/nn';
-import { packTensors, unpackTensors } from '@dxo/serialize';
+import { decodeSafetensors, encodeSafetensors, packTensors, unpackTensors } from '@dxo/serialize';
 
 // --- Embedding gather ---
 {
@@ -57,6 +57,19 @@ for (const key of Object.keys(named)) {
 
 const logits2 = withoutGrad(() => model.forward(tokens));
 assert.deepEqual([...logits2.shape], [2, 4, 8]);
+
+// --- Named state ↔ safetensors reload ---
+const namedState = await model.state();
+const st = encodeSafetensors(namedState);
+const reloaded = new TinyTransformer(8, 4, 8, 2, 1, { requiresGrad: false });
+reloaded.loadState(decodeSafetensors(st), { requiresGrad: false });
+const logits3 = withoutGrad(() => reloaded.forward(tokens));
+const a = await logits2.toArray();
+const b = await logits3.toArray();
+assert.equal(a.length, b.length);
+for (let i = 0; i < a.length; i++) {
+    assert.ok(Math.abs(a[i]! - b[i]!) < 1e-5);
+}
 
 console.log(
     `framework-core-transformer ok: params=${params.length} logits=${(await logits.toArray()).slice(0, 4).map((n) => +n.toFixed(3))}`,

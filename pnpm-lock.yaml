@@ -142,7 +142,17 @@ importers:
 
   projects/runtimes/dxo-lite-unknown-wasm32: {}
 
-  projects/runtimes/dxo-llm: {}
+  projects/runtimes/dxo-llm:
+    dependencies:
+      '@dxo/core':
+        specifier: workspace:*
+        version: link:../dxo-core
+      '@dxo/nn':
+        specifier: workspace:*
+        version: link:../dxo-nn
+      '@dxo/serialize':
+        specifier: workspace:*
+        version: link:../dxo-serialize
 
   projects/runtimes/dxo-nn:
     dependencies:
