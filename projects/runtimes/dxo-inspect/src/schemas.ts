@@ -67,8 +67,22 @@ export type ProfileSpan = {
 export type ProfileTraceV0 = {
     format: 'dxo-profile';
     version: 0;
+    /** When Titan emits no spans, set unavailable — never invent start/end times. */
+    availability?: 'ready' | 'unavailable';
+    unavailableReason?: string;
     spans: ProfileSpan[];
 };
+
+/** Helper: structured unavailable profile (empty spans). */
+export function profileTraceUnavailable(reason: string): ProfileTraceV0 {
+    return {
+        format: 'dxo-profile',
+        version: 0,
+        availability: 'unavailable',
+        unavailableReason: reason,
+        spans: [],
+    };
+}
 
 export function inspectVersion(): string {
     return `${INSPECT_PROTOCOL}@${INSPECT_PROTOCOL_VERSION}`;

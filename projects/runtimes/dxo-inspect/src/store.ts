@@ -8,6 +8,7 @@ import {
     INSPECT_PROTOCOL,
     INSPECT_PROTOCOL_VERSION,
     type InspectEventV0,
+    type ProfileTraceV0,
     type RunMetaV0,
     type RunStatus,
 } from './schemas.js';
@@ -121,6 +122,14 @@ export class RunRecorder {
 
     async writeImageSamples(data: ImageSamplesArtifactV0): Promise<string> {
         return this.writeArtifact('image-samples.json', 'image-samples', JSON.stringify(data, null, 2));
+    }
+
+    async writeProfileTrace(data: ProfileTraceV0): Promise<string> {
+        return this.writeArtifact('profile-trace.json', 'other', JSON.stringify(data, null, 2));
+    }
+
+    async writeModelGraph(data: unknown): Promise<string> {
+        return this.writeArtifact('model-graph.json', 'other', JSON.stringify(data, null, 2));
     }
 
     async close(status: Exclude<RunStatus, 'running'>, error?: string): Promise<void> {

@@ -10,8 +10,8 @@ use std::time::Duration;
 
 use crate::store::{
     artifacts_from_events, checkpoints_from_events, confusion_matrix_path, image_samples_path, list_runs, metrics_from_events,
-    mime_for_path, model_graph_path, read_artifact_bytes, read_artifact_text, read_events, read_json_artifact, read_run_meta,
-    safe_run_file,
+    mime_for_path, model_graph_path, profile_trace_path, read_artifact_bytes, read_artifact_text, read_events, read_json_artifact,
+    read_run_meta, safe_run_file,
 };
 
 /// Options for {@link InspectApiServer::bind}.
@@ -269,6 +269,10 @@ fn handle_run_path(rest: &str, runs_root: &Path) -> ApiResponse {
                     body: serde_json::json!({ "error": "internal_error", "message": err.to_string() }),
                 },
             },
+            Err(_) => ApiResponse::Json { status: 404, body: serde_json::json!({ "error": "not_found" }) },
+        },
+        "/profile-trace" => match read_json_artifact(&profile_trace_path(runs_root, &run_id)) {
+            Ok(data) => ApiResponse::Json { status: 200, body: serde_json::json!({ "runId": run_id, "profileTrace": data }) },
             Err(_) => ApiResponse::Json { status: 404, body: serde_json::json!({ "error": "not_found" }) },
         },
         other if other.starts_with("/artifacts/") => {

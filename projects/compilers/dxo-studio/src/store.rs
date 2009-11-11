@@ -141,6 +141,10 @@ pub fn model_graph_path(root: &Path, run_id: &str) -> PathBuf {
     run_dir(root, run_id).join(ARTIFACTS_DIR).join("model-graph.json")
 }
 
+pub fn profile_trace_path(root: &Path, run_id: &str) -> PathBuf {
+    run_dir(root, run_id).join(ARTIFACTS_DIR).join("profile-trace.json")
+}
+
 pub fn metrics_from_events(events: &[serde_json::Value]) -> Vec<serde_json::Value> {
     events
         .iter()

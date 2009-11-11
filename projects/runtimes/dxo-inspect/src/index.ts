@@ -15,6 +15,7 @@ export {
     type MetricV0,
     type ProfileSpan,
     type ProfileTraceV0,
+    profileTraceUnavailable,
     type RunMetaV0,
     type RunStatus,
 } from './schemas.js';
