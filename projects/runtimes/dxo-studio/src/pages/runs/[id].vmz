@@ -63,8 +63,23 @@
         <li each={checkpoints} as="c" key={c.uri}><code>{c.name}</code> · {c.uri}</li>
       </ul>
 
-      <h2>Model graph</h2>
+      <h2>Models</h2>
+      <p class="studio__hint">Module · Execution · Kernel are separate views — never one merged architecture diagram.</p>
+      <div class="studio__tabs">
+        <button class={tabClass('module')} onClick={() => selectGraphTab('module')}>Module</button>
+        <button class={tabClass('execution')} onClick={() => selectGraphTab('execution')}>Execution</button>
+        <button class={tabClass('kernel')} onClick={() => selectGraphTab('kernel')}>Kernel</button>
+      </div>
+      <p class="studio__meta" if={graphAvailability}>{graphAvailability}</p>
       <pre class="studio__pre">{graphText}</pre>
+
+      <h2>Profiler</h2>
+      <p class="studio__hint" if={!hasProfile}>{profileHint}</p>
+      <ul class="studio__list studio__list--compact" if={hasProfile}>
+        <li each={profileSpans} as="s" key={spanKey(s)}>
+          <code>{s.category}</code> {s.name} · {s.startMs}–{s.endMs} ms
+        </li>
+      </ul>
     </section>
   </main>
 </template>
@@ -78,11 +93,17 @@ export default class RunDetailPage {
     metrics = [];
     trainEvents = [];
     checkpoints = [];
+    graphTab = 'module';
+    graphBundle = null;
     graphText = '(none)';
+    graphAvailability = '';
     hasMatrix = false;
     matrixLabels = [];
     matrixRows = [];
     samples = [];
+    hasProfile = false;
+    profileHint = 'No profile-trace artifact (Titan spans required; timeline is never fabricated).';
+    profileSpans = [];
 
     metricKey(m) {
         return `${m.name}:${m.step ?? ''}:${m.wallTimeMs ?? ''}`;
@@ -90,6 +111,34 @@ export default class RunDetailPage {
 
     eventKey(e) {
         return `${e.type}:${e.wallTimeMs ?? ''}:${e.step ?? ''}:${e.epoch ?? ''}`;
+    }
+
+    spanKey(s) {
+        return `${s.category}:${s.name}:${s.startMs}:${s.endMs}`;
+    }
+
+    tabClass(tab) {
+        return this.graphTab === tab ? 'studio__tab studio__tab--active' : 'studio__tab';
+    }
+
+    selectGraphTab(tab) {
+        this.graphTab = tab;
+        this.renderGraphTab();
+    }
+
+    renderGraphTab() {
+        const bundle = this.graphBundle;
+        if (!bundle) {
+            this.graphText = '(no model-graph artifact)';
+            this.graphAvailability = '';
+            return;
+        }
+        const g = bundle[this.graphTab] ?? bundle.module;
+        const avail = g.availability === 'unavailable'
+            ? `unavailable: ${g.unavailableReason ?? 'n/a'}`
+            : `view=${g.view} · nodes=${(g.nodes ?? []).length}`;
+        this.graphAvailability = avail;
+        this.graphText = JSON.stringify(g, null, 2);
     }
 
     formatValue(v) {
@@ -138,6 +187,47 @@ export default class RunDetailPage {
         });
     }
 
+    normalizeGraphArtifact(raw) {
+        if (!raw || typeof raw !== 'object') return null;
+        if (raw.format === 'dxo-model-graph-bundle') return raw;
+        if (raw.format === 'dxo-model-graph') {
+            const emptyExec = {
+                format: 'dxo-model-graph',
+                version: 0,
+                view: 'execution',
+                availability: 'unavailable',
+                unavailableReason: 'legacy module-only artifact',
+                nodes: [],
+                edges: [],
+            };
+            const emptyKernel = {
+                format: 'dxo-model-graph',
+                version: 0,
+                view: 'kernel',
+                availability: 'unavailable',
+                unavailableReason: 'legacy module-only artifact',
+                nodes: [],
+                edges: [],
+            };
+            return {
+                format: 'dxo-model-graph-bundle',
+                version: 0,
+                module: raw.view === 'module' ? raw : {
+                    format: 'dxo-model-graph',
+                    version: 0,
+                    view: 'module',
+                    availability: 'unavailable',
+                    unavailableReason: 'legacy artifact was not module view',
+                    nodes: [],
+                    edges: [],
+                },
+                execution: raw.view === 'execution' ? raw : emptyExec,
+                kernel: raw.view === 'kernel' ? raw : emptyKernel,
+            };
+        }
+        return null;
+    }
+
     async onMount() {
         const parts = location.pathname.split('/').filter(Boolean);
         this.runId = parts[1] ?? '';
@@ -160,9 +250,11 @@ export default class RunDetailPage {
             this.checkpoints = ckRes.checkpoints ?? [];
             try {
                 const g = await apiGet(`/api/runs/${encodeURIComponent(this.runId)}/model-graph`);
-                this.graphText = JSON.stringify(g.graph, null, 2);
+                this.graphBundle = this.normalizeGraphArtifact(g.graph ?? g);
+                this.renderGraphTab();
             } catch {
-                this.graphText = '(no model-graph artifact)';
+                this.graphBundle = null;
+                this.renderGraphTab();
             }
             try {
                 const cm = await apiGet(`/api/runs/${encodeURIComponent(this.runId)}/confusion-matrix`);
@@ -175,6 +267,25 @@ export default class RunDetailPage {
                 this.buildSamples(imgs.imageSamples ?? imgs);
             } catch {
                 this.samples = [];
+            }
+            try {
+                const pr = await apiGet(`/api/runs/${encodeURIComponent(this.runId)}/profile-trace`);
+                const trace = pr.profileTrace ?? pr.trace ?? pr;
+                const spans = (trace.spans ?? []).filter(
+                    (s) => s && (s.category === 'kernel' || s.category === 'transfer' || s.category === 'readback' || s.category === 'op'),
+                );
+                if (trace.availability === 'unavailable' || spans.length === 0) {
+                    this.hasProfile = false;
+                    this.profileHint = trace.unavailableReason
+                        ?? 'ProfileTrace unavailable (no Titan spans; timeline not fabricated).';
+                    this.profileSpans = [];
+                } else {
+                    this.hasProfile = true;
+                    this.profileSpans = spans;
+                }
+            } catch {
+                this.hasProfile = false;
+                this.profileHint = 'No profile-trace artifact (Titan spans required; timeline is never fabricated).';
             }
         } catch (err) {
             this.status = err instanceof Error ? err.message : String(err);

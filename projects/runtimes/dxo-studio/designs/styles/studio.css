@@ -185,3 +185,24 @@
     font-size: 0.8rem;
     max-height: 24rem;
 }
+
+.studio__tabs {
+    display: flex;
+    gap: 0.35rem;
+    margin: 0.5rem 0 0.75rem;
+}
+
+.studio__tab {
+    border: 1px solid #ccd;
+    background: #f7f8f7;
+    color: #334;
+    padding: 0.35rem 0.7rem;
+    cursor: pointer;
+    font: inherit;
+}
+
+.studio__tab--active {
+    background: #2a4;
+    color: #fff;
+    border-color: #2a4;
+}

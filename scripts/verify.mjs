@@ -27,6 +27,7 @@ const suites = {
     'model-app-image': 'scripts/test/model-app-image.ts',
     'framework-core-transformer': 'scripts/test/framework-core-transformer.ts',
     'model-runtime-text': 'scripts/test/model-runtime-text.ts',
+    'profiler-trace': 'scripts/test/profiler-trace.ts',
 };
 
 if (!id || !(id in suites)) {
