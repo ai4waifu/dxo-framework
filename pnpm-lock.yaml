@@ -116,6 +116,9 @@ importers:
 
   projects/runtimes/dxo-graph:
     dependencies:
+      '@dxo/inspect':
+        specifier: workspace:*
+        version: link:../dxo-inspect
       '@dxo/nn':
         specifier: workspace:*
         version: link:../dxo-nn

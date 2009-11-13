@@ -7,6 +7,7 @@ export function emptyModelGraph(view: GraphViewKind = 'module'): ModelGraphV0 {
         format: MODEL_GRAPH_FORMAT,
         version: MODEL_GRAPH_VERSION,
         view,
+        availability: 'ready',
         nodes: [],
         edges: [],
     };

@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO model graph IR â€?module / execution / kernel views (placeholder, API unstable)",
+    "description": "DXO model graph IR: module / execution / kernel views (placeholder, API unstable)",
     "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -21,6 +21,7 @@
         "build": "tsc -p tsconfig.json"
     },
     "dependencies": {
+        "@dxo/inspect": "workspace:*",
         "@dxo/nn": "workspace:*"
     },
     "keywords": [
