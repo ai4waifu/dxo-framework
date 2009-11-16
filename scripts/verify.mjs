@@ -26,8 +26,10 @@ const suites = {
     'studio-ui-wave2': 'scripts/test/studio-ui-wave2.ts',
     'model-app-image': 'scripts/test/model-app-image.ts',
     'framework-core-transformer': 'scripts/test/framework-core-transformer.ts',
+    'framework-core-cnn': 'scripts/test/framework-core-cnn.ts',
     'model-runtime-text': 'scripts/test/model-runtime-text.ts',
     'profiler-trace': 'scripts/test/profiler-trace.ts',
+    'titan-event-dep': 'scripts/test/titan-event-dep.ts',
 };
 
 if (!id || !(id in suites)) {

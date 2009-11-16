@@ -177,7 +177,7 @@ impl Tensor {
     }
 
     /// 2D convolution NCHW.
-    #[napi]
+    #[napi(js_name = "conv2d")]
     pub fn conv2d(&self, weight: &Tensor, bias: Option<&Tensor>, stride: u32, padding: u32) -> Result<Tensor> {
         Ok(Tensor {
             inner: self
@@ -188,13 +188,13 @@ impl Tensor {
     }
 
     /// Max pool 2D NCHW.
-    #[napi]
+    #[napi(js_name = "maxPool2d")]
     pub fn max_pool2d(&self, kernel: u32, stride: u32, padding: u32) -> Result<Tensor> {
         Ok(Tensor { inner: self.inner.max_pool2d(kernel as usize, stride as usize, padding as usize).map_err(map_err)? })
     }
 
     /// Batch norm 2D (training-style).
-    #[napi]
+    #[napi(js_name = "batchNorm2d")]
     pub fn batch_norm2d(&self, gamma: &Tensor, beta: &Tensor, eps: Option<f64>) -> Result<Tensor> {
         Ok(Tensor { inner: self.inner.batch_norm2d(&gamma.inner, &beta.inner, eps.unwrap_or(1e-5) as f32).map_err(map_err)? })
     }

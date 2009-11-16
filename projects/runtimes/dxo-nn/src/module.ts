@@ -379,3 +379,174 @@ export class TinyTransformer extends Module {
         this.head.bias = take('head.bias');
     }
 }
+
+export interface Conv2dState {
+    weight: TensorStateSlice;
+    bias: TensorStateSlice;
+}
+
+/** 2D convolution NCHW / OIHW. */
+export class Conv2d extends Module {
+    weight: Tensor;
+    bias: Tensor;
+
+    constructor(
+        readonly inChannels: number,
+        readonly outChannels: number,
+        readonly kernelSize: number,
+        opts: { stride?: number; padding?: number; requiresGrad?: boolean } = {},
+    ) {
+        super();
+        this.stride = opts.stride ?? 1;
+        this.padding = opts.padding ?? 0;
+        const rg = opts.requiresGrad ?? true;
+        const fanIn = inChannels * kernelSize * kernelSize;
+        const scale = Math.sqrt(2 / fanIn);
+        const n = outChannels * inChannels * kernelSize * kernelSize;
+        const raw = randnValues([n]).map((v) => v * scale);
+        this.weight = tensor(raw, [outChannels, inChannels, kernelSize, kernelSize], { requiresGrad: rg });
+        this.bias = zeros([outChannels], { requiresGrad: rg });
+    }
+
+    readonly stride: number;
+    readonly padding: number;
+
+    forward(x: Tensor): Tensor {
+        return x.conv2d(this.weight, this.bias, this.stride, this.padding);
+    }
+
+    async state(): Promise<Conv2dState> {
+        return {
+            weight: { shape: [...this.weight.shape], data: await this.weight.toArray() },
+            bias: { shape: [...this.bias.shape], data: await this.bias.toArray() },
+        };
+    }
+
+    loadState(saved: Conv2dState, opts: { requiresGrad?: boolean } = {}): void {
+        const rg = opts.requiresGrad ?? true;
+        this.weight = tensor(saved.weight.data, saved.weight.shape, { requiresGrad: rg });
+        this.bias = tensor(saved.bias.data, saved.bias.shape, { requiresGrad: rg });
+    }
+}
+
+/** Max pooling 2D NCHW. */
+export class MaxPool2d extends Module {
+    constructor(
+        readonly kernelSize: number,
+        opts: { stride?: number; padding?: number } = {},
+    ) {
+        super();
+        this.stride = opts.stride ?? kernelSize;
+        this.padding = opts.padding ?? 0;
+    }
+
+    readonly stride: number;
+    readonly padding: number;
+
+    forward(x: Tensor): Tensor {
+        return x.maxPool2d(this.kernelSize, this.stride, this.padding);
+    }
+}
+
+export interface BatchNorm2dState {
+    weight: TensorStateSlice;
+    bias: TensorStateSlice;
+}
+
+/** Batch norm 2D (per-batch stats, training-style). */
+export class BatchNorm2d extends Module {
+    weight: Tensor;
+    bias: Tensor;
+
+    constructor(
+        readonly numFeatures: number,
+        opts: { eps?: number; requiresGrad?: boolean } = {},
+    ) {
+        super();
+        this.eps = opts.eps ?? 1e-5;
+        const rg = opts.requiresGrad ?? true;
+        this.weight = ones([numFeatures], { requiresGrad: rg });
+        this.bias = zeros([numFeatures], { requiresGrad: rg });
+    }
+
+    readonly eps: number;
+
+    forward(x: Tensor): Tensor {
+        return x.batchNorm2d(this.weight, this.bias, this.eps);
+    }
+
+    async state(): Promise<BatchNorm2dState> {
+        return {
+            weight: { shape: [...this.weight.shape], data: await this.weight.toArray() },
+            bias: { shape: [...this.bias.shape], data: await this.bias.toArray() },
+        };
+    }
+
+    loadState(saved: BatchNorm2dState, opts: { requiresGrad?: boolean } = {}): void {
+        const rg = opts.requiresGrad ?? true;
+        this.weight = tensor(saved.weight.data, saved.weight.shape, { requiresGrad: rg });
+        this.bias = tensor(saved.bias.data, saved.bias.shape, { requiresGrad: rg });
+    }
+}
+
+/** Tiny CNN: Conv → BN → ReLU → Pool → Linear. */
+export class TinyCnn extends Module {
+    conv: Conv2d;
+    bn: BatchNorm2d;
+    pool: MaxPool2d;
+    fc: Linear;
+
+    constructor(
+        readonly inChannels: number,
+        readonly numClasses: number,
+        opts: { channels?: number; spatial?: number; requiresGrad?: boolean } = {},
+    ) {
+        super();
+        const ch = opts.channels ?? 4;
+        const spatial = opts.spatial ?? 8;
+        const rg = opts.requiresGrad ?? true;
+        this.conv = new Conv2d(inChannels, ch, 3, { padding: 1, requiresGrad: rg });
+        this.bn = new BatchNorm2d(ch, { requiresGrad: rg });
+        this.pool = new MaxPool2d(2);
+        const flat = ch * Math.floor(spatial / 2) * Math.floor(spatial / 2);
+        this.fc = new Linear(flat, numClasses, { requiresGrad: rg });
+    }
+
+    forward(x: Tensor): Tensor {
+        let h = this.conv.forward(x);
+        h = this.bn.forward(h);
+        h = relu(h);
+        h = this.pool.forward(h);
+        const n = h.shape[0]!;
+        return this.fc.forward(h.reshape([n, h.numel() / n]));
+    }
+
+    async state(): Promise<Record<string, TensorStateSlice>> {
+        const c = await this.conv.state();
+        const b = await this.bn.state();
+        const f = await this.fc.state();
+        return {
+            'conv.weight': c.weight,
+            'conv.bias': c.bias,
+            'bn.weight': b.weight,
+            'bn.bias': b.bias,
+            'fc.weight': f.weight,
+            'fc.bias': f.bias,
+        };
+    }
+
+    loadState(saved: Record<string, TensorStateSlice>, opts: { requiresGrad?: boolean } = {}): void {
+        const rg = opts.requiresGrad ?? true;
+        const take = (k: string) => {
+            const t = saved[k];
+            if (!t) throw new Error(`TinyCnn missing state key ${k}`);
+            return tensor(t.data, t.shape, { requiresGrad: rg });
+        };
+        this.conv.weight = take('conv.weight');
+        this.conv.bias = take('conv.bias');
+        this.bn.weight = take('bn.weight');
+        this.bn.bias = take('bn.bias');
+        this.fc.weight = take('fc.weight');
+        this.fc.bias = take('fc.bias');
+    }
+}

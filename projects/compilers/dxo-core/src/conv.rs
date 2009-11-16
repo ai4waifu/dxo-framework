@@ -9,20 +9,37 @@ impl Tensor {
     /// 2D convolution NCHW: input `[N,C,H,W]`, weight `[O,C,kH,kW]`, optional bias `[O]`.
     pub fn conv2d(&self, weight: &Self, bias: Option<&Self>, stride: usize, padding: usize) -> Result<Self, TensorError> {
         let (out, _) = conv2d_forward(self, weight, bias, stride, padding)?;
+        let parents: Vec<&Tensor> = if bias.is_some() {
+            vec![self, weight, bias.as_ref().unwrap()]
+        } else {
+            vec![self, weight]
+        };
         Ok(Self::maybe_attach(
             out,
-            &[self, weight],
-            Arc::new(Conv2dBackward { input: self.clone(), weight: weight.clone(), bias: bias.cloned(), stride, padding }),
+            &parents,
+            Arc::new(Conv2dBackward {
+                input: self.clone(),
+                weight: weight.clone(),
+                bias: bias.cloned(),
+                stride,
+                padding,
+            }),
         ))
     }
 
-    /// Max pool 2D NCHW kernel/stride same value.
+    /// Max pool 2D NCHW.
     pub fn max_pool2d(&self, kernel: usize, stride: usize, padding: usize) -> Result<Self, TensorError> {
         let (out, indices) = max_pool2d_forward(self, kernel, stride, padding)?;
         Ok(Self::maybe_attach(
             out,
             &[self],
-            Arc::new(MaxPool2dBackward { input: self.clone(), indices, kernel, stride, padding }),
+            Arc::new(MaxPool2dBackward {
+                input: self.clone(),
+                indices,
+                kernel,
+                stride,
+                padding,
+            }),
         ))
     }
 
@@ -32,7 +49,14 @@ impl Tensor {
         Ok(Self::maybe_attach(
             out,
             &[self, gamma, beta],
-            Arc::new(BatchNorm2dBackward { input: self.clone(), gamma: gamma.clone(), beta: beta.clone(), mean, var, eps }),
+            Arc::new(BatchNorm2dBackward {
+                input: self.clone(),
+                gamma: gamma.clone(),
+                beta: beta.clone(),
+                mean,
+                var,
+                eps,
+            }),
         ))
     }
 }
@@ -58,6 +82,7 @@ fn conv2d_forward(
     let w_out = (w + 2 * padding).saturating_sub(kw) / stride + 1;
     let id = input.to_vec();
     let wd = weight.to_vec();
+    let bias_v = bias.map(|b| b.to_vec());
     let mut out = vec![0.0f32; n * c_out * h_out * w_out];
     for ni in 0..n {
         for co in 0..c_out {
@@ -80,8 +105,8 @@ fn conv2d_forward(
                             }
                         }
                     }
-                    if let Some(b) = bias {
-                        sum += b.to_vec()[co];
+                    if let Some(ref b) = bias_v {
+                        sum += b[co];
                     }
                     let o_idx = ((ni * c_out + co) * h_out + ho) * w_out + wo;
                     out[o_idx] = sum;
@@ -91,6 +116,62 @@ fn conv2d_forward(
     }
     let t = Tensor::from_vec(out, vec![n, c_out, h_out, w_out])?;
     Ok((t, ()))
+}
+
+fn conv2d_backward(
+    input: &Tensor,
+    weight: &Tensor,
+    bias: Option<&Tensor>,
+    grad_output: &[f32],
+    stride: usize,
+    padding: usize,
+) -> Result<(Vec<f32>, Vec<f32>, Option<Vec<f32>>), TensorError> {
+    let is = input.shape();
+    let ws = weight.shape();
+    let (n, c_in, h, w) = (is[0], is[1], is[2], is[3]);
+    let (c_out, _, kh, kw) = (ws[0], ws[1], ws[2], ws[3]);
+    let h_out = (h + 2 * padding).saturating_sub(kh) / stride + 1;
+    let w_out = (w + 2 * padding).saturating_sub(kw) / stride + 1;
+    if grad_output.len() != n * c_out * h_out * w_out {
+        return Err(TensorError::Shape("conv2d backward: grad_output size mismatch".into()));
+    }
+    let id = input.to_vec();
+    let wd = weight.to_vec();
+    let mut gx = vec![0.0f32; n * c_in * h * w];
+    let mut gw = vec![0.0f32; c_out * c_in * kh * kw];
+    let mut gb = bias.map(|_| vec![0.0f32; c_out]);
+
+    for ni in 0..n {
+        for co in 0..c_out {
+            for ho in 0..h_out {
+                for wo in 0..w_out {
+                    let o_idx = ((ni * c_out + co) * h_out + ho) * w_out + wo;
+                    let g = grad_output[o_idx];
+                    if let Some(ref mut b) = gb {
+                        b[co] += g;
+                    }
+                    for ci in 0..c_in {
+                        for kh_i in 0..kh {
+                            for kw_i in 0..kw {
+                                let hi = ho * stride + kh_i;
+                                let wi = wo * stride + kw_i;
+                                if hi < padding || wi < padding || hi >= padding + h || wi >= padding + w {
+                                    continue;
+                                }
+                                let hi_in = hi - padding;
+                                let wi_in = wi - padding;
+                                let i_idx = ((ni * c_in + ci) * h + hi_in) * w + wi_in;
+                                let w_idx = ((co * c_in + ci) * kh + kh_i) * kw + kw_i;
+                                gx[i_idx] += wd[w_idx] * g;
+                                gw[w_idx] += id[i_idx] * g;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok((gx, gw, gb))
 }
 
 fn max_pool2d_forward(
@@ -152,12 +233,16 @@ fn batch_norm2d_forward(
         return Err(TensorError::Shape("batch_norm2d expects NCHW".into()));
     }
     let (n, c, h, w) = (is[0], is[1], is[2], is[3]);
+    if gamma.numel() != c || beta.numel() != c {
+        return Err(TensorError::Shape("batch_norm2d gamma/beta must be [C]".into()));
+    }
     let spatial = (h * w).max(1);
     let id = input.to_vec();
     let g = gamma.to_vec();
     let b = beta.to_vec();
     let mut mean = vec![0.0f32; c];
     let mut var = vec![0.0f32; c];
+    let m_count = (n * spatial) as f32;
     for ci in 0..c {
         let mut m = 0.0f32;
         for ni in 0..n {
@@ -168,7 +253,7 @@ fn batch_norm2d_forward(
                 }
             }
         }
-        m /= (n * spatial) as f32;
+        m /= m_count;
         mean[ci] = m;
         let mut v = 0.0f32;
         for ni in 0..n {
@@ -180,7 +265,7 @@ fn batch_norm2d_forward(
                 }
             }
         }
-        var[ci] = v / (n * spatial) as f32;
+        var[ci] = v / m_count;
     }
     let mut out = id.clone();
     for ci in 0..c {
@@ -197,6 +282,55 @@ fn batch_norm2d_forward(
     Ok((Tensor::from_vec(out, is.to_vec())?, mean, var))
 }
 
+fn batch_norm2d_backward(
+    input: &Tensor,
+    gamma: &Tensor,
+    grad_output: &[f32],
+    mean: &[f32],
+    var: &[f32],
+    eps: f32,
+) -> Result<(Vec<f32>, Vec<f32>, Vec<f32>), TensorError> {
+    let is = input.shape();
+    let (n, c, h, w) = (is[0], is[1], is[2], is[3]);
+    let spatial = (h * w).max(1);
+    let m = (n * spatial) as f32;
+    let id = input.to_vec();
+    let g = gamma.to_vec();
+    let mut gx = vec![0.0f32; id.len()];
+    let mut dgamma = vec![0.0f32; c];
+    let mut dbeta = vec![0.0f32; c];
+
+    for ci in 0..c {
+        let inv_std = 1.0 / (var[ci] + eps).sqrt();
+        let mut sum_dy = 0.0f32;
+        let mut sum_dy_xhat = 0.0f32;
+        for ni in 0..n {
+            for hi in 0..h {
+                for wi in 0..w {
+                    let idx = ((ni * c + ci) * h + hi) * w + wi;
+                    let xhat = (id[idx] - mean[ci]) * inv_std;
+                    let dy = grad_output[idx];
+                    sum_dy += dy;
+                    sum_dy_xhat += dy * xhat;
+                    dbeta[ci] += dy;
+                    dgamma[ci] += dy * xhat;
+                }
+            }
+        }
+        for ni in 0..n {
+            for hi in 0..h {
+                for wi in 0..w {
+                    let idx = ((ni * c + ci) * h + hi) * w + wi;
+                    let xhat = (id[idx] - mean[ci]) * inv_std;
+                    let dy = grad_output[idx];
+                    gx[idx] = (g[ci] * inv_std / m) * (m * dy - sum_dy - xhat * sum_dy_xhat);
+                }
+            }
+        }
+    }
+    Ok((gx, dgamma, dbeta))
+}
+
 struct Conv2dBackward {
     input: Tensor,
     weight: Tensor,
@@ -207,39 +341,27 @@ struct Conv2dBackward {
 
 impl GradFn for Conv2dBackward {
     fn apply(&self, grad_output: &[f32]) -> Result<(), TensorError> {
-        // Numerical-style backward via tiny perturbation is too slow; use simplified grad for verify:
-        // Propagate grad_output shape to input/weight with approximate conv backward (CPU ref).
-        let eps = 1e-3f32;
-        let loss = |t: &Tensor| -> f32 { t.to_vec().iter().zip(grad_output).map(|(a, &g)| a * g).sum() };
-        let mut gx = vec![0.0f32; self.input.numel()];
-        let base_in = self.input.to_vec();
-        for i in 0..gx.len().min(256) {
-            let mut data_plus = base_in.clone();
-            data_plus[i] += eps;
-            let t = Tensor::from_vec(data_plus, self.input.shape().to_vec())?;
-            let out = conv2d_forward(&t, &self.weight, self.bias.as_ref(), self.stride, self.padding)?.0;
-            let l1 = loss(&out);
-            let mut data_minus = base_in.clone();
-            data_minus[i] -= eps;
-            let t2 = Tensor::from_vec(data_minus, self.input.shape().to_vec())?;
-            let out2 = conv2d_forward(&t2, &self.weight, self.bias.as_ref(), self.stride, self.padding)?.0;
-            let l0 = loss(&out2);
-            gx[i] = (l1 - l0) / (2.0 * eps);
-        }
-        // Fill remaining with average grad scale for larger tensors
-        if gx.len() > 256 {
-            let scale = grad_output.iter().sum::<f32>() / grad_output.len() as f32;
-            for g in gx.iter_mut().skip(256) {
-                *g = scale;
-            }
-        }
+        let (gx, gw, gb) = conv2d_backward(
+            &self.input,
+            &self.weight,
+            self.bias.as_ref(),
+            grad_output,
+            self.stride,
+            self.padding,
+        )?;
         propagate(&self.input, &gx)?;
-        let gw = vec![0.0f32; self.weight.numel()];
         propagate(&self.weight, &gw)?;
+        if let (Some(bias), Some(gb)) = (&self.bias, gb) {
+            propagate(bias, &gb)?;
+        }
         Ok(())
     }
     fn parents(&self) -> Vec<&Tensor> {
-        vec![&self.input, &self.weight]
+        if let Some(ref b) = self.bias {
+            vec![&self.input, &self.weight, b]
+        } else {
+            vec![&self.input, &self.weight]
+        }
     }
 }
 
@@ -278,10 +400,11 @@ struct BatchNorm2dBackward {
 
 impl GradFn for BatchNorm2dBackward {
     fn apply(&self, grad_output: &[f32]) -> Result<(), TensorError> {
-        let _ = (&self.mean, &self.var, self.eps);
-        propagate(&self.input, grad_output)?;
-        propagate(&self.gamma, &vec![0.0; self.gamma.numel()])?;
-        propagate(&self.beta, grad_output)?;
+        let (gx, dgamma, dbeta) =
+            batch_norm2d_backward(&self.input, &self.gamma, grad_output, &self.mean, &self.var, self.eps)?;
+        propagate(&self.input, &gx)?;
+        propagate(&self.gamma, &dgamma)?;
+        propagate(&self.beta, &dbeta)?;
         Ok(())
     }
     fn parents(&self) -> Vec<&Tensor> {
