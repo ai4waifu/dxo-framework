@@ -274,6 +274,11 @@ export function cudaAvailable(): boolean {
     return loadNative().cudaAvailable();
 }
 
+/** Probe Titan HAL `wait_event` via the CPU session (does not use JS await as a substitute). */
+export function probeTitanEventDep(): void {
+    loadNative().probeTitanEventDep();
+}
+
 /** Whether the current thread records autograd ops. */
 export function isGradEnabled(): boolean {
     return loadNative().isGradEnabled();

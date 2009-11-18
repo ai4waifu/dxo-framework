@@ -36,6 +36,12 @@ pub fn cuda_available() -> bool {
     dxo_core::cuda_available()
 }
 
+/// Probe Titan HAL `wait_event` on the CPU session (always available when native loads).
+#[napi]
+pub fn probe_titan_event_dep() -> Result<()> {
+    dxo_core::probe_event_dep().map_err(map_err)
+}
+
 /// Set whether the current thread records autograd ops; returns previous flag.
 #[napi]
 pub fn set_grad_enabled(enabled: bool) -> bool {

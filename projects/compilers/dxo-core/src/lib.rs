@@ -18,7 +18,7 @@ mod transformer;
 pub use autograd::{is_grad_enabled, set_grad_enabled, without_grad};
 pub use cuda::is_available as cuda_available;
 pub use dtype::DType;
-pub use engine::{backend_label, cpu_session};
+pub use engine::{backend_label, cpu_session, probe_event_dep};
 pub use shape::{Shape, Strides, contiguous_strides};
 pub use storage::Storage;
 pub use tensor::{DeviceKind, Tensor, TensorError};
