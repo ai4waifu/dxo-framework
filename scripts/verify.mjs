@@ -30,6 +30,7 @@ const suites = {
     'model-runtime-text': 'scripts/test/model-runtime-text.ts',
     'profiler-trace': 'scripts/test/profiler-trace.ts',
     'titan-event-dep': 'scripts/test/titan-event-dep.ts',
+    'hub-provider': 'scripts/test/hub-provider.ts',
 };
 
 if (!id || !(id in suites)) {

@@ -123,7 +123,14 @@ importers:
         specifier: workspace:*
         version: link:../dxo-nn
 
-  projects/runtimes/dxo-hub: {}
+  projects/runtimes/dxo-hub:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
 
   projects/runtimes/dxo-inspect:
     devDependencies:

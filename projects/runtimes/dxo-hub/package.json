@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO artifact providers â€?HF / ModelScope / local / S3 (workspace stub, not published)",
+    "description": "DXO artifact providers: HF / ModelScope / local / S3 (workspace package, not published yet)",
     "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -19,6 +19,10 @@
     ],
     "scripts": {
         "build": "tsc -p tsconfig.json"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.0",
+        "typescript": "^5.8.3"
     },
     "keywords": [
         "dxo",
