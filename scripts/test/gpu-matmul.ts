@@ -3,6 +3,10 @@ import { cudaAvailable, tensor, version } from '@dxo/core';
 
 const v = version();
 if (!cudaAvailable()) {
+    if (process.env.DXO_REQUIRE_CUDA === '1') {
+        console.error(`gpu-matmul FAIL: CUDA required (DXO_REQUIRE_CUDA=1) but unavailable (version=${v})`);
+        process.exit(1);
+    }
     console.log(`gpu-matmul SKIP: CUDA unavailable (version=${v})`);
     process.exit(0);
 }

@@ -126,7 +126,7 @@ for (const name of list) {
   const r = spawnSync(process.execPath, ['--import', 'tsx', path.join(root, 'scripts', name)], {
     cwd: root,
     stdio: 'inherit',
-    env: process.env,
+    env: { ...process.env, DXO_REQUIRE_CUDA: '1' },
   });
   if ((r.status ?? 1) !== 0) process.exit(r.status ?? 1);
 }
