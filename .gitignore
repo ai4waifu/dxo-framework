@@ -25,6 +25,9 @@ Cargo.lock
 # Homepage staged WASM (from stage-homepage-wasm.mjs)
 projects/homepage/public/dxo_lite_bg.wasm
 
+# GPU CI packed verify bundle (generated on linux)
+artifacts/
+
 # wasm-pack staging under crate
 projects/compilers/dxo-lite-wasm/.wasm-pack-out/
 
