@@ -35,8 +35,9 @@ jobs:
           cache: pnpm
       - name: Install JS workspace
         run: pnpm install --no-frozen-lockfile
-      - name: Build TypeScript
-        run: pnpm run build:ts
+      # GPU bundle only needs @dxo/core + linux .node — skip full build:ts (lite wasm, etc.).
+      - name: Build @dxo/core TypeScript
+        run: pnpm --filter @dxo/core run build
       - name: Build native (linux-x64)
         run: pnpm run build:native
       - name: Pack GPU verify bundle
