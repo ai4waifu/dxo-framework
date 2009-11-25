@@ -31,8 +31,15 @@ jobs:
           cache: pnpm
       - name: Install JS workspace
         run: pnpm install --no-frozen-lockfile
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Add wasm32 target
+        run: rustup target add wasm32-unknown-unknown
       - name: Biome
         run: pnpm run lint
+      # Glue + .wasm → @dxo/lite-unknown-wasm32/dist (gitignored); required before @dxo/lite tsc.
+      - name: Build lite WASM artifact
+        run: pnpm run build:lite-wasm
       - name: Build TypeScript packages
         run: pnpm run build:ts
       - name: Build native addon
