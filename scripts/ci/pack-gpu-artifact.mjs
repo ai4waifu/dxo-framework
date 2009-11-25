@@ -1,7 +1,8 @@
 /**
  * Pack a minimal Linux GPU-verify bundle (no Rust toolchain, no monorepo root).
  *
- * Expects: already ran `pnpm build:ts` + `pnpm build:native` on linux-x64.
+ * Expects: already built `@dxo/core` dist + linux native on linux-x64.
+ * Emits a **standalone** npm tree under the tarball (file: deps only — no workspace:).
  * Output: `artifacts/dxo-gpu-verify.tgz`
  */
 import { spawnSync } from 'node:child_process';
