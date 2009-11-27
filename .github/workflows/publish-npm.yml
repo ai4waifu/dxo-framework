@@ -86,7 +86,7 @@ jobs:
           ls -la "$out"
 
       - name: Upload native artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: native-${{ matrix.short }}
           path: dist/${{ matrix.short }}
@@ -139,6 +139,11 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
@@ -154,11 +159,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      # lib/ + dist/ for @dxo/lite-unknown-wasm32 before any @dxo/lite tsc / publish.
+      - name: Build lite WASM artifact
+        run: pnpm run build:lite-wasm
+
       - name: Build TypeScript packages
         run: pnpm run build:ts
 
       - name: Download native artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           pattern: native-*
           path: dist/native-artifacts
