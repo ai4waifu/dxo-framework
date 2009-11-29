@@ -20,6 +20,7 @@
         "placeholder:publish": "node scripts/ci/publish-placeholder.mjs publish",
         "placeholder:trust": "node scripts/ci/publish-placeholder.mjs trust",
         "homepage": "pnpm install && pnpm run build:lite-wasm && pnpm run build:ts && node scripts/build/stage-homepage-wasm.mjs && pnpm --filter @dxo/homepage build",
+        "homepage:cf": "pnpm --filter @dxo/homepage... install && pnpm --filter @dxo/homepage run build",
         "homepage:check": "pnpm --filter @dxo/homepage check",
         "homepage:build": "node scripts/build/stage-homepage-wasm.mjs --force && pnpm --filter @dxo/homepage build",
         "homepage:dev": "node scripts/build/stage-homepage-wasm.mjs --force && pnpm --filter @dxo/homepage dev",

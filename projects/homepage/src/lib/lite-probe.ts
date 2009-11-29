@@ -19,12 +19,12 @@ function browserWasmUrl(): URL | undefined {
     return new URL('/dxo_lite_bg.wasm', location.origin);
 }
 
-/** Options shared by homepage probe / playground (browser serves public wasm). */
+void browserWasmUrl;
+
+/** Options for pinned registry `@dxo/lite` (0.0.9: CPU fallback; wasm url ignored until 0.0.10). */
 export function homepageLiteOptions() {
-    const url = browserWasmUrl();
     return {
         fallback: 'cpu' as const,
-        wasm: url ? { url } : undefined,
     };
 }
 
@@ -44,7 +44,7 @@ export async function probeLite(): Promise<LiteProbe> {
             webglTensorBackend: rt.capabilities.webglTensorBackend,
             tensorClass: a.constructor.name,
             matmulOk: out[0] === 1 && out[1] === 2 && out[2] === 3 && out[3] === 4,
-            wasmVersion: rt.capabilities.wasm?.version ?? '(not loaded)',
+            wasmVersion: rt.capabilities.wasm?.version ?? '(not in this release)',
             wasmInterim: rt.capabilities.wasm?.interimHostF32 ?? false,
         };
     } finally {

@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO marketing homepage - VMZ frontend with @dxo/lite smoke surface",
+    "description": "DXO marketing homepage - VMZ frontend with pinned @dxo/lite (CF Pages cannot build Rust/wasm)",
     "scripts": {
         "check": "vmz check .",
         "predev": "node ../../scripts/build/stage-homepage-wasm.mjs",
@@ -14,7 +14,7 @@
         "test:lite": "node ./tests/lite-probe.mjs"
     },
     "dependencies": {
-        "@dxo/lite": "workspace:*",
+        "@dxo/lite": "0.0.9",
         "@vmz/core": "^0.1.12"
     },
     "devDependencies": {
