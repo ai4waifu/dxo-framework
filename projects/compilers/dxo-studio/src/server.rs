@@ -10,8 +10,8 @@ use std::time::Duration;
 
 use crate::store::{
     artifacts_from_events, checkpoints_from_events, confusion_matrix_path, image_samples_path, list_runs, metrics_from_events,
-    mime_for_path, model_graph_path, profile_trace_path, read_artifact_bytes, read_artifact_text, read_events, read_json_artifact,
-    read_run_meta, safe_run_file,
+    mime_for_path, model_graph_path, profile_trace_path, read_artifact_bytes, read_artifact_text, read_events,
+    read_json_artifact, read_run_meta, safe_run_file,
 };
 
 /// Options for {@link InspectApiServer::bind}.

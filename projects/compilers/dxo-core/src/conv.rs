@@ -9,21 +9,12 @@ impl Tensor {
     /// 2D convolution NCHW: input `[N,C,H,W]`, weight `[O,C,kH,kW]`, optional bias `[O]`.
     pub fn conv2d(&self, weight: &Self, bias: Option<&Self>, stride: usize, padding: usize) -> Result<Self, TensorError> {
         let (out, _) = conv2d_forward(self, weight, bias, stride, padding)?;
-        let parents: Vec<&Tensor> = if bias.is_some() {
-            vec![self, weight, bias.as_ref().unwrap()]
-        } else {
-            vec![self, weight]
-        };
+        let parents: Vec<&Tensor> =
+            if bias.is_some() { vec![self, weight, bias.as_ref().unwrap()] } else { vec![self, weight] };
         Ok(Self::maybe_attach(
             out,
             &parents,
-            Arc::new(Conv2dBackward {
-                input: self.clone(),
-                weight: weight.clone(),
-                bias: bias.cloned(),
-                stride,
-                padding,
-            }),
+            Arc::new(Conv2dBackward { input: self.clone(), weight: weight.clone(), bias: bias.cloned(), stride, padding }),
         ))
     }
 
@@ -33,13 +24,7 @@ impl Tensor {
         Ok(Self::maybe_attach(
             out,
             &[self],
-            Arc::new(MaxPool2dBackward {
-                input: self.clone(),
-                indices,
-                kernel,
-                stride,
-                padding,
-            }),
+            Arc::new(MaxPool2dBackward { input: self.clone(), indices, kernel, stride, padding }),
         ))
     }
 
@@ -49,14 +34,7 @@ impl Tensor {
         Ok(Self::maybe_attach(
             out,
             &[self, gamma, beta],
-            Arc::new(BatchNorm2dBackward {
-                input: self.clone(),
-                gamma: gamma.clone(),
-                beta: beta.clone(),
-                mean,
-                var,
-                eps,
-            }),
+            Arc::new(BatchNorm2dBackward { input: self.clone(), gamma: gamma.clone(), beta: beta.clone(), mean, var, eps }),
         ))
     }
 }
@@ -341,14 +319,8 @@ struct Conv2dBackward {
 
 impl GradFn for Conv2dBackward {
     fn apply(&self, grad_output: &[f32]) -> Result<(), TensorError> {
-        let (gx, gw, gb) = conv2d_backward(
-            &self.input,
-            &self.weight,
-            self.bias.as_ref(),
-            grad_output,
-            self.stride,
-            self.padding,
-        )?;
+        let (gx, gw, gb) =
+            conv2d_backward(&self.input, &self.weight, self.bias.as_ref(), grad_output, self.stride, self.padding)?;
         propagate(&self.input, &gx)?;
         propagate(&self.weight, &gw)?;
         if let (Some(bias), Some(gb)) = (&self.bias, gb) {
@@ -357,11 +329,7 @@ impl GradFn for Conv2dBackward {
         Ok(())
     }
     fn parents(&self) -> Vec<&Tensor> {
-        if let Some(ref b) = self.bias {
-            vec![&self.input, &self.weight, b]
-        } else {
-            vec![&self.input, &self.weight]
-        }
+        if let Some(ref b) = self.bias { vec![&self.input, &self.weight, b] } else { vec![&self.input, &self.weight] }
     }
 }
 

@@ -26,9 +26,7 @@ impl Tensor {
         for (i, &raw) in idx.iter().enumerate() {
             let id = raw as isize;
             if id < 0 || (id as usize) >= vocab {
-                return Err(TensorError::Shape(format!(
-                    "embedding index {id} out of range for vocab {vocab}"
-                )));
+                return Err(TensorError::Shape(format!("embedding index {id} out of range for vocab {vocab}")));
             }
             let row = id as usize;
             let src = row * dim;
@@ -37,24 +35,8 @@ impl Tensor {
         }
         let mut out_shape = indices.shape().to_vec();
         out_shape.push(dim);
-        let base = Self::from_storage_on(
-            Storage::from_vec(out),
-            0,
-            &out_shape,
-            false,
-            None,
-            None,
-            weight.device(),
-        );
-        Ok(Self::maybe_attach(
-            base,
-            &[weight],
-            Arc::new(EmbeddingBackward {
-                weight: weight.clone(),
-                indices: idx,
-                dim,
-            }),
-        ))
+        let base = Self::from_storage_on(Storage::from_vec(out), 0, &out_shape, false, None, None, weight.device());
+        Ok(Self::maybe_attach(base, &[weight], Arc::new(EmbeddingBackward { weight: weight.clone(), indices: idx, dim })))
     }
 
     /// LayerNorm over the last dimension: `(x - mean) / sqrt(var + eps) * weight + bias`.
@@ -82,10 +64,13 @@ impl Tensor {
             let base = o * dim;
             let slice = &data[base..base + dim];
             let mean = slice.iter().sum::<f32>() / dim as f32;
-            let var = slice.iter().map(|&x| {
-                let d = x - mean;
-                d * d
-            }).sum::<f32>()
+            let var = slice
+                .iter()
+                .map(|&x| {
+                    let d = x - mean;
+                    d * d
+                })
+                .sum::<f32>()
                 / dim as f32;
             let inv = 1.0 / (var + eps).sqrt();
             means[o] = mean;
@@ -95,15 +80,7 @@ impl Tensor {
                 out[base + i] = xn * w[i] + b[i];
             }
         }
-        let base = Self::from_storage_on(
-            Storage::from_vec(out),
-            0,
-            shape,
-            false,
-            None,
-            None,
-            self.device(),
-        );
+        let base = Self::from_storage_on(Storage::from_vec(out), 0, shape, false, None, None, self.device());
         Ok(Self::maybe_attach(
             base,
             &[self, weight, bias],
@@ -126,10 +103,7 @@ impl Tensor {
             return Err(TensorError::Shape("bmm expects rank-3 tensors".into()));
         }
         if a[0] != b[0] || a[2] != b[1] {
-            return Err(TensorError::Shape(format!(
-                "bmm shape mismatch {:?} @ {:?}",
-                a, b
-            )));
+            return Err(TensorError::Shape(format!("bmm shape mismatch {:?} @ {:?}", a, b)));
         }
         let (batch, m, k, n) = (a[0], a[1], a[2], b[2]);
         let ad = self.to_vec();
@@ -146,23 +120,8 @@ impl Tensor {
                 }
             }
         }
-        let base = Self::from_storage_on(
-            Storage::from_vec(out),
-            0,
-            &[batch, m, n],
-            false,
-            None,
-            None,
-            self.device(),
-        );
-        Ok(Self::maybe_attach(
-            base,
-            &[self, other],
-            Arc::new(BmmBackward {
-                a: self.clone(),
-                b: other.clone(),
-            }),
-        ))
+        let base = Self::from_storage_on(Storage::from_vec(out), 0, &[batch, m, n], false, None, None, self.device());
+        Ok(Self::maybe_attach(base, &[self, other], Arc::new(BmmBackward { a: self.clone(), b: other.clone() })))
     }
 
     /// Swap the last two dimensions (contiguous copy).
@@ -180,9 +139,7 @@ impl Tensor {
         let s = self.shape();
         let rank = s.len();
         if dim0 >= rank || dim1 >= rank {
-            return Err(TensorError::Shape(format!(
-                "transpose_dims dims {dim0},{dim1} out of range for rank {rank}"
-            )));
+            return Err(TensorError::Shape(format!("transpose_dims dims {dim0},{dim1} out of range for rank {rank}")));
         }
         if dim0 == dim1 {
             return Ok(self.clone());
@@ -205,51 +162,25 @@ impl Tensor {
             }
             out[dst] = data[flat];
         }
-        let base = Self::from_storage_on(
-            Storage::from_vec(out),
-            0,
-            &out_shape,
-            false,
-            None,
-            None,
-            self.device(),
-        );
-        Ok(Self::maybe_attach(
-            base,
-            &[self],
-            Arc::new(TransposeDimsBackward {
-                input: self.clone(),
-                dim0,
-                dim1,
-            }),
-        ))
+        let base = Self::from_storage_on(Storage::from_vec(out), 0, &out_shape, false, None, None, self.device());
+        Ok(Self::maybe_attach(base, &[self], Arc::new(TransposeDimsBackward { input: self.clone(), dim0, dim1 })))
     }
 
     /// Scaled dot-product attention with optional causal mask.
     ///
     /// `q`, `k`, `v` shapes `[B, H, T, D]` (or broadcastable batch/head via reshape before call).
-    pub fn scaled_dot_product_attention(
-        q: &Self,
-        k: &Self,
-        v: &Self,
-        causal: bool,
-    ) -> Result<Self, TensorError> {
+    pub fn scaled_dot_product_attention(q: &Self, k: &Self, v: &Self, causal: bool) -> Result<Self, TensorError> {
         let qs = q.shape();
         let ks = k.shape();
         let vs = v.shape();
         if qs.len() != 4 || ks.len() != 4 || vs.len() != 4 {
-            return Err(TensorError::Shape(
-                "scaled_dot_product_attention expects [B,H,T,D]".into(),
-            ));
+            return Err(TensorError::Shape("scaled_dot_product_attention expects [B,H,T,D]".into()));
         }
         if qs[0] != ks[0] || qs[0] != vs[0] || qs[1] != ks[1] || qs[1] != vs[1] {
             return Err(TensorError::Shape("attention batch/head mismatch".into()));
         }
         if qs[3] != ks[3] || vs[3] != qs[3] || ks[2] != vs[2] {
-            return Err(TensorError::Shape(format!(
-                "attention dim mismatch q={:?} k={:?} v={:?}",
-                qs, ks, vs
-            )));
+            return Err(TensorError::Shape(format!("attention dim mismatch q={:?} k={:?} v={:?}", qs, ks, vs)));
         }
         let (b, h, tq, d) = (qs[0], qs[1], qs[2], qs[3]);
         let tk = ks[2];
@@ -287,15 +218,7 @@ impl Tensor {
             t.set_dtype(dtype);
             return t;
         }
-        let base = Self::from_storage_on(
-            Storage::from_vec(self.to_vec()),
-            0,
-            self.shape(),
-            false,
-            None,
-            None,
-            self.device(),
-        );
+        let base = Self::from_storage_on(Storage::from_vec(self.to_vec()), 0, self.shape(), false, None, None, self.device());
         let mut out = Self::maybe_attach(base, &[self], Arc::new(CastDtypeBackward { input: self.clone() }));
         out.set_dtype(dtype);
         out

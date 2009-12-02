@@ -208,12 +208,7 @@ impl Tensor {
     /// LayerNorm over the last dimension.
     #[napi]
     pub fn layer_norm(&self, weight: &Tensor, bias: &Tensor, eps: Option<f64>) -> Result<Tensor> {
-        Ok(Tensor {
-            inner: self
-                .inner
-                .layer_norm(&weight.inner, &bias.inner, eps.unwrap_or(1e-5) as f32)
-                .map_err(map_err)?,
-        })
+        Ok(Tensor { inner: self.inner.layer_norm(&weight.inner, &bias.inner, eps.unwrap_or(1e-5) as f32).map_err(map_err)? })
     }
 
     /// Batch matmul `[B,M,K] @ [B,K,N]`.
@@ -231,27 +226,15 @@ impl Tensor {
     /// Swap two axes.
     #[napi]
     pub fn transpose_dims(&self, dim0: u32, dim1: u32) -> Result<Tensor> {
-        Ok(Tensor {
-            inner: self.inner.transpose_dims(dim0 as usize, dim1 as usize).map_err(map_err)?,
-        })
+        Ok(Tensor { inner: self.inner.transpose_dims(dim0 as usize, dim1 as usize).map_err(map_err)? })
     }
 
     /// Scaled dot-product attention; `q/k/v` are `[B,H,T,D]` (`self` = q).
     #[napi]
-    pub fn scaled_dot_product_attention(
-        &self,
-        k: &Tensor,
-        v: &Tensor,
-        causal: Option<bool>,
-    ) -> Result<Tensor> {
+    pub fn scaled_dot_product_attention(&self, k: &Tensor, v: &Tensor, causal: Option<bool>) -> Result<Tensor> {
         Ok(Tensor {
-            inner: CoreTensor::scaled_dot_product_attention(
-                &self.inner,
-                &k.inner,
-                &v.inner,
-                causal.unwrap_or(false),
-            )
-            .map_err(map_err)?,
+            inner: CoreTensor::scaled_dot_product_attention(&self.inner, &k.inner, &v.inner, causal.unwrap_or(false))
+                .map_err(map_err)?,
         })
     }
 
