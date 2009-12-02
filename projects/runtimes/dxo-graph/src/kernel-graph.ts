@@ -80,11 +80,7 @@ export function kernelGraphFromProfile(trace: ProfileTraceV0 | null | undefined)
     };
 }
 
-export function bundleModelGraphs(parts: {
-    module: ModelGraphV0;
-    execution: ModelGraphV0;
-    kernel: ModelGraphV0;
-}): ModelGraphBundleV0 {
+export function bundleModelGraphs(parts: { module: ModelGraphV0; execution: ModelGraphV0; kernel: ModelGraphV0 }): ModelGraphBundleV0 {
     if (parts.module.view !== 'module') throw new Error('bundle: module.view must be module');
     if (parts.execution.view !== 'execution') throw new Error('bundle: execution.view must be execution');
     if (parts.kernel.view !== 'kernel') throw new Error('bundle: kernel.view must be kernel');
@@ -130,11 +126,14 @@ export function parseModelGraphArtifact(raw: unknown): ModelGraphBundleV0 {
         const g = obj as unknown as ModelGraphV0;
         return bundleModelGraphs({
             module: g.view === 'module' ? g : emptyModelGraph('module'),
-            execution: g.view === 'execution' ? g : {
-                ...emptyModelGraph('execution'),
-                availability: 'unavailable',
-                unavailableReason: 'single-view artifact was not execution',
-            },
+            execution:
+                g.view === 'execution'
+                    ? g
+                    : {
+                          ...emptyModelGraph('execution'),
+                          availability: 'unavailable',
+                          unavailableReason: 'single-view artifact was not execution',
+                      },
             kernel: g.view === 'kernel' ? g : kernelGraphUnavailable('single-view artifact was not kernel'),
         });
     }

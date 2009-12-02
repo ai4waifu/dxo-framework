@@ -65,13 +65,7 @@ export interface LiteRuntime {
 }
 
 type WasmKernels = {
-    matmulF32: (
-        a: Float32Array,
-        aRows: number,
-        aCols: number,
-        b: Float32Array,
-        bCols: number,
-    ) => Float32Array;
+    matmulF32: (a: Float32Array, aRows: number, aCols: number, b: Float32Array, bCols: number) => Float32Array;
     addF32: (a: Float32Array, b: Float32Array) => Float32Array;
     version: () => string;
     isInterimHostF32: () => boolean;

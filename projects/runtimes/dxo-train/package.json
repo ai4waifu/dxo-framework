@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO training loop â€?fitIter / TrainEvent / checkpoint (developer preview, API unstable)",
+    "description": "DXO training loop - fitIter / TrainEvent / checkpoint (developer preview, API unstable)",
     "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",

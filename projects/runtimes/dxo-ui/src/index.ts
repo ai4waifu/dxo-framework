@@ -19,10 +19,7 @@ export type ModelAppDefinition = {
     title: string;
     input: ImageInputSpec;
     output: LabelsOutputSpec;
-    run: (
-        input: { bytes: Uint8Array; mime: string },
-        ctx: ModelAppRunContext,
-    ) => AsyncIterable<unknown> | Promise<unknown>;
+    run: (input: { bytes: Uint8Array; mime: string }, ctx: ModelAppRunContext) => AsyncIterable<unknown> | Promise<unknown>;
 };
 
 export type ModelAppServeHandle = {
@@ -91,10 +88,7 @@ function abortError(): Error {
     return err;
 }
 
-async function collectRunResult(
-    result: AsyncIterable<unknown> | Promise<unknown>,
-    signal: AbortSignal,
-): Promise<unknown> {
+async function collectRunResult(result: AsyncIterable<unknown> | Promise<unknown>, signal: AbortSignal): Promise<unknown> {
     if (result && typeof (result as AsyncIterable<unknown>)[Symbol.asyncIterator] === 'function') {
         const iter = (result as AsyncIterable<unknown>)[Symbol.asyncIterator]();
         let last: unknown;
@@ -158,10 +152,7 @@ export function defineModelApp(def: ModelAppDefinition): ModelApp {
                         bytes = new Uint8Array(raw);
                     }
 
-                    const out = await collectRunResult(
-                        def.run({ bytes, mime }, { signal: controller.signal }),
-                        controller.signal,
-                    );
+                    const out = await collectRunResult(def.run({ bytes, mime }, { signal: controller.signal }), controller.signal);
                     json(res, 200, { title, output: out });
                     return;
                 }

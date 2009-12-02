@@ -119,9 +119,7 @@ export async function createTokenizer(nameOrPath: string): Promise<Tokenizer> {
     if (nameOrPath === CHAR_V0 || nameOrPath === 'char' || nameOrPath === 'dxo-char') {
         return createCharTokenizer();
     }
-    throw new Error(
-        `@dxo/llm createTokenizer: unknown tokenizer '${nameOrPath}' (v0 supports '${CHAR_V0}')`,
-    );
+    throw new Error(`@dxo/llm createTokenizer: unknown tokenizer '${nameOrPath}' (v0 supports '${CHAR_V0}')`);
 }
 
 function assertNotAborted(signal?: AbortSignal): void {
@@ -217,11 +215,7 @@ export async function encodeTinyTransformerSafetensors(model: TinyTransformer): 
 }
 
 /** Load TinyTransformer weights from safetensors (F32). */
-export function loadTinyTransformerSafetensors(
-    model: TinyTransformer,
-    bytes: Uint8Array,
-    opts: { requiresGrad?: boolean } = {},
-): void {
+export function loadTinyTransformerSafetensors(model: TinyTransformer, bytes: Uint8Array, opts: { requiresGrad?: boolean } = {}): void {
     const slices = decodeSafetensors(bytes) as Record<string, SafetensorSlice>;
     model.loadState(slices, opts);
 }

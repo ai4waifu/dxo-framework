@@ -39,9 +39,6 @@ if (!existsSync(path.join(out, 'node_modules/modal'))) {
 }
 
 const pkg = JSON.parse(readFileSync(path.join(out, 'package.json'), 'utf8'));
-writeFileSync(
-    path.join(out, '.packed.json'),
-    JSON.stringify({ name: pkg.name, packedAt: new Date().toISOString(), modal: '0.10.0' }, null, 2),
-);
+writeFileSync(path.join(out, '.packed.json'), JSON.stringify({ name: pkg.name, packedAt: new Date().toISOString(), modal: '0.10.0' }, null, 2));
 
 console.log(`pack-modal-runner: ready ${out}`);
