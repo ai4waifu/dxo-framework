@@ -4,7 +4,7 @@ import { backend, ones, randn, tensor, version, zeros } from '@dxo/core';
 const v = version();
 assert.equal(typeof v, 'string');
 assert.match(v, /^\d+\.\d+\.\d+/);
-assert.equal(backend(), 'titan-cpu');
+assert.equal(backend(), 'cpu');
 
 const a = tensor([1, 2, 3, 4], [2, 2]);
 const b = tensor([5, 6, 7, 8], [2, 2]);

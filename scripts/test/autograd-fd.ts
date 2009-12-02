@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { backend, tensor, withoutGrad } from '@dxo/core';
 
-assert.equal(backend(), 'titan-cpu');
+assert.equal(backend(), 'cpu');
 
 function almostEqual(a: number[], b: number[], tol = 5e-2): void {
     assert.equal(a.length, b.length);

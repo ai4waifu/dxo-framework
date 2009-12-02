@@ -3,7 +3,7 @@ import { backend, isGradEnabled, tensor, withoutGrad } from '@dxo/core';
 import { Linear, Relu, Sequential } from '@dxo/nn';
 import { SGD } from '@dxo/optimizer';
 
-assert.equal(backend(), 'titan-cpu');
+assert.equal(backend(), 'cpu');
 assert.equal(isGradEnabled(), true);
 
 // Linear is affine-only (negative pre-activation must survive).

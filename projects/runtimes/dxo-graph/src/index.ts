@@ -29,7 +29,7 @@ export type ModelGraphV0 = {
     format: typeof MODEL_GRAPH_FORMAT;
     version: typeof MODEL_GRAPH_VERSION;
     view: GraphViewKind;
-    /** Kernel (and optionally execution) may be unavailable without Titan / a real forward. */
+    /** Kernel (and optionally execution) may be unavailable without a profile trace / real forward. */
     availability?: GraphAvailability;
     unavailableReason?: string;
     nodes: GraphNode[];

@@ -264,19 +264,19 @@ export function version(): string {
     return loadNative().version();
 }
 
-/** Engine backend label (e.g. `titan-cpu`). */
+/** Active engine backend for diagnostics (`cpu` / `cuda` / … — DXO product labels only). */
 export function backend(): string {
     return loadNative().backend();
 }
 
-/** Whether Titan CUDA Driver API is available on this machine. */
+/** Whether CUDA Driver API is available on this machine. */
 export function cudaAvailable(): boolean {
     return loadNative().cudaAvailable();
 }
 
-/** Probe Titan HAL `wait_event` via the CPU session (does not use JS await as a substitute). */
-export function probeTitanEventDep(): void {
-    loadNative().probeTitanEventDep();
+/** Probe HAL `wait_event` via the CPU session (does not use JS await as a substitute). */
+export function probeEventDep(): void {
+    loadNative().probeEventDep();
 }
 
 /** Whether the current thread records autograd ops. */

@@ -10,7 +10,7 @@ fn version_is_semver_like() {
 #[test]
 fn titan_cpu_engine_wired() {
     let _ = cpu_session();
-    assert_eq!(backend_label(), "titan-cpu");
+    assert_eq!(backend_label(), "cpu");
 }
 
 #[test]

@@ -1,33 +1,24 @@
-# 🌐 @dxo/lite
+# @dxo/lite
 
-**Developer preview — API unstable (`0.0.x`).**
+Browser / Worker runtime facade for DXO tensors (WebGPU path + explicit CPU fallback).
 
-Browser / Worker runtime facade. **Not** a napi / `@dxo/core` port.
+| Symbol | Notes |
+|--------|-------|
+| `GPU_BACKEND_READY` | `false` until WASM → dxo-core → GPU backend is linked |
+| `createRuntime` | Promise barrier; never keeps `GPUDevice` |
+| `runtime.capabilities` | `backend`, `webgpu`, `gpuBackendReady`, `webglTensorBackend: false` |
 
-## Contract (0.0.8+)
-
-| API | Behavior |
-|-----|----------|
-| `createRuntime(opts?)` | **Async** init; probes WebGPU adapter only (no `GPUDevice` in TS) |
-| `TITAN_WGPU_READY` | `false` until WASM → dxo-core → Titan wgpu is linked |
-| `fallback: 'cpu' \| 'error'` | Default `'error'`; explicit host f32 path — **never WebGL** |
-| `runtime.capabilities` | `backend`, `webgpu`, `titanWgpuReady`, `webglTensorBackend: false` |
-| `Tensor` ops | `matmul` / `add` synchronously return handles; `ready` / `toArray` are Promise barriers |
-
-```typescript
+```ts
 import { createRuntime } from '@dxo/lite';
 
 const rt = await createRuntime({ fallback: 'cpu' });
 const a = rt.tensor([1, 2, 3, 4], [2, 2]);
-const b = rt.ones([2, 2]);
+const b = rt.tensor([5, 6, 7, 8], [2, 2]);
 const c = a.matmul(b);
-console.log(rt.capabilities.backend, rt.capabilities.titanWgpuReady, await c.toArray());
-rt.destroy();
+console.log(rt.capabilities.backend, rt.capabilities.gpuBackendReady, await c.toArray());
 ```
 
-## Non-goals (this gate)
+Constraints:
 
-- TS retention of `GPUAdapter` / `GPUDevice`
-- WebGL tensor backend (forbidden)
-- DXO-owned wgpu kernels (Titan owns GPU execution)
-- Training / autograd parity with `@dxo/core`
+- WebGL is never a tensor backend
+- DXO does not ship a second in-tree wgpu runtime; GPU execution is owned by the DXO-linked engine facade

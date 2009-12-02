@@ -13,7 +13,7 @@ assert.match(version(), /lite/);
 const rt = await createRuntime({ fallback: 'cpu' });
 assert.equal(rt.capabilities.backend, 'cpu');
 assert.equal(rt.capabilities.webgpu, false);
-assert.equal(rt.capabilities.titanWgpuReady, false);
+assert.equal(rt.capabilities.gpuBackendReady, false);
 assert.equal(rt.capabilities.webglTensorBackend, false);
 assert.equal(rt.capabilities.dtype.f32, true);
 assert.ok(rt.capabilities.wasm, 'expected interim WASM kernels — run pnpm build:lite-wasm');
