@@ -17,6 +17,9 @@ importers:
       '@dxo/data':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-data
+      '@dxo/diffuser':
+        specifier: workspace:*
+        version: link:projects/runtimes/dxo-diffuser
       '@dxo/graph':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-graph
@@ -109,6 +112,12 @@ importers:
   projects/runtimes/dxo-darwin-x64: {}
 
   projects/runtimes/dxo-data:
+    dependencies:
+      '@dxo/core':
+        specifier: workspace:*
+        version: link:../dxo-core
+
+  projects/runtimes/dxo-diffuser:
     dependencies:
       '@dxo/core':
         specifier: workspace:*
@@ -230,7 +239,11 @@ importers:
         specifier: ^22.15.0
         version: 22.20.1
 
-  projects/runtimes/dxo-vision: {}
+  projects/runtimes/dxo-vision:
+    dependencies:
+      '@dxo/core':
+        specifier: workspace:*
+        version: link:../dxo-core
 
   projects/runtimes/dxo-win32-x64: {}
 
