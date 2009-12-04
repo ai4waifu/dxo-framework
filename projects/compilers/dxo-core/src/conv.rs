@@ -5,12 +5,18 @@ use std::sync::Arc;
 use crate::autograd::{GradFn, propagate};
 use crate::tensor::{Tensor, TensorError};
 
+type Conv2dGradParts = (Vec<f32>, Vec<f32>, Option<Vec<f32>>);
+type BatchNorm2dGradParts = (Vec<f32>, Vec<f32>, Vec<f32>);
+
 impl Tensor {
     /// 2D convolution NCHW: input `[N,C,H,W]`, weight `[O,C,kH,kW]`, optional bias `[O]`.
     pub fn conv2d(&self, weight: &Self, bias: Option<&Self>, stride: usize, padding: usize) -> Result<Self, TensorError> {
         let (out, _) = conv2d_forward(self, weight, bias, stride, padding)?;
-        let parents: Vec<&Tensor> =
-            if bias.is_some() { vec![self, weight, bias.as_ref().unwrap()] } else { vec![self, weight] };
+        let parents: Vec<&Tensor> = if let Some(b) = bias {
+            vec![self, weight, b]
+        } else {
+            vec![self, weight]
+        };
         Ok(Self::maybe_attach(
             out,
             &parents,
@@ -103,7 +109,7 @@ fn conv2d_backward(
     grad_output: &[f32],
     stride: usize,
     padding: usize,
-) -> Result<(Vec<f32>, Vec<f32>, Option<Vec<f32>>), TensorError> {
+) -> Result<Conv2dGradParts, TensorError> {
     let is = input.shape();
     let ws = weight.shape();
     let (n, c_in, h, w) = (is[0], is[1], is[2], is[3]);
@@ -267,7 +273,7 @@ fn batch_norm2d_backward(
     mean: &[f32],
     var: &[f32],
     eps: f32,
-) -> Result<(Vec<f32>, Vec<f32>, Vec<f32>), TensorError> {
+) -> Result<BatchNorm2dGradParts, TensorError> {
     let is = input.shape();
     let (n, c, h, w) = (is[0], is[1], is[2], is[3]);
     let spatial = (h * w).max(1);

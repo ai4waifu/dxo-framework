@@ -149,7 +149,7 @@ impl Tensor {
         let data = self.to_vec();
         let mut out = vec![0.0f32; data.len()];
         let mut coord = vec![0usize; rank];
-        for flat in 0..data.len() {
+        for (flat, &val) in data.iter().enumerate() {
             let mut rem = flat;
             for d in (0..rank).rev() {
                 coord[d] = rem % s[d];
@@ -160,7 +160,7 @@ impl Tensor {
             for d in 0..rank {
                 dst = dst * out_shape[d] + coord[d];
             }
-            out[dst] = data[flat];
+            out[dst] = val;
         }
         let base = Self::from_storage_on(Storage::from_vec(out), 0, &out_shape, false, None, None, self.device());
         Ok(Self::maybe_attach(base, &[self], Arc::new(TransposeDimsBackward { input: self.clone(), dim0, dim1 })))
@@ -350,7 +350,7 @@ impl GradFn for TransposeDimsBackward {
         let rank = in_shape.len();
         let mut gin = vec![0.0f32; self.input.numel()];
         let mut coord = vec![0usize; rank];
-        for flat in 0..grad_output.len() {
+        for (flat, &g) in grad_output.iter().enumerate() {
             let mut rem = flat;
             for d in (0..rank).rev() {
                 coord[d] = rem % out_shape[d];
@@ -361,7 +361,7 @@ impl GradFn for TransposeDimsBackward {
             for d in 0..rank {
                 dst = dst * in_shape[d] + coord[d];
             }
-            gin[dst] = grad_output[flat];
+            gin[dst] = g;
         }
         propagate(&self.input, &gin)
     }
