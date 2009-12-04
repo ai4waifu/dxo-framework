@@ -1,5 +1,5 @@
-# 👁️ @dxo/vision
+# @dxo/vision
 
 **Workspace stub — not on npm publish / placeholder OIDC lists.**
 
-Vision transforms, datasets, and model zoo. Implementation waits on unified runtime + Conv/Norm (Living layer B). This package only reserves the npm name shape inside the monorepo.
+Vision `Image` / `ImageBatch`, transforms, and model zoo. Pixel carrier is `@dxo/core` `ImageBuffer` (Living `11` two-layer contract). Implementation waits on `vision-classify`.

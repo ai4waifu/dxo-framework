@@ -298,6 +298,41 @@ export function withoutGrad<T>(run: () => T): T {
     }
 }
 
+export type {
+    DecodeImageBridgeOptions,
+    ImageBuffer,
+    ImageBufferAlphaMode,
+    ImageBufferColorSpace,
+    ImageBufferDtype,
+    ImageBufferLayout,
+    ImageBufferToTensorOptions,
+} from './image-buffer.js';
+export { decodeImageBuffer, unsupportedImageBufferApi } from './image-buffer.js';
+
+export type {
+    AudioBuffer,
+    BatchBuffer,
+    IndexBuffer,
+    OutputBuffer,
+    SparseBuffer,
+    StateBuffer,
+    TokenBuffer,
+    TokenBufferDtype,
+    VideoFrameBuffer,
+} from './domain-buffers.js';
+
+export type {
+    BufferToTensorOptions,
+    CodecHandle,
+    DeviceBuffer,
+    HostDtype,
+    MappedFile,
+    StreamHandle,
+    TensorView,
+    TypedBuffer,
+} from './typed-buffer.js';
+export { unsupportedTypedBufferApi } from './typed-buffer.js';
+
 function flattenData(data: number[]): number[] {
     return data.flat(Infinity) as number[];
 }
