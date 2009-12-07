@@ -65,7 +65,5 @@ export interface CodecHandle {
 }
 
 export function unsupportedTypedBufferApi(name: string): never {
-    throw new Error(
-        `@dxo/core ${name} is reserved for the typed-buffer napi surface (Living 11); not a domain product API`,
-    );
+    throw new Error(`@dxo/core ${name} is reserved for the typed-buffer napi surface; not a domain product API`);
 }

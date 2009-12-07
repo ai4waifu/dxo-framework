@@ -38,19 +38,10 @@ export type DecodeImageBridgeOptions = {
  * Native decode bridge entry (stub). Codec providers plug in later;
  * full JPEG/PNG product APIs stay out of `@dxo/core`.
  */
-export function decodeImageBuffer(
-    _bytes: Uint8Array,
-    _options?: DecodeImageBridgeOptions,
-): Promise<ImageBuffer> {
-    return Promise.reject(
-        new Error(
-            '@dxo/core decodeImageBuffer is not wired yet; ImageBuffer napi bridge lands with vision-classify',
-        ),
-    );
+export function decodeImageBuffer(_bytes: Uint8Array, _options?: DecodeImageBridgeOptions): Promise<ImageBuffer> {
+    return Promise.reject(new Error('@dxo/core decodeImageBuffer is not wired yet'));
 }
 
 export function unsupportedImageBufferApi(name: string): never {
-    throw new Error(
-        `@dxo/core ${name} is reserved for the ImageBuffer napi surface; not an @dxo/vision Image API`,
-    );
+    throw new Error(`@dxo/core ${name} is reserved for the ImageBuffer napi surface; not an @dxo/vision Image API`);
 }

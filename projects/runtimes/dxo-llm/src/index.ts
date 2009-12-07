@@ -3,9 +3,8 @@
  * Workspace-only until model-runtime-text / related gates close (not on publish-npm).
  */
 
-import { tensor, withoutGrad, type Tensor, type TokenBuffer } from '@dxo/core';
-import type { Module } from '@dxo/nn';
-import { TinyTransformer } from '@dxo/nn';
+import { type Tensor, type TokenBuffer, tensor, withoutGrad } from '@dxo/core';
+import type { Module, TinyTransformer } from '@dxo/nn';
 import { decodeSafetensors, encodeSafetensors, type SafetensorSlice } from '@dxo/serialize';
 
 export type TokenizerEncodeOptions = {

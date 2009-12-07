@@ -10,5 +10,22 @@
     "license": "Apache-2.0",
     "engines": {
         "node": ">=20"
+    },
+    "homepage": "https://github.com/ai4waifu/dxo-framework#readme",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ai4waifu/dxo-framework.git",
+        "directory": "projects/runtimes/dxo-skills"
+    },
+    "bugs": {
+        "url": "https://github.com/ai4waifu/dxo-framework/issues"
+    },
+    "keywords": [
+        "dxo",
+        "typescript",
+        "deep-learning"
+    ],
+    "publishConfig": {
+        "access": "public"
     }
 }

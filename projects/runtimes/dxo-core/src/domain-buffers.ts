@@ -4,13 +4,7 @@
  */
 
 import type { Tensor } from './index.js';
-import type {
-    BufferToTensorOptions,
-    DeviceBuffer,
-    HostDtype,
-    MappedFile,
-    TypedBuffer,
-} from './typed-buffer.js';
+import type { BufferToTensorOptions, DeviceBuffer, HostDtype, MappedFile, TypedBuffer } from './typed-buffer.js';
 
 export type TokenBufferDtype = Extract<HostDtype, 'i32' | 'i64'>;
 

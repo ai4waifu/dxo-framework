@@ -1,4 +1,4 @@
-import { createRuntime, version, type LiteRuntime } from '@dxo/lite';
+import { createRuntime, type LiteRuntime, version } from '@dxo/lite';
 
 export { version };
 
@@ -29,10 +29,7 @@ export function homepageLiteOptions() {
     };
 }
 
-function readGpuBackendReady(capabilities: {
-    gpuBackendReady?: boolean;
-    titanWgpuReady?: boolean;
-}): boolean {
+function readGpuBackendReady(capabilities: { gpuBackendReady?: boolean; titanWgpuReady?: boolean }): boolean {
     return capabilities.gpuBackendReady ?? capabilities.titanWgpuReady ?? false;
 }
 

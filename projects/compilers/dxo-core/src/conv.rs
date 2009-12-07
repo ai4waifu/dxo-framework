@@ -12,11 +12,7 @@ impl Tensor {
     /// 2D convolution NCHW: input `[N,C,H,W]`, weight `[O,C,kH,kW]`, optional bias `[O]`.
     pub fn conv2d(&self, weight: &Self, bias: Option<&Self>, stride: usize, padding: usize) -> Result<Self, TensorError> {
         let (out, _) = conv2d_forward(self, weight, bias, stride, padding)?;
-        let parents: Vec<&Tensor> = if let Some(b) = bias {
-            vec![self, weight, b]
-        } else {
-            vec![self, weight]
-        };
+        let parents: Vec<&Tensor> = if let Some(b) = bias { vec![self, weight, b] } else { vec![self, weight] };
         Ok(Self::maybe_attach(
             out,
             &parents,

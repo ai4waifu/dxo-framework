@@ -1,8 +1,9 @@
 # 💬 @dxo/llm
 
-**Workspace-only — not on npm publish / placeholder OIDC lists until gates close.**
+Tokenizer and streaming language-model workflows for Node.js.
 
-Tokenizer and language-model product surface (`GenerationConfig`, streaming `generate`, AbortSignal). Inference serving remains `@dxo/serve` (later). Prefer this package name over a vague `@dxo/text` umbrella.
+Tokenizer and language-model product surface (`GenerationConfig`, streaming `generate`, AbortSignal). Inference serving
+remains `@dxo/serve` (later). Prefer this package name over a vague `@dxo/text` umbrella.
 
 ## Preview API
 

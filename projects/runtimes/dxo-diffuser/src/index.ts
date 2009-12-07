@@ -1,6 +1,6 @@
 /**
- * Diffusion / multimodal pipeline product surface (Living `11` · Wave 4).
- * Workspace-only until `diffuser-pipeline` closes (not on publish-npm).
+ * Diffusion / multimodal pipeline product surface.
+ * Workspace-only until the diffusion pipeline gate closes (not on publish-npm).
  * Package name is `@dxo/diffuser` — never `@dxo/generate`.
  *
  * Generation pixels stay on `OutputBuffer` / device handle; preview uses explicit
@@ -82,14 +82,12 @@ export function diffuserVersion(): string {
 }
 
 /**
- * Reserve the pipeline factory. Real weights / schedulers land with `diffuser-pipeline`.
+ * Reserve the pipeline factory. Real weights / schedulers land with the diffusion product gate.
  */
 export async function createDiffusionPipeline(_ref: string): Promise<DiffusionPipeline> {
     unsupportedDiffuserApi('createDiffusionPipeline');
 }
 
 export function unsupportedDiffuserApi(name: string): never {
-    throw new Error(
-        `@dxo/diffuser ${name} is a workspace stub; DiffusionPipeline lands with diffuser-pipeline after device-residency`,
-    );
+    throw new Error(`@dxo/diffuser ${name} is a workspace stub; real DiffusionPipeline is not wired yet`);
 }

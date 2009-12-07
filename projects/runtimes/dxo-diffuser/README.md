@@ -1,5 +1,6 @@
 # @dxo/diffuser
 
-**Workspace stub — not on npm publish / placeholder OIDC lists.**
+Composable diffusion and multimodal generation pipelines for Node.js.
 
-Wave 4 generative product surface: `DiffusionPipeline`, scheduler, prompt/condition, image-to-image, cancelable streaming progress/preview. Replaces the unfrozen `@dxo/generate` name. Exit gate: `diffuser-pipeline`.
+Generative product surface: `DiffusionPipeline`, scheduler, prompt/condition, image-to-image, cancelable streaming
+progress/preview. Replaces the unfrozen `@dxo/generate` name.

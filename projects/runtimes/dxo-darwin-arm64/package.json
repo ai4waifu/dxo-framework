@@ -14,5 +14,19 @@
     "files": [
         "dxo.darwin-arm64.node",
         "README.md"
+    ],
+    "homepage": "https://github.com/ai4waifu/dxo-framework#readme",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ai4waifu/dxo-framework.git",
+        "directory": "projects/runtimes/dxo-darwin-arm64"
+    },
+    "bugs": {
+        "url": "https://github.com/ai4waifu/dxo-framework/issues"
+    },
+    "keywords": [
+        "dxo",
+        "typescript",
+        "deep-learning"
     ]
 }

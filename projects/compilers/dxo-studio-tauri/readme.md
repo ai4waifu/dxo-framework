@@ -1,10 +1,9 @@
 # dxo-studio-tauri
 
-Tauri shell → **`dxo-studio.exe`**. Embeds VMZ static build from `@dxo/studio` (`dist/`).
+Desktop shell for DXO Studio built with Tauri.
 
-Separate from `dxo studio` CLI (VMZ watch + browser).
+The application embeds the Studio web bundle in a native desktop window and shares the same local runtime APIs as the browser experience.
 
 ```bash
-pnpm --filter @dxo/studio build:ui
 cargo build -p dxo-studio-tauri --release
 ```

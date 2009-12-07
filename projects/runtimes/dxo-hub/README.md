@@ -1,5 +1,12 @@
-# @dxo/hub
+# 📦 @dxo/hub
 
-**Workspace stub — not on npm publish / placeholder OIDC lists.**
+Reliable model and dataset access for DXO applications.
 
-Artifact providers: `local:` and `hf:` are implemented (digest + offline cache). Wave 4 reserves `modelscope:` / `s3:` / `r2:` with structured `HUB_PROVIDER_UNAVAILABLE` until `hub-remote-cache`. Not a UI. Secrets stay on Node/server capability.
+Load artifacts from local storage or remote providers with caching, integrity checks, and offline-friendly workflows. Keep artifact retrieval separate from model execution so the same application can switch between local development, CI, and production storage.
+
+```ts
+const artifact = await hub.resolve('model://my-classifier');
+const model = await loadModel(artifact);
+```
+
+Providers are composable, and applications retain control over credentials, storage, and deployment.

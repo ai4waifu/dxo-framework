@@ -4,7 +4,7 @@
 
 import { createHash } from 'node:crypto';
 import { createWriteStream, existsSync } from 'node:fs';
-import { mkdir, readFile, readdir, rename } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
@@ -18,7 +18,7 @@ export type HubModelOptions = {
     files?: string[];
     cache?: HubCacheMode;
     signal?: AbortSignal;
-    /** Collection / dataset manifest id when resolving a model set (Wave 4). */
+    /** Collection / dataset manifest id when resolving a model set. */
     collection?: string;
 };
 
@@ -47,15 +47,15 @@ function parseRef(ref: string): { provider: HubProvider; rest: string } {
             return { provider: scheme, rest: ref.slice(prefix.length) };
         }
     }
-    throw new Error(
-        `@dxo/hub model() requires explicit scheme local:|hf:|modelscope:|s3:|r2:, got ${JSON.stringify(ref)}`,
-    );
+    throw new Error(`@dxo/hub model() requires explicit scheme local:|hf:|modelscope:|s3:|r2:, got ${JSON.stringify(ref)}`);
 }
 
 function unsupportedRemoteProvider(provider: HubProvider, ref: string): never {
-    const err = new Error(
-        `@dxo/hub provider ${provider} is reserved for hub-remote-cache (Wave 4); ref=${JSON.stringify(ref)}`,
-    ) as Error & { code: string; phase: string; recoverable: boolean };
+    const err = new Error(`@dxo/hub provider ${provider} is not implemented yet; use local: or hf: (ref=${JSON.stringify(ref)})`) as Error & {
+        code: string;
+        phase: string;
+        recoverable: boolean;
+    };
     err.code = 'HUB_PROVIDER_UNAVAILABLE';
     err.phase = 'resolve';
     err.recoverable = false;

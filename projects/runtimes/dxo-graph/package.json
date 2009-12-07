@@ -29,6 +29,16 @@
         "graph",
         "model",
         "netron",
-        "typescript"
-    ]
+        "typescript",
+        "deep-learning"
+    ],
+    "homepage": "https://github.com/ai4waifu/dxo-framework#readme",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ai4waifu/dxo-framework.git",
+        "directory": "projects/runtimes/dxo-graph"
+    },
+    "bugs": {
+        "url": "https://github.com/ai4waifu/dxo-framework/issues"
+    }
 }
