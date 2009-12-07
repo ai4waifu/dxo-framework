@@ -14,7 +14,7 @@
         "test:lite": "node ./tests/lite-probe.mjs"
     },
     "dependencies": {
-        "@dxo/lite": "0.0.9",
+        "@dxo/lite": "0.0.10",
         "@vmz/core": "^0.1.12"
     },
     "devDependencies": {
