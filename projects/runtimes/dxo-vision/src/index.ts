@@ -7,6 +7,23 @@
 import type { ImageBuffer, Tensor } from '@dxo/core';
 
 export { VisionError } from './errors.js';
+export {
+    Classifier,
+    type ClassifierOptions,
+    compose,
+    LinearHead,
+    type LinearHeadOptions,
+} from './heads.js';
+export {
+    type ClassificationDecode,
+    type ClassificationTopK,
+    type DecodeClassificationOptions,
+    decodeClassification,
+    defineLabelSpace,
+    type LabelSpace,
+    type LabelSpaceOptions,
+} from './labels.js';
+export { defineResNet, ResNet } from './resnet.js';
 export type {
     Device,
     ResNetDepth,
@@ -16,23 +33,6 @@ export type {
     WeightSource,
 } from './types.js';
 export { resnetFeatureChannels } from './types.js';
-export { ResNet, defineResNet } from './resnet.js';
-export {
-    Classifier,
-    LinearHead,
-    compose,
-    type ClassifierOptions,
-    type LinearHeadOptions,
-} from './heads.js';
-export {
-    decodeClassification,
-    defineLabelSpace,
-    type ClassificationDecode,
-    type ClassificationTopK,
-    type DecodeClassificationOptions,
-    type LabelSpace,
-    type LabelSpaceOptions,
-} from './labels.js';
 
 export type ColorSpace = 'rgb' | 'rgba' | 'gray' | 'bgr';
 export type ImageLayout = 'HWC' | 'CHW' | 'nchw' | 'nhwc';

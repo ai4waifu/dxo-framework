@@ -5,9 +5,9 @@ import {
     type ResNetDepth,
     type ResNetOptions,
     type ResNetSignature,
+    resnetFeatureChannels,
     type TensorPort,
     type WeightSource,
-    resnetFeatureChannels,
 } from './types.js';
 
 function buildSignature(depth: ResNetDepth, inChannels: number): ResNetSignature {
@@ -76,10 +76,7 @@ export class ResNet extends Module {
     }
 
     forward(_image: Tensor): Tensor {
-        unsupported(
-            'ResNet.forward',
-            `depth=${this.depth}; full stem/stages/GAP not wired on this preview surface`,
-        );
+        unsupported('ResNet.forward', `depth=${this.depth}; full stem/stages/GAP not wired on this preview surface`);
     }
 
     async load(_weights: WeightSource, _options?: { scope?: 'all' | 'backbone' }): Promise<void> {

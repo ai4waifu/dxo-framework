@@ -2,14 +2,14 @@ import assert from 'node:assert/strict';
 import { tensor } from '@dxo/core';
 import {
     Classifier,
-    LinearHead,
-    ResNet,
-    VisionError,
     compose,
     decodeClassification,
     defineLabelSpace,
     defineResNet,
+    LinearHead,
+    ResNet,
     type ResNetOptions,
+    VisionError,
 } from '@dxo/vision';
 
 // Constructible ResNet + signature ports (no classes field).

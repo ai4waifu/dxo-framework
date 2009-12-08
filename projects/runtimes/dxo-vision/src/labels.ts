@@ -46,10 +46,7 @@ export type DecodeClassificationOptions = {
  * Decode logits with an external label space.
  * Same logits may be decoded with different LabelSpaces (e.g. EN vs ZH).
  */
-export async function decodeClassification(
-    logits: Tensor,
-    options: DecodeClassificationOptions,
-): Promise<ClassificationDecode> {
+export async function decodeClassification(logits: Tensor, options: DecodeClassificationOptions): Promise<ClassificationDecode> {
     const { labels } = options;
     const k = Math.max(1, Math.min(options.topK ?? 5, labels.size));
     const shape = logits.shape;
@@ -58,10 +55,7 @@ export async function decodeClassification(
     }
     const classDim = shape[shape.length - 1]!;
     if (classDim !== labels.size) {
-        throw new VisionError(
-            'LABEL_SIZE_MISMATCH',
-            `logits class dim=${classDim} does not match labelSpace size=${labels.size}`,
-        );
+        throw new VisionError('LABEL_SIZE_MISMATCH', `logits class dim=${classDim} does not match labelSpace size=${labels.size}`);
     }
 
     const data = await logits.toArray();

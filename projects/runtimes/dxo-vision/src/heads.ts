@@ -1,8 +1,8 @@
 import type { Tensor } from '@dxo/core';
 import { Linear, Module } from '@dxo/nn';
+import { VisionError } from './errors.js';
 import type { ResNet } from './resnet.js';
 import type { TensorPort } from './types.js';
-import { VisionError } from './errors.js';
 
 export type LinearHeadOptions = {
     /** Feature dim; inferred from `input` port or by `compose` when omitted. */
@@ -16,10 +16,7 @@ function resolveInFeatures(input: number | TensorPort): number {
     if (typeof input === 'number') return input;
     const last = input.shape[input.shape.length - 1];
     if (typeof last === 'number') return last;
-    throw new VisionError(
-        'INVALID_HEAD_INPUT',
-        'LinearHead input port must end with a fixed feature dimension',
-    );
+    throw new VisionError('INVALID_HEAD_INPUT', 'LinearHead input port must end with a fixed feature dimension');
 }
 
 /** Feature → logits only; no label names / language. */
@@ -43,10 +40,7 @@ export class LinearHead extends Module {
     /** Wire feature size (used by `compose` when ctor omitted `input`). */
     bindInput(inFeatures: number): void {
         if (this.#inFeatures !== undefined && this.#inFeatures !== inFeatures) {
-            throw new VisionError(
-                'HEAD_FEATURE_MISMATCH',
-                `LinearHead already bound to inFeatures=${this.#inFeatures}, got ${inFeatures}`,
-            );
+            throw new VisionError('HEAD_FEATURE_MISMATCH', `LinearHead already bound to inFeatures=${this.#inFeatures}, got ${inFeatures}`);
         }
         if (this.#linear && this.#inFeatures === inFeatures) return;
         this.#inFeatures = inFeatures;
@@ -99,10 +93,7 @@ export function compose(backbone: ResNet, head: LinearHead): Classifier {
         throw new VisionError('INVALID_BACKBONE', 'backbone features port must end with a fixed dim');
     }
     if (head.inFeatures !== undefined && head.inFeatures !== last) {
-        throw new VisionError(
-            'HEAD_FEATURE_MISMATCH',
-            `LinearHead inFeatures=${head.inFeatures} does not match backbone features=${last}`,
-        );
+        throw new VisionError('HEAD_FEATURE_MISMATCH', `LinearHead inFeatures=${head.inFeatures} does not match backbone features=${last}`);
     }
     head.bindInput(last);
     return new Classifier({ backbone, head });

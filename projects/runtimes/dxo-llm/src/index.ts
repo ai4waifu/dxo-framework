@@ -190,7 +190,9 @@ export async function* generate(
     const maxTokens = config.maxTokens ?? 16;
     const temperature = config.temperature ?? 0;
     const topP = config.topP ?? 1;
-    const eosTokenId = config.eosTokenId;
+    // Only non-negative finite eos ids can stop decoding (avoids accidental stop on unset/negative sentinels).
+    const eosTokenId =
+        typeof config.eosTokenId === 'number' && Number.isFinite(config.eosTokenId) && config.eosTokenId >= 0 ? config.eosTokenId : undefined;
 
     if (tokens.shape.length !== 2 || tokens.shape[0] !== 1) {
         throw new Error(`generate expects tokens shape [1, T], got [${tokens.shape.join(',')}]`);
@@ -215,7 +217,8 @@ export async function* generate(
         if (eosTokenId !== undefined && tokenId === eosTokenId) return;
 
         const prev = await cur.toArray();
-        cur = tensor([...prev, tokenId], [1, t + 1]);
+        const nextLen = prev.length + 1;
+        cur = tensor([...prev, tokenId], [1, nextLen]);
     }
 }
 
