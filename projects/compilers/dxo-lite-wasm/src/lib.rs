@@ -3,7 +3,7 @@
 //! Exports opaque init + f32 kernels consumed by `@dxo/lite-unknown-wasm32`.
 //! Does **not** own WebGPU devices; Titan wgpu dispatch lands later via `dxo-core`.
 
-#![warn(missing_docs)]
+#![deny(missing_docs)]
 
 use wasm_bindgen::prelude::*;
 

@@ -1,10 +1,6 @@
-import { loadNative } from '@dxo/core/native';
+import { createInspectApiServer as createNativeInspectApiServer, type NativeInspectApiServerOptions } from '@dxo/core';
 
-export type InspectApiServerOptions = {
-    host?: string;
-    port?: number;
-    runsRoot?: string;
-};
+export type InspectApiServerOptions = NativeInspectApiServerOptions;
 
 export type InspectApiServer = {
     host: string;
@@ -14,25 +10,12 @@ export type InspectApiServer = {
     close: () => Promise<void>;
 };
 
-type NativeInspectHandle = {
-    host: string;
-    port: number;
-    url: string;
-    runsRoot: string;
-    close: () => void;
-};
-
-type NativeWithInspect = ReturnType<typeof loadNative> & {
-    createInspectApiServer(options: InspectApiServerOptions): NativeInspectHandle;
-};
-
-/** Loopback HTTP API over the append-only inspect run store (Rust `dxo-studio`). */
+/**
+ * Loopback inspect HTTP serve — thin TS wrapper over napi `create_inspect_api_server`.
+ * Do not reimplement the HTTP server or run-store reader in TypeScript.
+ */
 export async function createInspectApiServer(options: InspectApiServerOptions = {}): Promise<InspectApiServer> {
-    const native = loadNative() as NativeWithInspect;
-    if (typeof native.createInspectApiServer !== 'function') {
-        throw new Error('createInspectApiServer requires `pnpm build:native`');
-    }
-    const handle = native.createInspectApiServer({
+    const handle = createNativeInspectApiServer({
         host: options.host,
         port: options.port,
         runsRoot: options.runsRoot,

@@ -167,6 +167,4 @@ if (wasmSrc) {
     console.warn(`homepage-cdn: missing ${wasmName} (run stage-homepage-wasm / build:lite-wasm)`);
 }
 
-console.log(
-    `homepage-cdn: staged ${relPaths.size} path(s) + lib=${libCopied} entryRewrites=${entryRewrites} → ${cdnDir}`,
-);
+console.log(`homepage-cdn: staged ${relPaths.size} path(s) + lib=${libCopied} entryRewrites=${entryRewrites} → ${cdnDir}`);

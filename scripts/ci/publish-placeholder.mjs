@@ -80,9 +80,9 @@ const JS_STUBS = [
     '@dxo/inspect',
     '@dxo/graph',
     '@dxo/studio',
+    '@dxo/vision',
 ];
-// Domain workspace stubs (@dxo/hub|vision|llm|diffuser|ui) stay out of placeholder OIDC.
-
+// @dxo/resnet is external (sibling weight-asset repo). Other stubs (hub/llm/diffuser/ui) stay out until their gates.
 const NATIVE_STUBS = [
     { name: '@dxo/dxo-win32-x64', os: ['win32'], cpu: ['x64'] },
     { name: '@dxo/dxo-linux-x64', os: ['linux'], cpu: ['x64'] },

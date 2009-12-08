@@ -1,12 +1,38 @@
 /**
- * Vision product surface (Living `11`).
- * Workspace-only; excluded from placeholder / publish-npm lists.
- *
- * `Image` / `ImageBatch` live here. Pixel storage / zero-copy views are
- * `@dxo/core` `ImageBuffer` — not a second tensor engine.
+ * @dxo/vision — developer preview (API unstable).
+ * Image types + ResNet backbone / heads / label decode.
+ * Not a closed vision-classify gate. Weights live in external `@dxo/resnet`.
  */
 
 import type { ImageBuffer, Tensor } from '@dxo/core';
+
+export { VisionError } from './errors.js';
+export type {
+    Device,
+    ResNetDepth,
+    ResNetOptions,
+    ResNetSignature,
+    TensorPort,
+    WeightSource,
+} from './types.js';
+export { resnetFeatureChannels } from './types.js';
+export { ResNet, defineResNet } from './resnet.js';
+export {
+    Classifier,
+    LinearHead,
+    compose,
+    type ClassifierOptions,
+    type LinearHeadOptions,
+} from './heads.js';
+export {
+    decodeClassification,
+    defineLabelSpace,
+    type ClassificationDecode,
+    type ClassificationTopK,
+    type DecodeClassificationOptions,
+    type LabelSpace,
+    type LabelSpaceOptions,
+} from './labels.js';
 
 export type ColorSpace = 'rgb' | 'rgba' | 'gray' | 'bgr';
 export type ImageLayout = 'HWC' | 'CHW' | 'nchw' | 'nhwc';
@@ -57,9 +83,9 @@ export interface ImageBatch {
 export type LegacyImageTensorSpec = ImageTensorSpec;
 
 export function visionVersion(): string {
-    return 'dxo-vision@placeholder';
+    return 'dxo-vision@developer-preview';
 }
 
 export function unsupportedVisionApi(name: string): never {
-    throw new Error(`@dxo/vision ${name} is a workspace stub; real transforms / zoo are not wired yet`);
+    throw new Error(`@dxo/vision ${name} is not wired yet on this developer preview surface`);
 }

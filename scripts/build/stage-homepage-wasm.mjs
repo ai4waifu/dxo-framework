@@ -15,22 +15,13 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const wasmLib = path.join(root, 'projects/runtimes/dxo-lite-unknown-wasm32/lib/dxo_lite_bg.wasm');
 const publicDir = path.join(root, 'projects/homepage/public');
 const publicWasm = path.join(publicDir, 'dxo_lite_bg.wasm');
-const force =
-    process.argv.includes('--force') ||
-    process.env.DXO_FORCE_WASM_BUILD === '1' ||
-    process.env.DXO_FORCE_WASM_BUILD === 'true';
-const skipRust =
-    process.env.CF_PAGES === '1' ||
-    process.env.DXO_HOMEPAGE_SKIP_WASM === '1' ||
-    process.env.DXO_HOMEPAGE_SKIP_WASM === 'true';
+const force = process.argv.includes('--force') || process.env.DXO_FORCE_WASM_BUILD === '1' || process.env.DXO_FORCE_WASM_BUILD === 'true';
+const skipRust = process.env.CF_PAGES === '1' || process.env.DXO_HOMEPAGE_SKIP_WASM === '1' || process.env.DXO_HOMEPAGE_SKIP_WASM === 'true';
 
 function publishedWasmCandidates() {
     return [
         path.join(root, 'projects/homepage/node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
-        path.join(
-            root,
-            'projects/homepage/node_modules/@dxo/lite/node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm',
-        ),
+        path.join(root, 'projects/homepage/node_modules/@dxo/lite/node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
         path.join(root, 'node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
         path.join(root, 'node_modules/@dxo/lite/node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
     ];
@@ -52,9 +43,7 @@ if (skipRust) {
         console.log(`stage-homepage-wasm: skip rust; keep existing ${publicWasm}`);
         process.exit(0);
     }
-    console.warn(
-        'stage-homepage-wasm: CF/skip and no published wasm in node_modules — CPU fallback only (pin @dxo/lite >= 0.0.10)',
-    );
+    console.warn('stage-homepage-wasm: CF/skip and no published wasm in node_modules — CPU fallback only (pin @dxo/lite >= 0.0.10)');
     process.exit(0);
 }
 

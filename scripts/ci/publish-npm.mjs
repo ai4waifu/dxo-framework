@@ -39,7 +39,8 @@ const JS_PACKAGES = [
     { dir: 'projects/runtimes/dxo-inspect', publishName: '@dxo/inspect' },
     { dir: 'projects/runtimes/dxo-graph', publishName: '@dxo/graph' },
     { dir: 'projects/runtimes/dxo-studio', publishName: '@dxo/studio' },
-    // Workspace-only stubs (hub/vision/llm/diffuser/ui) are not published here.
+    { dir: 'projects/runtimes/dxo-vision', publishName: '@dxo/vision' },
+    // @dxo/resnet is external (sibling dxo-resnet/); hub/llm/diffuser/ui stay out until their gates.
 ];
 
 function fail(msg) {

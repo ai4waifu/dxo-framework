@@ -6,8 +6,8 @@
  * Output: `artifacts/dxo-gpu-verify.tgz`
  */
 import { spawnSync } from 'node:child_process';
-import { createRequire } from 'node:module';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

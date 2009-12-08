@@ -20,6 +20,9 @@ importers:
       '@dxo/diffuser':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-diffuser
+      '@dxo/dxo':
+        specifier: workspace:*
+        version: link:projects/runtimes/dxo
       '@dxo/graph':
         specifier: workspace:*
         version: link:projects/runtimes/dxo-graph
@@ -84,6 +87,16 @@ importers:
       '@dxo/studio':
         specifier: workspace:*
         version: link:../dxo-studio
+      cac:
+        specifier: '6'
+        version: 6.7.14
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
 
   projects/runtimes/dxo-core:
     optionalDependencies:
@@ -244,6 +257,9 @@ importers:
       '@dxo/core':
         specifier: workspace:*
         version: link:../dxo-core
+      '@dxo/nn':
+        specifier: workspace:*
+        version: link:../dxo-nn
 
   projects/runtimes/dxo-win32-x64: {}
 
@@ -510,6 +526,10 @@ packages:
   boolbase@2.0.0:
     resolution: {integrity: sha512-DkVaaQHymRhpYEYo9x1oo7Q7B0Y6KJUsjm3c9eTyFDby4MHLBTwZ6ZDWBel5zrYxj1WsZgC5oLpiz+93MluXeA==}
     engines: {node: '>=20.19.0'}
+
+  cac@6.7.14:
+    resolution: {integrity: sha512-b6Ilus+c3RrdDk+JhLKUAQfzzgLEPy6wcXqS7f/xe1EETvsDP6GORG7SFuOs6cID5YkqchW/LXZbX5bc8j7ZcQ==}
+    engines: {node: '>=8'}
 
   css-select@7.0.0:
     resolution: {integrity: sha512-snmjEVXy+1LnwXdxhYvTMj1d9tOh4HxkA1YmoayVBeeyR2C14Pum7fcxJIm4SswYspVy866eYNwlH6xC3/VH5g==}
@@ -779,6 +799,8 @@ snapshots:
       - canvas
 
   boolbase@2.0.0: {}
+
+  cac@6.7.14: {}
 
   css-select@7.0.0:
     dependencies:

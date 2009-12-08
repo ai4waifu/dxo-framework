@@ -1,6 +1,6 @@
 //! DXO dxo-core engine — Titan CPU tensor, eager autograd, and CUDA matmul facade.
 
-#![warn(missing_docs)]
+#![deny(missing_docs)]
 #![warn(missing_debug_implementations)]
 
 mod autograd;

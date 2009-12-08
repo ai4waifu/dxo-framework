@@ -14,13 +14,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
     CI_GROUPS,
-    selectCiSuites,
-    selectGpuArtifactSuites,
-    selectGroupSuites,
     SUITE_BY_ID,
     SUITES,
     type SuiteDef,
     type SuiteGroup,
+    selectCiSuites,
+    selectGpuArtifactSuites,
+    selectGroupSuites,
 } from './suites.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');

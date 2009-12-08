@@ -1,6 +1,6 @@
 //! Node N-API bindings for DXO (`version`, CPU `Tensor`, eager autograd).
 
-#![warn(missing_docs)]
+#![deny(missing_docs)]
 #![warn(missing_debug_implementations)]
 #![allow(unsafe_code)] // `tensor_f32` reads Node `Buffer` bytes as f32 via a validated slice view.
 
@@ -34,6 +34,34 @@ pub fn backend() -> String {
 #[napi]
 pub fn cuda_available() -> bool {
     dxo_core::cuda_available()
+}
+
+/// Single engine diagnosis document for `dxo doctor` (napi is the source of truth).
+#[napi(object)]
+#[derive(Debug, Clone)]
+pub struct DoctorReport {
+    /// Native entry succeeded (this struct is only returned when the addon loaded).
+    pub ok: bool,
+    /// `dxo-core` crate version.
+    pub version: String,
+    /// Active backend product label (`cpu` / `cuda`).
+    pub backend: String,
+    /// CUDA Driver session probe.
+    pub cuda_available: bool,
+    /// Napi binding identity (`dxo-napi@<crate version>`).
+    pub abi: String,
+}
+
+/// Collect engine/backend facts in one napi call so CLI cannot drift from core.
+#[napi]
+pub fn doctor_report() -> DoctorReport {
+    DoctorReport {
+        ok: true,
+        version: dxo_core::VERSION.to_string(),
+        backend: dxo_core::backend_label().to_string(),
+        cuda_available: dxo_core::cuda_available(),
+        abi: format!("dxo-napi@{}", env!("CARGO_PKG_VERSION")),
+    }
 }
 
 /// Probe HAL `wait_event` on the CPU session (always available when native loads).
@@ -241,7 +269,7 @@ impl Tensor {
     /// Retag logical dtype without changing host f32 payload.
     #[napi]
     pub fn cast_dtype(&self, dtype: String) -> Result<Tensor> {
-        let d = dxo_core::DType::parse(&dtype).map_err(|e| Error::from_reason(e))?;
+        let d = dxo_core::DType::parse(&dtype).map_err(Error::from_reason)?;
         Ok(Tensor { inner: self.inner.cast_dtype(d) })
     }
 
@@ -365,9 +393,13 @@ pub fn tensor_f32(data: Buffer, shape: Vec<u32>, requires_grad: Option<bool>) ->
 
 /// Options for the loopback inspect HTTP API (`@dxo/studio`).
 #[napi(object)]
+#[derive(Debug, Clone)]
 pub struct InspectApiServerOptions {
+    /// Bind host; defaults to `127.0.0.1`.
     pub host: Option<String>,
+    /// TCP port; defaults to `4310` (`0` asks the OS for a free port).
     pub port: Option<u16>,
+    /// Runs root directory; defaults to [`default_inspect_runs_root`].
     pub runs_root: Option<String>,
 }
 
@@ -377,32 +409,43 @@ pub struct InspectApiServerHandle {
     inner: Option<dxo_studio::InspectApiServer>,
 }
 
+impl fmt::Debug for InspectApiServerHandle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("InspectApiServerHandle").field("open", &self.inner.is_some()).finish_non_exhaustive()
+    }
+}
+
 #[napi]
 impl InspectApiServerHandle {
     fn server(&self) -> Result<&dxo_studio::InspectApiServer> {
         self.inner.as_ref().ok_or_else(|| Error::from_reason("inspect API server already closed"))
     }
 
+    /// Bound host string.
     #[napi(getter)]
     pub fn host(&self) -> Result<String> {
         Ok(self.server()?.host.clone())
     }
 
+    /// Bound TCP port.
     #[napi(getter)]
     pub fn port(&self) -> Result<u16> {
         Ok(self.server()?.port)
     }
 
+    /// Base URL for the loopback API.
     #[napi(getter)]
     pub fn url(&self) -> Result<String> {
         Ok(self.server()?.url.clone())
     }
 
+    /// Root directory of inspect run stores.
     #[napi(getter)]
     pub fn runs_root(&self) -> Result<String> {
         Ok(self.server()?.runs_root.display().to_string())
     }
 
+    /// Stop the server thread and release the handle.
     #[napi]
     pub fn close(&mut self) {
         if let Some(server) = self.inner.take() {
@@ -422,4 +465,83 @@ pub fn create_inspect_api_server(options: InspectApiServerOptions) -> Result<Ins
     })
     .map_err(|err| Error::from_reason(err.to_string()))?;
     Ok(InspectApiServerHandle { inner: Some(inner) })
+}
+
+fn resolve_runs_root(runs_root: Option<String>) -> std::path::PathBuf {
+    runs_root.filter(|s| !s.trim().is_empty()).map(std::path::PathBuf::from).unwrap_or_else(dxo_studio::default_runs_root)
+}
+
+/// Run metadata for CLI `inspect` (Rust store is the source of truth).
+#[napi(object)]
+#[derive(Debug, Clone)]
+pub struct InspectRunMetaJs {
+    /// Format identifier (e.g. `dxo-inspect`).
+    pub format: String,
+    /// Schema version for this meta document.
+    pub version: u32,
+    /// Stable run directory / id.
+    pub run_id: String,
+    /// Unix epoch milliseconds when the run started (JS number).
+    pub started_at_ms: f64,
+    /// Unix epoch milliseconds when the run ended, if known.
+    pub ended_at_ms: Option<f64>,
+    /// Optional human-readable label.
+    pub label: Option<String>,
+    /// Run status string (e.g. `ok`, `failed`).
+    pub status: String,
+    /// Hyperparameters as a JSON string, if present.
+    pub hyperparams_json: Option<String>,
+}
+
+/// One row from `inspect list`.
+#[napi(object)]
+#[derive(Debug, Clone)]
+pub struct InspectRunSummaryJs {
+    /// Run directory name / id.
+    pub run_id: String,
+    /// Parsed run metadata.
+    pub meta: InspectRunMetaJs,
+}
+
+fn meta_to_js(meta: dxo_studio::RunMetaV0) -> InspectRunMetaJs {
+    InspectRunMetaJs {
+        format: meta.format,
+        version: meta.version,
+        run_id: meta.run_id,
+        started_at_ms: meta.started_at_ms as f64,
+        ended_at_ms: meta.ended_at_ms.map(|v| v as f64),
+        label: meta.label,
+        status: meta.status,
+        hyperparams_json: meta.hyperparams.map(|v| v.to_string()),
+    }
+}
+
+/// List local inspect runs via Rust store (not a parallel TS reader).
+#[napi]
+pub fn list_inspect_runs(runs_root: Option<String>) -> Result<Vec<InspectRunSummaryJs>> {
+    let root = resolve_runs_root(runs_root);
+    let runs = dxo_studio::list_runs(&root).map_err(|err| Error::from_reason(err.to_string()))?;
+    Ok(runs.into_iter().map(|row| InspectRunSummaryJs { run_id: row.run_id, meta: meta_to_js(row.meta) }).collect())
+}
+
+/// Read one run's metadata via Rust store.
+#[napi]
+pub fn read_inspect_run_meta(run_id: String, runs_root: Option<String>) -> Result<Option<InspectRunMetaJs>> {
+    let root = resolve_runs_root(runs_root);
+    let meta = dxo_studio::read_run_meta(&root, &run_id).map_err(|err| Error::from_reason(err.to_string()))?;
+    Ok(meta.map(meta_to_js))
+}
+
+/// Read one run's events.jsonl as a JSON array string via Rust store.
+#[napi]
+pub fn read_inspect_events_json(run_id: String, runs_root: Option<String>) -> Result<String> {
+    let root = resolve_runs_root(runs_root);
+    let events = dxo_studio::read_events(&root, &run_id).map_err(|err| Error::from_reason(err.to_string()))?;
+    serde_json::to_string(&events).map_err(|err| Error::from_reason(err.to_string()))
+}
+
+/// Resolved default runs root (same rule as the inspect HTTP server).
+#[napi]
+pub fn default_inspect_runs_root() -> String {
+    dxo_studio::default_runs_root().display().to_string()
 }

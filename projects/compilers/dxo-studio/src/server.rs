@@ -1,5 +1,6 @@
 //! Loopback HTTP API over the inspect run store.
 
+use std::fmt;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
@@ -14,11 +15,14 @@ use crate::store::{
     read_json_artifact, read_run_meta, safe_run_file,
 };
 
-/// Options for {@link InspectApiServer::bind}.
+/// Options for [`InspectApiServer::bind`].
 #[derive(Debug, Clone)]
 pub struct InspectApiOptions {
+    /// Bind address host (typically loopback).
     pub host: String,
+    /// TCP port; `0` asks the OS for a free port.
     pub port: u16,
+    /// Root directory of inspect run stores.
     pub runs_root: PathBuf,
 }
 
@@ -30,12 +34,27 @@ impl Default for InspectApiOptions {
 
 /// Bound inspect HTTP server handle.
 pub struct InspectApiServer {
+    /// Bound host string.
     pub host: String,
+    /// Bound TCP port.
     pub port: u16,
+    /// Base URL for the loopback API (`http://host:port`).
     pub url: String,
+    /// Root directory of inspect run stores.
     pub runs_root: PathBuf,
     stop: Arc<AtomicBool>,
     join: Mutex<Option<JoinHandle<()>>>,
+}
+
+impl fmt::Debug for InspectApiServer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("InspectApiServer")
+            .field("host", &self.host)
+            .field("port", &self.port)
+            .field("url", &self.url)
+            .field("runs_root", &self.runs_root)
+            .finish_non_exhaustive()
+    }
 }
 
 impl InspectApiServer {

@@ -3,15 +3,7 @@
  * `pnpm verify`, `pnpm test:verify`, ordinary CI, and GPU artifact packing all read this registry.
  */
 
-export type SuiteGroup =
-    | 'cpu'
-    | 'contract'
-    | 'product'
-    | 'gpu-smoke'
-    | 'gpu-parity'
-    | 'gpu-residency'
-    | 'gpu-model'
-    | 'gpu-precision';
+export type SuiteGroup = 'cpu' | 'contract' | 'product' | 'gpu-smoke' | 'gpu-parity' | 'gpu-residency' | 'gpu-model' | 'gpu-precision';
 
 export type SuitePlatform = 'linux' | 'darwin' | 'win32' | 'all';
 
@@ -227,6 +219,30 @@ export const SUITES: SuiteDef[] = [
         timeoutMs: 60_000,
     },
     {
+        id: 'cli-contract',
+        script: 'scripts/test/cli-contract.ts',
+        group: 'contract',
+        packages: ['@dxo/dxo', '@dxo/core', '@dxo/studio'],
+        platforms: ['all'],
+        backend: ['cpu'],
+        requiresGpu: false,
+        requiresNetwork: false,
+        allowSkip: false,
+        timeoutMs: 180_000,
+    },
+    {
+        id: 'vision-compose-contract',
+        script: 'scripts/test/vision-compose-contract.ts',
+        group: 'contract',
+        packages: ['@dxo/vision', '@dxo/core', '@dxo/nn'],
+        platforms: ['all'],
+        backend: ['cpu'],
+        requiresGpu: false,
+        requiresNetwork: false,
+        allowSkip: false,
+        timeoutMs: 60_000,
+    },
+    {
         id: 'titan-event-dep',
         script: 'scripts/test/titan-event-dep.ts',
         group: 'contract',
@@ -327,13 +343,7 @@ export function suiteMatchesPlatform(suite: SuiteDef, platform: NodeJS.Platform 
 
 /** Suites run by ordinary host CI / `pnpm test:verify`. */
 export function selectCiSuites(platform: NodeJS.Platform = process.platform): SuiteDef[] {
-    return SUITES.filter(
-        (s) =>
-            CI_GROUPS.includes(s.group) &&
-            !s.requiresGpu &&
-            !s.requiresNetwork &&
-            suiteMatchesPlatform(s, platform),
-    );
+    return SUITES.filter((s) => CI_GROUPS.includes(s.group) && !s.requiresGpu && !s.requiresNetwork && suiteMatchesPlatform(s, platform));
 }
 
 export function selectGroupSuites(group: SuiteGroup, platform: NodeJS.Platform = process.platform): SuiteDef[] {

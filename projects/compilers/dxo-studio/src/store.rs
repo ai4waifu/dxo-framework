@@ -20,26 +20,38 @@ pub fn default_runs_root() -> PathBuf {
     std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")).join(".dxo").join("runs")
 }
 
+/// Inspect run metadata (`meta.json`, format version 0).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RunMetaV0 {
+    /// Format identifier (e.g. `dxo-inspect`).
     pub format: String,
+    /// Schema version for this meta document.
     pub version: u32,
+    /// Stable run directory / id.
     pub run_id: String,
+    /// Unix epoch milliseconds when the run started.
     pub started_at_ms: u64,
+    /// Unix epoch milliseconds when the run ended, if known.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ended_at_ms: Option<u64>,
+    /// Optional human-readable label.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    /// Run status string (e.g. `ok`, `failed`).
     pub status: String,
+    /// Optional hyperparameters payload.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hyperparams: Option<serde_json::Value>,
 }
 
+/// One listed run: id plus parsed metadata.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RunSummary {
+    /// Run directory name / id.
     pub run_id: String,
+    /// Parsed `meta.json` for this run.
     pub meta: RunMetaV0,
 }
 
@@ -62,10 +74,11 @@ pub fn list_runs(root: &Path) -> std::io::Result<Vec<RunSummary>> {
             out.push(RunSummary { run_id, meta });
         }
     }
-    out.sort_by(|a, b| b.meta.started_at_ms.cmp(&a.meta.started_at_ms));
+    out.sort_by_key(|b| std::cmp::Reverse(b.meta.started_at_ms));
     Ok(out)
 }
 
+/// Read and parse `meta.json` for `run_id`, or `Ok(None)` if missing.
 pub fn read_run_meta(root: &Path, run_id: &str) -> std::io::Result<Option<RunMetaV0>> {
     let path = run_dir(root, run_id).join(META_FILE);
     let text = match fs::read_to_string(&path) {
@@ -76,6 +89,7 @@ pub fn read_run_meta(root: &Path, run_id: &str) -> std::io::Result<Option<RunMet
     serde_json::from_str(&text).map(Some).map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))
 }
 
+/// Read `events.jsonl` as a vector of JSON values (empty if the file is absent).
 pub fn read_events(root: &Path, run_id: &str) -> std::io::Result<Vec<serde_json::Value>> {
     let path = run_dir(root, run_id).join(EVENTS_FILE);
     let text = match fs::read_to_string(&path) {
@@ -95,18 +109,21 @@ pub fn read_events(root: &Path, run_id: &str) -> std::io::Result<Vec<serde_json:
     Ok(out)
 }
 
+/// Read a run-relative artifact as UTF-8 text (rejects `..` escapes).
 pub fn read_artifact_text(root: &Path, run_id: &str, rel: &str) -> std::io::Result<String> {
     let abs = safe_run_file(root, run_id, rel)
         .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "artifact path escapes run dir"))?;
     fs::read_to_string(abs)
 }
 
+/// Read a run-relative artifact as bytes (rejects `..` escapes).
 pub fn read_artifact_bytes(root: &Path, run_id: &str, rel: &str) -> std::io::Result<Vec<u8>> {
     let abs = safe_run_file(root, run_id, rel)
         .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "artifact path escapes run dir"))?;
     fs::read(abs)
 }
 
+/// Resolve `rel` under the run dir, or `None` if it would escape via `..`.
 pub fn safe_run_file(root: &Path, run_id: &str, rel: &str) -> Option<PathBuf> {
     if rel.contains("..") {
         return None;
@@ -114,19 +131,23 @@ pub fn safe_run_file(root: &Path, run_id: &str, rel: &str) -> Option<PathBuf> {
     Some(run_dir(root, run_id).join(rel.replace('/', std::path::MAIN_SEPARATOR_STR)))
 }
 
+/// Path to the confusion-matrix JSON artifact for a run.
 pub fn confusion_matrix_path(root: &Path, run_id: &str) -> PathBuf {
     run_dir(root, run_id).join(ARTIFACTS_DIR).join("confusion-matrix.json")
 }
 
+/// Path to the image-samples JSON artifact for a run.
 pub fn image_samples_path(root: &Path, run_id: &str) -> PathBuf {
     run_dir(root, run_id).join(ARTIFACTS_DIR).join("image-samples.json")
 }
 
+/// Read a JSON file from disk into a `serde_json::Value`.
 pub fn read_json_artifact(path: &Path) -> std::io::Result<serde_json::Value> {
     let text = fs::read_to_string(path)?;
     serde_json::from_str(&text).map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))
 }
 
+/// Best-effort MIME type from a file extension.
 pub fn mime_for_path(path: &Path) -> &'static str {
     match path.extension().and_then(|e| e.to_str()) {
         Some("png") => "image/png",
@@ -138,14 +159,17 @@ pub fn mime_for_path(path: &Path) -> &'static str {
     }
 }
 
+/// Path to the model-graph JSON artifact for a run.
 pub fn model_graph_path(root: &Path, run_id: &str) -> PathBuf {
     run_dir(root, run_id).join(ARTIFACTS_DIR).join("model-graph.json")
 }
 
+/// Path to the profile-trace JSON artifact for a run.
 pub fn profile_trace_path(root: &Path, run_id: &str) -> PathBuf {
     run_dir(root, run_id).join(ARTIFACTS_DIR).join("profile-trace.json")
 }
 
+/// Collect `metric/scalar` payloads from inspect events.
 pub fn metrics_from_events(events: &[serde_json::Value]) -> Vec<serde_json::Value> {
     events
         .iter()
@@ -158,6 +182,7 @@ pub fn metrics_from_events(events: &[serde_json::Value]) -> Vec<serde_json::Valu
         .collect()
 }
 
+/// Collect `artifact/ref` payloads from inspect events.
 pub fn artifacts_from_events(events: &[serde_json::Value]) -> Vec<serde_json::Value> {
     events
         .iter()
@@ -170,6 +195,7 @@ pub fn artifacts_from_events(events: &[serde_json::Value]) -> Vec<serde_json::Va
         .collect()
 }
 
+/// Collect checkpoint artifacts (`kind == "checkpoint"`) from inspect events.
 pub fn checkpoints_from_events(events: &[serde_json::Value]) -> Vec<serde_json::Value> {
     artifacts_from_events(events)
         .into_iter()

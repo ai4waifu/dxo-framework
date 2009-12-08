@@ -1,6 +1,6 @@
 //! DXO Studio native backend: inspect run store reader + loopback HTTP API.
 
-#![warn(missing_docs)]
+#![deny(missing_docs)]
 #![warn(missing_debug_implementations)]
 
 pub mod server;

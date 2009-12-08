@@ -3,18 +3,36 @@
     "version": "0.1.0",
     "private": true,
     "type": "module",
-    "description": "DXO CLI placeholder (developer preview, API unstable)",
+    "description": "DXO TypeScript CLI (developer preview, API unstable)",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
     "license": "Apache-2.0",
     "bin": {
         "dxo": "./bin/dxo.mjs"
     },
     "files": [
+        "dist",
+        "src",
         "bin",
         "README.md"
     ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json"
+    },
     "dependencies": {
         "@dxo/core": "workspace:*",
-        "@dxo/studio": "workspace:*"
+        "@dxo/studio": "workspace:*",
+        "cac": "6"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.0",
+        "typescript": "^5.8.3"
     },
     "homepage": "https://github.com/ai4waifu/dxo-framework#readme",
     "repository": {

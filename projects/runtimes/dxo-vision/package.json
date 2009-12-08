@@ -1,9 +1,8 @@
 {
     "name": "@dxo/vision",
     "version": "0.1.0",
-    "private": true,
     "type": "module",
-    "description": "DXO vision pipelines and model zoo (workspace stub, not published)",
+    "description": "DXO vision models and task adapters (developer preview, API unstable)",
     "license": "Apache-2.0",
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -21,14 +20,17 @@
         "build": "tsc -p tsconfig.json"
     },
     "dependencies": {
-        "@dxo/core": "workspace:*"
+        "@dxo/core": "workspace:*",
+        "@dxo/nn": "workspace:*"
     },
     "keywords": [
         "dxo",
         "vision",
+        "resnet",
         "image",
         "typescript",
-        "deep-learning"
+        "deep-learning",
+        "developer-preview"
     ],
     "homepage": "https://github.com/ai4waifu/dxo-framework#readme",
     "repository": {

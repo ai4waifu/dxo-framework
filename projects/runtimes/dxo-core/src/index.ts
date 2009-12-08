@@ -1,6 +1,13 @@
 import { Buffer } from 'node:buffer';
 import { loadNative } from './native.js';
-import type { NativeTensor } from './native-types.js';
+import type {
+    NativeDoctorReport,
+    NativeInspectApiServerHandle,
+    NativeInspectApiServerOptions,
+    NativeInspectRunMeta,
+    NativeInspectRunSummary,
+    NativeTensor,
+} from './native-types.js';
 
 export type Device = 'cpu' | 'cuda' | 'metal';
 
@@ -13,7 +20,15 @@ export interface TensorOptions {
     requiresGrad?: boolean;
 }
 
-export type { NativeAddon, NativeTensor } from './native-types.js';
+export type {
+    NativeAddon,
+    NativeDoctorReport,
+    NativeInspectApiServerHandle,
+    NativeInspectApiServerOptions,
+    NativeInspectRunMeta,
+    NativeInspectRunSummary,
+    NativeTensor,
+} from './native-types.js';
 
 /**
  * Dense float32 tensor (CPU preview + optional CUDA matmul spike).
@@ -274,9 +289,40 @@ export function cudaAvailable(): boolean {
     return loadNative().cudaAvailable();
 }
 
+/** Engine/backend diagnosis from napi (CLI must not reimplement this). */
+export function doctorReport(): NativeDoctorReport {
+    return loadNative().doctorReport();
+}
+
 /** Probe HAL `wait_event` via the CPU session (does not use JS await as a substitute). */
 export function probeEventDep(): void {
     loadNative().probeEventDep();
+}
+
+/** Default inspect runs root (same rule as napi inspect HTTP serve). */
+export function defaultInspectRunsRoot(): string {
+    return loadNative().defaultInspectRunsRoot();
+}
+
+/** List inspect runs via Rust store. */
+export function listInspectRuns(runsRoot?: string): NativeInspectRunSummary[] {
+    return loadNative().listInspectRuns(runsRoot ?? null);
+}
+
+/** Read one run meta via Rust store. */
+export function readInspectRunMeta(runId: string, runsRoot?: string): NativeInspectRunMeta | null {
+    return loadNative().readInspectRunMeta(runId, runsRoot ?? null);
+}
+
+/** Read inspect events.jsonl as parsed JSON array via Rust store. */
+export function readInspectEvents(runId: string, runsRoot?: string): unknown[] {
+    const raw = loadNative().readInspectEventsJson(runId, runsRoot ?? null);
+    return JSON.parse(raw) as unknown[];
+}
+
+/** Start loopback inspect HTTP serve (napi). Prefer `@dxo/studio` for WebUI orchestration. */
+export function createInspectApiServer(options: NativeInspectApiServerOptions = {}): NativeInspectApiServerHandle {
+    return loadNative().createInspectApiServer(options);
 }
 
 /** Whether the current thread records autograd ops. */
