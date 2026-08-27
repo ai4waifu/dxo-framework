@@ -10,7 +10,6 @@ thumbs.db
 
 # Node
 node_modules/
-pnpm-lock.yaml
 
 # Rust
 target/
