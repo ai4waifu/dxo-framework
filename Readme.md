@@ -1,31 +1,35 @@
-Rust Template Project
-=====================
+# DXO Framework
 
-Rust template project for monorepo
+**Deep Learning for the JavaScript Era** — TypeScript-first API, Rust core engine, napi-rs native bindings.
 
-## Change the initial commit
+## Quick start
 
-```shell
-git commit --amend --message "🎂 Project initialized!" --date "2012-12-12"
+```bash
+pnpm install
+pnpm build:native
+pnpm smoke
 ```
 
-## Emoji Comment
+```typescript
+import {version, Tensor} from '@dxo/core';
 
-| Emoji  | Meaning                      |  
-|--------|------------------------------|  
-| 🎂     | Project initialized!         |  
-| 🎉     | Release new version          |  
-| 🧪🔮   | Experimental code            |   
-| 🔧🐛🐞 | Bug fix                      |  
-| 🔒     | Security fix                 |  
-| 🐣🐤🐥 | Add feature                  |  
-| 📝🎀   | Documentation                |  
-| 🚀     | Performance improve!         |  
-| 🚧     | Work in progress             |  
-| 🚨     | Test coverage improve!       |  
-| 🚥     | CI improve!                  |  
-| 🔥🧨   | Remove code or files         |
-| 🧹     | Code refactor                |
-| 📈     | Add analytics or branch code |
-| 🤖     | Automation fix               |
-| 📦     | Update dependencies          |
+console.log(version()); // "0.1.0"
+new Tensor();
+```
+
+## Layout
+
+| Path                               | npm package           |
+|------------------------------------|-----------------------|
+| `projects/compilers/dxo-core`      | *(Rust crate)*        |
+| `projects/compilers/dxo-napi`      | *(Rust napi cdylib)*  |
+| `projects/runtimes/dxo-core`       | `@dxo/core`           |
+| `projects/runtimes/dxo-lite`       | `@dxo/lite`           |
+| `projects/runtimes/dxo`            | `@dxo/dxo` (CLI)      |
+| `projects/runtimes/dxo-<platform>` | `@dxo/dxo-<platform>` |
+
+pnpm workspace：`projects/runtimes/*`（见 `pnpm-workspace.yaml`）。
+
+## License
+
+MIT OR Apache-2.0
