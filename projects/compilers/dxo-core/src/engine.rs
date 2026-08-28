@@ -22,9 +22,9 @@ pub fn cpu_session() -> Arc<dyn DeviceSession> {
         .clone()
 }
 
-/// Stable backend label surfaced to diagnostics.
+/// Stable backend label for user-facing diagnostics (`cpu` / `cuda` / … — never Titan brand).
 pub const fn backend_label() -> &'static str {
-    "titan-cpu"
+    "cpu"
 }
 
 /// Exercise Titan HAL `wait_event` (upload stream → compute stream) via the CPU session.

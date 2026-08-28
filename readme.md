@@ -79,7 +79,7 @@ import {backend, tensor, version} from '@dxo/core';
 import {Linear} from '@dxo/nn';
 import {SGD} from '@dxo/optimizer';
 
-console.log(version(), backend()); // e.g. 0.1.0 titan-cpu
+console.log(version(), backend()); // e.g. 0.1.0 cpu
 
 const model = new Linear(2, 1);
 const x = tensor([1, 0, 0, 1], [2, 2]);

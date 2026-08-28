@@ -6,7 +6,8 @@ export type LiteProbe = {
     version: string;
     backend: string;
     webgpu: boolean;
-    titanWgpuReady: boolean;
+    /** DXO GPU WASM facade readiness (0.0.9 published field was titanWgpuReady). */
+    gpuBackendReady: boolean;
     webglTensorBackend: false;
     tensorClass: string;
     matmulOk: boolean;
@@ -28,6 +29,13 @@ export function homepageLiteOptions() {
     };
 }
 
+function readGpuBackendReady(capabilities: {
+    gpuBackendReady?: boolean;
+    titanWgpuReady?: boolean;
+}): boolean {
+    return capabilities.gpuBackendReady ?? capabilities.titanWgpuReady ?? false;
+}
+
 /** Runtime probe for @dxo/lite (async createRuntime + CPU fallback + interim WASM). */
 export async function probeLite(): Promise<LiteProbe> {
     const rt = await createRuntime(homepageLiteOptions());
@@ -40,7 +48,7 @@ export async function probeLite(): Promise<LiteProbe> {
             version: version(),
             backend: rt.capabilities.backend,
             webgpu: rt.capabilities.webgpu,
-            titanWgpuReady: rt.capabilities.titanWgpuReady,
+            gpuBackendReady: readGpuBackendReady(rt.capabilities),
             webglTensorBackend: rt.capabilities.webglTensorBackend,
             tensorClass: a.constructor.name,
             matmulOk: out[0] === 1 && out[1] === 2 && out[2] === 3 && out[3] === 4,

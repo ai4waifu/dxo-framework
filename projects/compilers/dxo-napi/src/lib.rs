@@ -24,21 +24,21 @@ pub fn version() -> String {
     dxo_core::VERSION.to_string()
 }
 
-/// Titan CPU backend label wired through `dxo-core` facade.
+/// DXO CPU backend label (product brand; internal engine is not named here).
 #[napi]
 pub fn backend() -> String {
     dxo_core::backend_label().to_string()
 }
 
-/// Whether Titan CUDA can open a Driver session on this machine.
+/// Whether CUDA can open a Driver session on this machine.
 #[napi]
 pub fn cuda_available() -> bool {
     dxo_core::cuda_available()
 }
 
-/// Probe Titan HAL `wait_event` on the CPU session (always available when native loads).
+/// Probe HAL `wait_event` on the CPU session (always available when native loads).
 #[napi]
-pub fn probe_titan_event_dep() -> Result<()> {
+pub fn probe_event_dep() -> Result<()> {
     dxo_core::probe_event_dep().map_err(map_err)
 }
 

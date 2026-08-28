@@ -10,7 +10,7 @@
 
     <h1>@dxo/lite test surface</h1>
     <p>
-      Async runtime facade; host f32 until Titan wgpu WASM is linked. TS never retains GPUDevice. WebGL is not a tensor backend.
+      Async runtime facade; host f32 until the DXO GPU WASM facade is linked. TS never retains GPUDevice. WebGL is not a tensor backend.
     </p>
 
     <section class="dxo-home__card">
@@ -20,7 +20,7 @@
         <div><dt>capabilities.backend</dt><dd>{liteBackend}</dd></div>
         <div><dt>wasm</dt><dd>{liteWasm}</dd></div>
         <div><dt>webgpu</dt><dd>{liteWebgpu}</dd></div>
-        <div><dt>titanWgpuReady</dt><dd>{liteTitanReady}</dd></div>
+        <div><dt>gpuBackendReady</dt><dd>{liteGpuReady}</dd></div>
         <div><dt>webglTensorBackend</dt><dd>{liteWebgl}</dd></div>
         <div><dt>Tensor</dt><dd>{liteTensorClass}</dd></div>
         <div><dt>matmul identity</dt><dd>{liteMatmul}</dd></div>
@@ -42,7 +42,7 @@ export default class LiteTestPage {
     liteBackend = '';
     liteWasm = '';
     liteWebgpu = '';
-    liteTitanReady = '';
+    liteGpuReady = '';
     liteWebgl = '';
     liteTensorClass = '';
     liteMatmul = '';
@@ -53,7 +53,7 @@ export default class LiteTestPage {
         this.liteBackend = probe.backend;
         this.liteWasm = probe.wasmVersion;
         this.liteWebgpu = String(probe.webgpu);
-        this.liteTitanReady = String(probe.titanWgpuReady);
+        this.liteGpuReady = String(probe.gpuBackendReady);
         this.liteWebgl = String(probe.webglTensorBackend);
         this.liteTensorClass = probe.tensorClass;
         this.liteMatmul = probe.matmulOk ? 'ok' : 'fail';

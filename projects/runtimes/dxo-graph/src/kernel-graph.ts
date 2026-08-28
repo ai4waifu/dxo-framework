@@ -38,7 +38,7 @@ export function kernelGraphUnavailable(reason: string): ModelGraphV0 {
  */
 export function kernelGraphFromProfile(trace: ProfileTraceV0 | null | undefined): ModelGraphV0 {
     if (!trace || trace.format !== 'dxo-profile') {
-        return kernelGraphUnavailable('no ProfileTraceV0 from Titan / inspect');
+        return kernelGraphUnavailable('no ProfileTraceV0 from runtime / inspect');
     }
     const spans = (trace.spans ?? []).filter(
         (s): s is ProfileSpan =>

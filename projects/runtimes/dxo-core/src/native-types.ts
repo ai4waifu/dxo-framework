@@ -41,7 +41,7 @@ export interface NativeAddon {
     backend(): string;
     version(): string;
     cudaAvailable(): boolean;
-    probeTitanEventDep(): void;
+    probeEventDep(): void;
     setGradEnabled(enabled: boolean): boolean;
     isGradEnabled(): boolean;
     tensor(data: number[], shape: number[], requiresGrad?: boolean): NativeTensor;

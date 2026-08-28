@@ -2,7 +2,7 @@
  * @dxo/lite — browser/Worker runtime facade.
  *
  * TS owns async init, capabilities, explicit CPU fallback, and synchronous Tensor composition.
- * Interim path loads `@dxo/lite-unknown-wasm32` f32 kernels (not Titan wgpu yet).
+ * Interim path loads `@dxo/lite-unknown-wasm32` f32 kernels (GPU WASM facade not linked yet).
  * This layer never retains `GPUAdapter` / `GPUDevice` handles.
  * WebGL is never a tensor backend.
  */
@@ -11,8 +11,8 @@ export type FallbackMode = 'cpu' | 'error';
 export type LiteBackend = 'webgpu' | 'cpu';
 export type PowerPreference = 'low-power' | 'high-performance';
 
-/** Set true when WASM + Titan wgpu facade is wired; until then compute stays host f32 (± interim WASM). */
-export const TITAN_WGPU_READY = false;
+/** Set true when WASM GPU facade is wired; until then compute stays host f32 (± interim WASM). */
+export const GPU_BACKEND_READY = false;
 
 export interface CreateRuntimeOptions {
     /** Passed to `navigator.gpu.requestAdapter` for capability probe only (no device acquire). */
@@ -20,7 +20,7 @@ export interface CreateRuntimeOptions {
     /** Adapter must expose these features during probe (ignored if empty). */
     requiredFeatures?: readonly string[];
     /**
-     * When GPU compute is unavailable (no WebGPU, or Titan WASM not ready):
+     * When GPU compute is unavailable (no WebGPU, or GPU WASM facade not ready):
      * - `'error'` (default): throw a diagnostic Error
      * - `'cpu'`: host f32 tensors with async observation barriers
      */
@@ -38,12 +38,12 @@ export interface CreateRuntimeOptions {
 }
 
 export interface LiteCapabilities {
-    /** Active compute backend. `'webgpu'` only when {@link TITAN_WGPU_READY} and WASM facade loaded. */
+    /** Active compute backend. `'webgpu'` only when {@link GPU_BACKEND_READY} and WASM facade loaded. */
     backend: LiteBackend;
     /** True when a WebGPU adapter was probed (adapter not retained). */
     webgpu: boolean;
-    /** True when Titan wgpu WASM facade is linked and may dispatch GPU kernels. */
-    titanWgpuReady: boolean;
+    /** True when the DXO GPU WASM facade is linked and may dispatch GPU kernels. */
+    gpuBackendReady: boolean;
     /** Always false — WebGL is not a DXO tensor backend. */
     webglTensorBackend: false;
     /** Interim host-f32 WASM kernels from `@dxo/lite-unknown-wasm32`, if loaded. */
@@ -281,7 +281,7 @@ function cpuCapabilities(wasm?: LiteCapabilities['wasm']): LiteCapabilities {
     return {
         backend: 'cpu',
         webgpu: false,
-        titanWgpuReady: TITAN_WGPU_READY,
+        gpuBackendReady: GPU_BACKEND_READY,
         webglTensorBackend: false,
         wasm,
         features: [],
@@ -332,9 +332,9 @@ async function probeWebGpuCapabilities(options: CreateRuntimeOptions): Promise<L
     }
 
     return {
-        backend: TITAN_WGPU_READY ? 'webgpu' : 'cpu',
+        backend: GPU_BACKEND_READY ? 'webgpu' : 'cpu',
         webgpu: true,
-        titanWgpuReady: TITAN_WGPU_READY,
+        gpuBackendReady: GPU_BACKEND_READY,
         webglTensorBackend: false,
         features,
         limits,
@@ -343,9 +343,9 @@ async function probeWebGpuCapabilities(options: CreateRuntimeOptions): Promise<L
     };
 }
 
-function titanNotReadyError(): Error {
+function gpuBackendNotReadyError(): Error {
     return new Error(
-        "Titan wgpu WASM facade is not ready; pass { fallback: 'cpu' } for host tensors until WASM is linked. WebGL is not a DXO tensor backend.",
+        "DXO GPU WASM facade is not ready; pass { fallback: 'cpu' } for host tensors until WASM is linked. WebGL is not a DXO tensor backend.",
     );
 }
 
@@ -374,16 +374,16 @@ export async function createRuntime(options: CreateRuntimeOptions = {}): Promise
     const fallback: FallbackMode = options.fallback ?? 'error';
     const kernels = await loadWasmKernels(options.wasm);
 
-    if (TITAN_WGPU_READY) {
-        // Future: dynamic import WASM facade → dxo-core → Titan wgpu session.
-        throw new Error('Titan wgpu WASM facade hook is not implemented yet');
+    if (GPU_BACKEND_READY) {
+        // Future: dynamic import WASM facade → dxo-core → GPU session.
+        throw new Error('DXO GPU WASM facade hook is not implemented yet');
     }
 
     try {
         const probed = await probeWebGpuCapabilities(options);
         if (probed) {
             if (fallback === 'error') {
-                throw titanNotReadyError();
+                throw gpuBackendNotReadyError();
             }
             return new RuntimeImpl(withWasmCap(probed, kernels), kernels);
         }
