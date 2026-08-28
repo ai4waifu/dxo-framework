@@ -4,7 +4,7 @@
     "type": "module",
     "packageManager": "pnpm@9.15.4",
     "scripts": {
-        "build:ts": "pnpm --filter @dxo/core --filter @dxo/lite --filter @dxo/nn --filter @dxo/optimizer --filter @dxo/data --filter @dxo/serialize --filter @dxo/train --filter @dxo/inspect --filter @dxo/graph --filter @dxo/studio --filter @dxo/ui --filter @dxo/hub --filter @dxo/vision --filter @dxo/llm run build",
+        "build:ts": "pnpm --filter @dxo/core --filter @dxo/lite --filter @dxo/nn --filter @dxo/optimizer --filter @dxo/data --filter @dxo/serialize --filter @dxo/train --filter @dxo/inspect --filter @dxo/graph --filter @dxo/studio --filter @dxo/ui --filter @dxo/hub --filter @dxo/vision --filter @dxo/llm --filter @dxo/diffuser run build",
         "build:native": "node scripts/build/napi.mjs --release",
         "build:lite-wasm": "node scripts/build/lite-wasm.mjs",
         "build": "pnpm run build:lite-wasm && pnpm run build:ts && pnpm run build:native",
@@ -31,6 +31,7 @@
         "@biomejs/biome": "^2.5.7",
         "@dxo/core": "workspace:*",
         "@dxo/data": "workspace:*",
+        "@dxo/diffuser": "workspace:*",
         "@dxo/graph": "workspace:*",
         "@dxo/hub": "workspace:*",
         "@dxo/inspect": "workspace:*",

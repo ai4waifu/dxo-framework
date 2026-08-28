@@ -81,7 +81,7 @@ const JS_STUBS = [
     '@dxo/graph',
     '@dxo/studio',
 ];
-// Domain workspace stubs (@dxo/hub|vision|llm|ui) stay out of placeholder OIDC.
+// Domain workspace stubs (@dxo/hub|vision|llm|diffuser|ui) stay out of placeholder OIDC.
 
 const NATIVE_STUBS = [
     { name: '@dxo/dxo-win32-x64', os: ['win32'], cpu: ['x64'] },
