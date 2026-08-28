@@ -42,7 +42,7 @@ jobs:
         run: pnpm run build:native
       - name: Pack GPU verify bundle
         run: node scripts/ci/pack-gpu-artifact.mjs
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: dxo-gpu-verify
           path: artifacts/dxo-gpu-verify.tgz
