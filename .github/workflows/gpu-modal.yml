@@ -70,18 +70,12 @@ jobs:
             echo "Missing MODAL_TOKEN_ID / MODAL_TOKEN_SECRET repo secrets."
             exit 1
           fi
-      - name: Install Modal JS SDK
-        # Install outside the pnpm workspace — root package.json uses workspace:* which npm rejects.
-        run: |
-          mkdir -p "$RUNNER_TEMP/dxo-modal-sdk"
-          cd "$RUNNER_TEMP/dxo-modal-sdk"
-          npm init -y
-          npm install modal@0.10.0
+      # Pack a real npm package (modal dep) into artifacts/ — never npm install at monorepo root.
+      - name: Pack Modal GPU runner
+        run: node scripts/ci/pack-modal-runner.mjs
       - uses: actions/download-artifact@v4
         with:
           name: dxo-gpu-verify
           path: artifacts
       - name: Run verifies on Modal T4
-        env:
-          NODE_PATH: ${{ runner.temp }}/dxo-modal-sdk/node_modules
-        run: node scripts/ci/modal-gpu-verify.mjs --artifact artifacts/dxo-gpu-verify.tgz
+        run: node artifacts/dxo-modal-runner/run.mjs --artifact artifacts/dxo-gpu-verify.tgz

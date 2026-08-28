@@ -1,0 +1,16 @@
+{
+    "name": "dxo-modal-gpu-runner",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "description": "Isolated Modal GPU CI orchestrator (no pnpm workspace: protocol)",
+    "bin": {
+        "dxo-modal-gpu-verify": "./run.mjs"
+    },
+    "dependencies": {
+        "modal": "0.10.0"
+    },
+    "engines": {
+        "node": ">=22"
+    }
+}
