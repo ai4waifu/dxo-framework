@@ -6,12 +6,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import {
-    bundleModelGraphs,
-    executionGraphFromModule,
-    kernelGraphFromProfile,
-    moduleGraphFromModule,
-} from '@dxo/graph';
+import { bundleModelGraphs, executionGraphFromModule, kernelGraphFromProfile, moduleGraphFromModule } from '@dxo/graph';
 import { profileTraceUnavailable, RunRecorder, type ProfileTraceV0 } from '@dxo/inspect';
 import { Linear } from '@dxo/nn';
 import { createInspectApiServer } from '@dxo/studio';

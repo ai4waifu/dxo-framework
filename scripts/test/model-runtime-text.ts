@@ -3,12 +3,7 @@
  */
 import assert from 'node:assert/strict';
 import { tensor, withoutGrad } from '@dxo/core';
-import {
-    createTokenizer,
-    encodeTinyTransformerSafetensors,
-    generate,
-    loadTinyTransformerSafetensors,
-} from '@dxo/llm';
+import { createTokenizer, encodeTinyTransformerSafetensors, generate, loadTinyTransformerSafetensors } from '@dxo/llm';
 import { TinyTransformer } from '@dxo/nn';
 
 const tok = await createTokenizer('dxo-char-v0');
@@ -58,6 +53,4 @@ try {
 }
 assert.ok(aborted, 'expected AbortError');
 
-console.log(
-    `model-runtime-text ok: vocab=${vocab} gen=${out.join(',')} text="${tok.decode(out)}"`,
-);
+console.log(`model-runtime-text ok: vocab=${vocab} gen=${out.join(',')} text="${tok.decode(out)}"`);

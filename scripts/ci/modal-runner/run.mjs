@@ -64,17 +64,9 @@ try {
 
     console.log(`modal-gpu-verify: upload ${artifact}`);
     await sb.filesystem.copyFromLocal(artifact, remoteTar);
-    await execChecked(sb, [
-        'bash',
-        '-lc',
-        `rm -rf ${remoteDir} && mkdir -p ${remoteDir} && tar -xzf ${remoteTar} -C ${remoteDir}`,
-    ]);
+    await execChecked(sb, ['bash', '-lc', `rm -rf ${remoteDir} && mkdir -p ${remoteDir} && tar -xzf ${remoteTar} -C ${remoteDir}`]);
 
-    await execChecked(sb, [
-        'bash',
-        '-lc',
-        `cd ${remoteDir} && DXO_REQUIRE_CUDA=1 node run-verifies.mjs`,
-    ]);
+    await execChecked(sb, ['bash', '-lc', `cd ${remoteDir} && DXO_REQUIRE_CUDA=1 node run-verifies.mjs`]);
 
     console.log('modal-gpu-verify: ok');
 } finally {

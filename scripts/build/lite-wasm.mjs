@@ -7,15 +7,7 @@
  * wasm-pack `--out-dir` is resolved relative to the **crate** directory, not cwd.
  */
 import { spawnSync } from 'node:child_process';
-import {
-    copyFileSync,
-    existsSync,
-    mkdirSync,
-    readdirSync,
-    rmSync,
-    unlinkSync,
-    writeFileSync,
-} from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -41,11 +33,7 @@ mkdirSync(staging, { recursive: true });
 if (existsSync(libDir)) rmSync(libDir, { recursive: true, force: true });
 mkdirSync(libDir, { recursive: true });
 
-run(
-    'wasm-pack',
-    ['build', '--target', 'web', '--release', '--out-dir', '.wasm-pack-out', '--out-name', 'dxo_lite'],
-    crate,
-);
+run('wasm-pack', ['build', '--target', 'web', '--release', '--out-dir', '.wasm-pack-out', '--out-name', 'dxo_lite'], crate);
 
 for (const name of readdirSync(staging)) {
     if (name === 'package.json' || name === 'README.md' || name === '.gitignore') continue;

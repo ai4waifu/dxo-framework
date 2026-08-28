@@ -30,12 +30,7 @@ function alignUp(n: number, align: number): number {
 function isTensorInfo(value: unknown): value is SafetensorInfo {
     if (!value || typeof value !== 'object') return false;
     const v = value as SafetensorInfo;
-    return (
-        typeof v.dtype === 'string' &&
-        Array.isArray(v.shape) &&
-        Array.isArray(v.data_offsets) &&
-        v.data_offsets.length === 2
-    );
+    return typeof v.dtype === 'string' && Array.isArray(v.shape) && Array.isArray(v.data_offsets) && v.data_offsets.length === 2;
 }
 
 /** Encode named f32 tensors to a safetensors binary buffer. */
@@ -90,7 +85,10 @@ export function decodeSafetensors(bytes: Uint8Array): Record<string, SafetensorS
         throw new Error(`decodeSafetensors: invalid header length ${headerLen}`);
     }
 
-    const headerText = view.subarray(8, 8 + headerLen).toString('utf8').trim();
+    const headerText = view
+        .subarray(8, 8 + headerLen)
+        .toString('utf8')
+        .trim();
     let header: SafetensorHeader;
     try {
         header = JSON.parse(headerText) as SafetensorHeader;

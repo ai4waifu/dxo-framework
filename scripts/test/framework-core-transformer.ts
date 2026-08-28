@@ -71,6 +71,4 @@ for (let i = 0; i < a.length; i++) {
     assert.ok(Math.abs(a[i]! - b[i]!) < 1e-5);
 }
 
-console.log(
-    `framework-core-transformer ok: params=${params.length} logits=${(await logits.toArray()).slice(0, 4).map((n) => +n.toFixed(3))}`,
-);
+console.log(`framework-core-transformer ok: params=${params.length} logits=${(await logits.toArray()).slice(0, 4).map((n) => +n.toFixed(3))}`);

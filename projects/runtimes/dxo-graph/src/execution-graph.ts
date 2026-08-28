@@ -1,12 +1,6 @@
 import type { Module } from '@dxo/nn';
 import { Linear, Relu, Sequential } from '@dxo/nn';
-import {
-    type GraphEdge,
-    type GraphNode,
-    MODEL_GRAPH_FORMAT,
-    MODEL_GRAPH_VERSION,
-    type ModelGraphV0,
-} from './index.js';
+import { type GraphEdge, type GraphNode, MODEL_GRAPH_FORMAT, MODEL_GRAPH_VERSION, type ModelGraphV0 } from './index.js';
 
 function node(id: string, kind: string, label: string, modulePath?: string, attrs?: Record<string, unknown>): GraphNode {
     return { id, kind, label, modulePath, attrs };
@@ -65,9 +59,7 @@ export function executionGraphFromLinear(linear: Linear, inputShape: number[], p
 
 /** Execution view for Sequential: one op node per layer along the actual control path. */
 export function executionGraphFromSequential(seq: Sequential, inputShape: number[], path = 'sequential'): ModelGraphV0 {
-    const nodes: GraphNode[] = [
-        node('in', 'tensor', 'input', undefined, { shape: [...inputShape], dtype: 'f32', device: 'cpu' }),
-    ];
+    const nodes: GraphNode[] = [node('in', 'tensor', 'input', undefined, { shape: [...inputShape], dtype: 'f32', device: 'cpu' })];
     const edges: GraphEdge[] = [];
     let prev = 'in';
     let shape = [...inputShape];

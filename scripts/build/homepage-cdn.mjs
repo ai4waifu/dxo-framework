@@ -68,11 +68,7 @@ for (const rel of relPaths) {
 const wasmName = 'dxo_lite_bg.wasm';
 const wasmFromPublic = path.join(ROOT, 'projects/homepage/public', wasmName);
 const wasmFromDist = path.join(distDir, wasmName);
-const wasmSrc = fs.existsSync(wasmFromDist)
-    ? wasmFromDist
-    : fs.existsSync(wasmFromPublic)
-      ? wasmFromPublic
-      : null;
+const wasmSrc = fs.existsSync(wasmFromDist) ? wasmFromDist : fs.existsSync(wasmFromPublic) ? wasmFromPublic : null;
 if (wasmSrc) {
     fs.copyFileSync(wasmSrc, path.join(cdnDir, wasmName));
     relPaths.add(wasmName);
