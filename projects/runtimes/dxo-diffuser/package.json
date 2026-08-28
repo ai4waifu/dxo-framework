@@ -25,9 +25,19 @@
         "diffuser",
         "diffusion",
         "pipeline",
-        "typescript"
+        "typescript",
+        "deep-learning"
     ],
     "dependencies": {
         "@dxo/core": "workspace:*"
+    },
+    "homepage": "https://github.com/ai4waifu/dxo-framework#readme",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ai4waifu/dxo-framework.git",
+        "directory": "projects/runtimes/dxo-diffuser"
+    },
+    "bugs": {
+        "url": "https://github.com/ai4waifu/dxo-framework/issues"
     }
 }

@@ -61,7 +61,5 @@ export function visionVersion(): string {
 }
 
 export function unsupportedVisionApi(name: string): never {
-    throw new Error(
-        `@dxo/vision ${name} is a workspace stub; Image / transforms / zoo land with vision-classify`,
-    );
+    throw new Error(`@dxo/vision ${name} is a workspace stub; real transforms / zoo are not wired yet`);
 }

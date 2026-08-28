@@ -6,12 +6,12 @@ Pure TypeScript optimizers over `@dxo/core` tensors.
 
 ## Contract (G3 preview)
 
-| API | Behavior |
-|-----|----------|
-| `SGD(lr)` / `Adam(lr, …)` | `lr` must be `> 0` |
-| `step(params)` | Returns **new** `requiresGrad: true` leaves; does **not** mutate inputs in place |
-| Missing `grad` | Parameter returned unchanged |
-| Caller duty | Reassign onto the module (`Linear.loadParameters` or field write) |
+| API                       | Behavior                                                                         |
+|---------------------------|----------------------------------------------------------------------------------|
+| `SGD(lr)` / `Adam(lr, …)` | `lr` must be `> 0`                                                               |
+| `step(params)`            | Returns **new** `requiresGrad: true` leaves; does **not** mutate inputs in place |
+| Missing `grad`            | Parameter returned unchanged                                                     |
+| Caller duty               | Reassign onto the module (`Linear.loadParameters` or field write)                |
 
 ```typescript
 import { SGD } from '@dxo/optimizer';
@@ -23,4 +23,5 @@ const opt = new SGD(0.1);
 model.loadParameters(opt.step(model.parameters()));
 ```
 
-Adam keeps moment buffers by **parameter index** in the `step(params)` array; keep a stable parameter order across steps.
+Adam keeps moment buffers by **parameter index** in the `step(params)` array; keep a stable parameter order across
+steps.

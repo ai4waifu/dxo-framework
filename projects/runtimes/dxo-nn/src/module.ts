@@ -1,4 +1,4 @@
-import { embedding, randnValues, Tensor, tensor, ones, zeros } from '@dxo/core';
+import { embedding, ones, randnValues, Tensor, tensor, zeros } from '@dxo/core';
 
 export interface TensorStateSlice {
     shape: number[];

@@ -37,6 +37,7 @@ pub struct RunMetaV0 {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RunSummary {
     pub run_id: String,
     pub meta: RunMetaV0,

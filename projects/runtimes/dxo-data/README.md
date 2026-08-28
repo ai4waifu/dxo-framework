@@ -6,13 +6,13 @@ Datasets and batching for DXO. Pure TypeScript over `@dxo/core`.
 
 ## Contract (0.0.5)
 
-| API | Behavior |
-|-----|----------|
-| `Sample` | Flat `x` (+ optional `y`) with explicit `xShape` / `yShape` |
-| `dataset(samples)` | Sync `Iterable<Sample>` |
-| `batch(samples, { batchSize, dropLast? })` | Sync batches; stacks on a new leading dim |
-| `batchAsync(samples, options)` | Same for `AsyncIterable` |
-| `DataLoader` | Thin alias helper around `batch` / `batchAsync` |
+| API                                        | Behavior                                                    |
+|--------------------------------------------|-------------------------------------------------------------|
+| `Sample`                                   | Flat `x` (+ optional `y`) with explicit `xShape` / `yShape` |
+| `dataset(samples)`                         | Sync `Iterable<Sample>`                                     |
+| `batch(samples, { batchSize, dropLast? })` | Sync batches; stacks on a new leading dim                   |
+| `batchAsync(samples, options)`             | Same for `AsyncIterable`                                    |
+| `DataLoader`                               | Thin alias helper around `batch` / `batchAsync`             |
 
 Not included: shuffle sampler, multi-worker, Prefetch, real MNIST download.
 

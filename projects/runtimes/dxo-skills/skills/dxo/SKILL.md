@@ -35,6 +35,8 @@ Return the files changed, install commands, and a runnable verification step.
 - `@dxo/core` is the Node native CPU runtime in the current preview.
 - `@dxo/lite` is an async browser/Worker facade; WebGL tensor execution is not supported.
 - `@dxo/train` is CPU-only in this preview slice.
-- `@dxo/graph`, `@dxo/inspect`, `@dxo/studio`, `@dxo/hub`, `@dxo/vision`, and `@dxo/llm` are placeholders; do not present them as production-ready.
+- `@dxo/graph`, `@dxo/inspect`, `@dxo/studio`, `@dxo/hub`, `@dxo/vision`, and `@dxo/llm` are placeholders; do not
+  present them as production-ready.
 
-When a requested API is not documented by the package README, explain the limitation and propose a documented alternative.
+When a requested API is not documented by the package README, explain the limitation and propose a documented
+alternative.

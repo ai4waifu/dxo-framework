@@ -5,10 +5,11 @@
  * Cloudflare Pages sets `CF_PAGES=1` and cannot run wasm-pack — skip there.
  * Pass `--force` or `DXO_FORCE_WASM_BUILD=1` to rebuild even when lib wasm exists.
  */
+
+import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const wasmLib = path.join(root, 'projects/runtimes/dxo-lite-unknown-wasm32/lib/dxo_lite_bg.wasm');

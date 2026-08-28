@@ -1,6 +1,9 @@
 # dxo-studio
 
-Rust-side inspect run store reader and loopback HTTP API for `@dxo/studio`.
+Rust service component for the DXO Studio runtime.
 
-- **Not** a VMZ app — UI lives in `projects/runtimes/dxo-studio`.
-- **Not** the append-only writer — trainers use `@dxo/inspect` (TS) with the same on-disk layout.
+It reads recorded runs and exposes a local loopback API for Studio clients. The browser interface and event writer are separate packages so this crate can remain focused on secure, predictable read access.
+
+## Contributing
+
+Run `cargo test -p dxo-studio` and keep API responses backward-compatible with the public Studio client.

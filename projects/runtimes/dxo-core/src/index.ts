@@ -299,17 +299,6 @@ export function withoutGrad<T>(run: () => T): T {
 }
 
 export type {
-    DecodeImageBridgeOptions,
-    ImageBuffer,
-    ImageBufferAlphaMode,
-    ImageBufferColorSpace,
-    ImageBufferDtype,
-    ImageBufferLayout,
-    ImageBufferToTensorOptions,
-} from './image-buffer.js';
-export { decodeImageBuffer, unsupportedImageBufferApi } from './image-buffer.js';
-
-export type {
     AudioBuffer,
     BatchBuffer,
     IndexBuffer,
@@ -320,6 +309,16 @@ export type {
     TokenBufferDtype,
     VideoFrameBuffer,
 } from './domain-buffers.js';
+export type {
+    DecodeImageBridgeOptions,
+    ImageBuffer,
+    ImageBufferAlphaMode,
+    ImageBufferColorSpace,
+    ImageBufferDtype,
+    ImageBufferLayout,
+    ImageBufferToTensorOptions,
+} from './image-buffer.js';
+export { decodeImageBuffer, unsupportedImageBufferApi } from './image-buffer.js';
 
 export type {
     BufferToTensorOptions,

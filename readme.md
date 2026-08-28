@@ -1,123 +1,149 @@
-# 🧠 DXO Framework
+# 🧠 DXO
 
-**TypeScript-first deep learning for Node.js.** DXO combines a Rust/Titan engine with napi-rs bindings and a small,
-composable TypeScript surface. This repository is an early developer preview; APIs are unstable while the runtime
-contracts settle.
+## TypeScript-first deep learning, without the Python translation layer
 
-[![CI](https://github.com/ai4waifu/dxo-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/ai4waifu/dxo-framework/actions/workflows/ci.yml)
-`0.0.x` · Apache-2.0
+[![license](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE) [![npm](https://img.shields.io/npm/v/%40dxo%2Fcore)](https://www.npmjs.com/package/@dxo/core)
 
-## 🤖 Agent-first quick start
+DXO is a deep-learning framework designed for TypeScript developers.
 
-DXO is designed to be explored and extended with an AI coding agent. Give the agent the repository context first, then
-ask for one verifiable change at a time. The agent should read the workspace `AGENTS.md` and the design source before
-editing code; implementation README files are intentionally only short package entry points.
+It does not mechanically copy Python APIs into JavaScript; it uses the conventions that make TypeScript readable,
+composable, and pleasant to operate in production.
 
-### Install skills
+## Why Pythonic API translations feel wrong in TypeScript
 
-Install the skills your agent needs before starting a DXO task. In Codex, ask the agent to run the built-in skill
-installer (or use the helper script directly):
+Python-first frameworks are brilliant research tools.
 
-```text
-Install the relevant DXO development skills from the curated catalog. At minimum install the skill for
-skill installation and the skill that matches my task (for example Cloudflare, Workers, SDK, or browser control).
-After installation, tell me which skills were added and use them on the next turn.
-```
+But when a model becomes a product, teams often rebuild the surrounding system in TypeScript: APIs, workers, queues,
+dashboards, desktop tools, and edge clients.
 
-For a local scripted install, use the installer supplied by your Codex installation:
+DXO keeps the model and the product in one language and one runtime.
 
-```bash
-python scripts/install-skill-from-github.py --repo openai/skills --path skills/.curated/<skill-name>
-```
+| The pain of a direct Python API port                                                                                            | The DXO answer                                                                                   |
+|---------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| **“What does this argument mean?”** Long positional calls, overloaded flags, and magic defaults.                                | Explicit option objects with editor-visible types and sensible TypeScript naming.                |
+| **“Why did this fail only at runtime?”** Shapes, devices, dtypes, and missing fields discovered after the job starts.           | Contracts visible during authoring, with structured errors when a capability is unavailable.     |
+| **“How do I stop this request?”** A blocking training or generation call with no natural cancellation path.                     | `AbortSignal` travels through the operation and releases work predictably.                       |
+| **“How do I stream this?”** Callbacks bolted onto an API designed to return one final value.                                    | `AsyncIterable` is the normal result for tokens, previews, progress, and metrics.                |
+| **“Why is my device copying everything?”** Python objects, JSON, and process boundaries between model and product.              | Typed buffers and tensor views make ownership, copies, and device transfers explicit.            |
+| **“Why does this feel unlike the rest of my codebase?”** A Python object lifecycle translated into classes and mutable globals. | Small functions, immutable configuration, composable handles, and ordinary Node.js control flow. |
+| **“How do I turn the demo into a feature?”** A research notebook that needs a second rewrite for the real product.              | The same TypeScript model code can live in an API route, worker, desktop app, or edge function.  |
 
-System skills are preinstalled. Do not copy skill files into this repository or commit them here.
+The result is not “Python, but in JavaScript.” It is deep learning shaped around TypeScript habits: explicit objects
+instead of magic positional arguments, ordinary async iteration instead of framework-specific callbacks, cancellation
+that travels with long-running work, and types that explain what can happen next.
 
-### Prompt template
+## 🤖 Start with an AI coding agent
 
-Copy this prompt into your agent and replace the bracketed fields:
-
-```text
-You are working on DXO Framework. First read AGENTS.md, then read the relevant design documents and roadmap entries.
-Task: [one concrete outcome]
-Scope: [files or package, if known]
-Constraints: preserve the Rust/napi boundary, do not invent APIs, and keep preview/placeholder status honest.
-Verification: run [specific pnpm verify gate or test].
-Delivery: make the smallest reviewable change, show the diff, and report any unrelated pre-existing changes without
-including them.
-```
-
-Example:
-
-```text
-You are working on DXO Framework. Read AGENTS.md and the runtime-contract design first.
-Implement the next runtime contract test vector for @dxo/lite only.
-Do not change public API names or add WebGL support. Run pnpm verify -- runtime-contract-lite and summarize failures.
-```
-
-The agent should stop and ask when the requested behavior is not defined by the design source. Keep commits focused and
-use the repository's gitmoji convention.
-
-## ✨ What is included
-
-- Eager CPU tensors and scalar autograd in `@dxo/core`
-- TypeScript modules, optimizers, datasets, serialization, and a CPU training loop
-- An explicit browser/Worker facade in `@dxo/lite` (WebGPU probing; no WebGL tensor backend)
-- Rust native bindings with platform packages selected through npm optional dependencies
-
-GPU, model-zoo, serving, and Studio features are still being built. Check each package README for its exact contract.
-
-## Quick start
+Install the DXO skill first:
 
 ```bash
-pnpm install
-pnpm build
-pnpm verify -- smoke
+npx skills add ai4waifu/dxo-framework --skill dxo
 ```
 
-```typescript
-import {backend, tensor, version} from '@dxo/core';
+Then give your agent a concrete product request:
+
+```text
+Build a TypeScript image-classification endpoint with DXO.
+Use @dxo/vision for image input and preprocessing, load a local model,
+return the top five labels as JSON, and include a small runnable example.
+```
+
+For language applications:
+
+```text
+Create a streaming text-generation feature with @dxo/llm.
+Accept a prompt, emit text chunks as they arrive, support AbortSignal cancellation,
+and show the smallest complete TypeScript example.
+```
+
+## The TypeScript-friendly advantage
+
+- **Types that explain the model** — tensor shapes, devices, media buffers, model state, and generated events are
+  visible while you code.
+- **Native performance where it matters** — a Rust execution engine handles tensor storage and numerical work without
+  making your application leave Node.js.
+- **One composable workflow** — move from tensors to neural networks, training, model loading, vision, language, and
+  generation without changing languages or service boundaries.
+- **Efficient data paths** — typed buffers and tensor views reduce unnecessary copies between media, models, and
+  devices.
+- **Built for real products** — stream progress, cancel long-running work, integrate with existing services, and keep
+  model behavior reproducible.
+
+```ts
+for await (const event of pipeline.generate({prompt, signal})) {
+    if (event.type === 'preview') updatePreview(event.image);
+    if (event.type === 'text') response.write(event.text);
+}
+```
+
+The same control flow works in an HTTP handler, a queue worker, a desktop app, or an edge function. No adapter layer is
+needed just to make inference feel natural in your product.
+
+## Start with a tensor, grow into an application
+
+```ts
+import {tensor} from '@dxo/core';
 import {Linear} from '@dxo/nn';
-import {SGD} from '@dxo/optimizer';
-
-console.log(version(), backend()); // e.g. 0.1.0 cpu
 
 const model = new Linear(2, 1);
-const x = tensor([1, 0, 0, 1], [2, 2]);
-const y = model.forward(x);
-const loss = y.mean(); // scalar shape [1]
+const input = tensor([1, 2], [1, 2]);
+const prediction = model.forward(input);
+
+console.log(await prediction.toArray());
 ```
 
-## Verify gates
+The same foundation supports training loops, image pipelines, tokenizers, language models, and diffusion workflows.
 
-```bash
-pnpm verify -- smoke
-pnpm verify -- tensor-cpu
-pnpm verify -- autograd-fd
-pnpm verify -- mnist-linear
-pnpm verify -- g3-contract
-pnpm verify -- data-iter
-pnpm verify -- serialize-roundtrip
-pnpm verify -- trainer-loop
-pnpm verify -- gpu-matmul
-pnpm verify -- lite-webgpu-smoke
-```
+## A focused ecosystem
 
-## Layout
+| Package          | Use it for                                        |
+|------------------|---------------------------------------------------|
+| `@dxo/core`      | Tensors, autograd, and runtime execution          |
+| `@dxo/nn`        | Reusable neural-network modules                   |
+| `@dxo/optimizer` | Parameter updates and optimization                |
+| `@dxo/data`      | Datasets, batching, and async data sources        |
+| `@dxo/train`     | Cancellable asynchronous training                 |
+| `@dxo/serialize` | Portable model state and weights                  |
+| `@dxo/vision`    | Image and video inference                         |
+| `@dxo/llm`       | Tokenizers and streaming language-model workflows |
+| `@dxo/diffuser`  | Diffusion and multimodal generation               |
+| `@dxo/lite`      | Browser, Worker, and edge runtimes                |
 
-| Path                               | npm package           |
-|------------------------------------|-----------------------|
-| `projects/compilers/dxo-core`      | *(Rust crate)*        |
-| `projects/compilers/dxo-napi`      | *(Rust napi cdylib)*  |
-| `projects/runtimes/dxo-core`       | `@dxo/core`           |
-| `projects/runtimes/dxo-nn`         | `@dxo/nn`             |
-| `projects/runtimes/dxo-optimizer`  | `@dxo/optimizer`      |
-| `projects/runtimes/dxo-data`       | `@dxo/data`           |
-| `projects/runtimes/dxo-serialize`  | `@dxo/serialize`      |
-| `projects/runtimes/dxo-train`      | `@dxo/train`          |
-| `projects/runtimes/dxo-lite`       | `@dxo/lite`           |
-| `projects/runtimes/dxo`            | `@dxo/dxo` (CLI)      |
-| `projects/runtimes/dxo-<platform>` | `@dxo/dxo-<platform>` |
+## From idea to shipped feature
 
-## License
+DXO is shaped around the way an intelligent feature actually grows:
 
-Apache-2.0
+1. Start with a typed tensor or a real input such as an image, audio clip, or prompt.
+2. Compose a model with ordinary TypeScript functions and objects.
+3. Stream predictions, previews, metrics, or tokens as work happens.
+4. Cancel expensive work when a request ends or a user changes their mind.
+5. Move the same workflow into an API route, queue worker, desktop tool, or edge application.
+
+There is no separate “research API” to abandon when the prototype becomes a product. The model, data path, and control
+flow remain understandable to the team that owns the application.
+
+## Built for intelligent products
+
+DXO fits the places where models create user value:
+
+- Personalization and ranking inside a Node.js service.
+- Image understanding in a content or commerce workflow.
+- Streaming assistants with responsive cancellation.
+- Generative media tools with live previews and progress.
+- Batch jobs that share code with an interactive product.
+- Browser and edge experiences that use the lightweight runtime.
+
+The ecosystem is intentionally composable. Use only `@dxo/core` for tensor work, add `@dxo/train` when you need
+optimization, or move directly to `@dxo/vision`, `@dxo/llm`, and `@dxo/diffuser` when the product problem is already
+clear.
+
+## A better default for TypeScript teams
+
+Your application already has a language, a package manager, a service framework, an observability stack, and a
+deployment story. DXO lets deep learning participate in that system directly. Types describe the boundaries, async
+iteration carries live work, and the agent that helps write your application can help shape the model workflow too.
+
+## Keep building
+
+Pick the package that matches your idea, ask your agent for the smallest working feature, and grow from there. DXO is
+open source under the Apache-2.0 license.

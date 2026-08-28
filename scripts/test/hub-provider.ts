@@ -2,7 +2,7 @@
  * hub-provider: local digest stable; offline cache reuse; HF optional when network allows.
  */
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createHub } from '@dxo/hub';

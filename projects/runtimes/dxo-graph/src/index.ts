@@ -50,23 +50,21 @@ export function graphVersion(): string {
 }
 
 export {
-    emptyModelGraph,
-    moduleGraphFromLinear,
-    moduleGraphFromModule,
-    moduleGraphFromSequential,
-    serializeModelGraph,
-} from './module-graph.js';
-
-export {
     executionGraphFromLinear,
     executionGraphFromModule,
     executionGraphFromSequential,
     executionGraphUnavailable,
 } from './execution-graph.js';
-
 export {
     bundleModelGraphs,
     kernelGraphFromProfile,
     kernelGraphUnavailable,
     parseModelGraphArtifact,
 } from './kernel-graph.js';
+export {
+    emptyModelGraph,
+    moduleGraphFromLinear,
+    moduleGraphFromModule,
+    moduleGraphFromSequential,
+    serializeModelGraph,
+} from './module-graph.js';

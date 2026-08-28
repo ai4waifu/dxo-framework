@@ -6,13 +6,13 @@ Async training loop over `@dxo/core` / `@dxo/nn` / `@dxo/optimizer` / `@dxo/data
 
 ## Contract (0.0.7 / G5)
 
-| API | Behavior |
-|-----|----------|
-| `Trainer` | Owns model + optimizer + batch factory + epoch count |
-| `fitIter` / `run` | `AsyncGenerator<TrainEvent>`; respects `AbortSignal` |
-| `fit` | Consumes the event stream; returns a short summary |
-| Checkpoint | Emits `encodeLinearState(model.state())` documents (no FS I/O) |
-| Device | **CPU-only** in this slice (GPU spike not required for this gate) |
+| API               | Behavior                                                          |
+|-------------------|-------------------------------------------------------------------|
+| `Trainer`         | Owns model + optimizer + batch factory + epoch count              |
+| `fitIter` / `run` | `AsyncGenerator<TrainEvent>`; respects `AbortSignal`              |
+| `fit`             | Consumes the event stream; returns a short summary                |
+| Checkpoint        | Emits `encodeLinearState(model.state())` documents (no FS I/O)    |
+| Device            | **CPU-only** in this slice (GPU spike not required for this gate) |
 
 ```typescript
 import { batch, dataset } from '@dxo/data';

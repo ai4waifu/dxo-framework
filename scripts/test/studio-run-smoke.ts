@@ -15,6 +15,21 @@ import { Trainer } from '@dxo/train';
  * Does not scrape stdout. UI is optional; this gate is API-level.
  */
 
+async function waitForHealth(baseUrl: string, attempts = 50): Promise<void> {
+    let last: unknown;
+    for (let i = 0; i < attempts; i++) {
+        try {
+            const res = await fetch(`${baseUrl}/api/health`);
+            if (res.ok) return;
+            last = new Error(`health status ${res.status}`);
+        } catch (err) {
+            last = err;
+        }
+        await new Promise((r) => setTimeout(r, 20));
+    }
+    throw last instanceof Error ? last : new Error(String(last));
+}
+
 function makeSamples(n: number) {
     const samples = [];
     for (let i = 0; i < n; i++) {
@@ -73,6 +88,9 @@ try {
 
     const api = await createInspectApiServer({ host: '127.0.0.1', port: 0, runsRoot });
     try {
+        // Non-blocking accept loop can race the first client on some CI hosts (ECONNRESET).
+        await waitForHealth(api.url);
+
         const runs1 = await (await fetch(`${api.url}/api/runs`)).json();
         assert.equal(runs1.runs.length, 1);
         assert.equal(runs1.runs[0].runId, runId);
