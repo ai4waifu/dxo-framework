@@ -1,8 +1,10 @@
 # @dxo/vision
 
-**Developer preview — API unstable.** Not a closed vision-classify gate.
+**Developer preview — API unstable.** Not a closed `vision-classify` gate.
 
-Composable vision surface: `Image` / `ImageBatch`, `ResNet` (backbone / features), `LinearHead` / `Classifier` / `compose` (logits), `defineLabelSpace` / `decodeClassification` (labels).
+Composable vision surface: `ResNet` (backbone / features), `LinearHead` / `Classifier` / `compose` (logits), `defineLabelSpace` / `decodeClassification` (labels).
+
+ResNet-18 uses **DXO-native** state keys (`stem.*`, `stage{n}.block{i}.*`). Preview `forward` supports `32×32` NCHW → `[N,512]` features.
 
 ```bash
 pnpm add @dxo/vision
@@ -15,4 +17,4 @@ const backbone = new ResNet({ depth: 18 });
 const model = compose(backbone, new LinearHead({ output: 10 }));
 ```
 
-Pretrained weight assets ship from the separate `@dxo/resnet` package (external repo). This package only defines networks and task adapters.
+Pretrained weight assets / torch→DXO conversion live in the separate `@dxo/resnet` package.
