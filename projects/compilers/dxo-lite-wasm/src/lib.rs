@@ -28,20 +28,10 @@ pub fn matmul_f32(a: &[f32], a_rows: u32, a_cols: u32, b: &[f32], b_cols: u32) -
     let k = a_cols as usize;
     let n = b_cols as usize;
     if a.len() != m * k {
-        return Err(JsValue::from_str(&format!(
-            "matmul a length {} != {}×{}",
-            a.len(),
-            m,
-            k
-        )));
+        return Err(JsValue::from_str(&format!("matmul a length {} != {}×{}", a.len(), m, k)));
     }
     if b.len() != k * n {
-        return Err(JsValue::from_str(&format!(
-            "matmul b length {} != {}×{}",
-            b.len(),
-            k,
-            n
-        )));
+        return Err(JsValue::from_str(&format!("matmul b length {} != {}×{}", b.len(), k, n)));
     }
     let mut out = vec![0.0_f32; m * n];
     for i in 0..m {
@@ -60,11 +50,7 @@ pub fn matmul_f32(a: &[f32], a_rows: u32, a_cols: u32, b: &[f32], b_cols: u32) -
 #[wasm_bindgen(js_name = addF32)]
 pub fn add_f32(a: &[f32], b: &[f32]) -> Result<Vec<f32>, JsValue> {
     if a.len() != b.len() {
-        return Err(JsValue::from_str(&format!(
-            "add length mismatch: {} vs {}",
-            a.len(),
-            b.len()
-        )));
+        return Err(JsValue::from_str(&format!("add length mismatch: {} vs {}", a.len(), b.len())));
     }
     Ok(a.iter().zip(b.iter()).map(|(x, y)| x + y).collect())
 }

@@ -33,15 +33,9 @@ pub const fn backend_label() -> &'static str {
 /// `await`. CUDA cross-stream proof remains a separate machine-gated check.
 pub fn probe_event_dep() -> Result<(), TensorError> {
     let session = cpu_session();
-    let upload_stream = session
-        .create_stream()
-        .map_err(|e| TensorError::Device(format!("create_stream: {e}")))?;
-    let compute_stream = session
-        .create_stream()
-        .map_err(|e| TensorError::Device(format!("create_stream: {e}")))?;
-    let buf = session
-        .allocate(16, 4)
-        .map_err(|e| TensorError::Device(format!("allocate: {e}")))?;
+    let upload_stream = session.create_stream().map_err(|e| TensorError::Device(format!("create_stream: {e}")))?;
+    let compute_stream = session.create_stream().map_err(|e| TensorError::Device(format!("create_stream: {e}")))?;
+    let buf = session.allocate(16, 4).map_err(|e| TensorError::Device(format!("allocate: {e}")))?;
     let bytes = 1.0f32.to_le_bytes();
     let upload_event = session
         .upload(upload_stream.as_ref(), buf.as_ref(), &bytes)
@@ -49,8 +43,6 @@ pub fn probe_event_dep() -> Result<(), TensorError> {
     session
         .wait_event(compute_stream.as_ref(), upload_event.as_ref())
         .map_err(|e| TensorError::Device(format!("wait_event: {e}")))?;
-    session
-        .wait(upload_event.as_ref())
-        .map_err(|e| TensorError::Device(format!("wait: {e}")))?;
+    session.wait(upload_event.as_ref()).map_err(|e| TensorError::Device(format!("wait: {e}")))?;
     Ok(())
 }
