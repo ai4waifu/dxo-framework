@@ -25,6 +25,9 @@ Cargo.lock
 # Homepage staged WASM (from stage-homepage-wasm.mjs)
 projects/homepage/public/dxo_lite_bg.wasm
 
+# lite-unknown-wasm32 generated glue + binary (src/ is hand-written)
+projects/runtimes/dxo-lite-unknown-wasm32/lib/
+
 # GPU CI packed verify bundle (generated on linux)
 artifacts/
 

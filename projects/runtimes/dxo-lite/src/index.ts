@@ -176,11 +176,9 @@ async function loadWasmKernels(options?: CreateRuntimeOptions['wasm']): Promise<
         } else if (typeof process !== 'undefined' && process.versions?.node) {
             const { readFile } = await import('node:fs/promises');
             const { createRequire } = await import('node:module');
-            const { dirname, join } = await import('node:path');
             const require = createRequire(import.meta.url);
-            // Resolve entry `dist/dxo_lite.js` — wasm sits beside it (not via package.json export).
-            const entryJs = require.resolve('@dxo/lite-unknown-wasm32');
-            const wasmPath = join(dirname(entryJs), 'dxo_lite_bg.wasm');
+            // Prefer package export of lib/dxo_lite_bg.wasm (not beside dist/).
+            const wasmPath = require.resolve('@dxo/lite-unknown-wasm32/dxo_lite_bg.wasm');
             await init({ module_or_path: await readFile(wasmPath) });
         } else {
             await init();

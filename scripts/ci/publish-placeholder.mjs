@@ -71,6 +71,7 @@ const JS_STUBS = [
     '@dxo/core',
     '@dxo/dxo',
     '@dxo/lite',
+    '@dxo/lite-unknown-wasm32',
     '@dxo/nn',
     '@dxo/optimizer',
     '@dxo/data',

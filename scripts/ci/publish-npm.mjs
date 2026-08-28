@@ -26,7 +26,9 @@ const NATIVE_PLATFORMS = [
 
 /** @type {{ dir: string, publishName?: string }[]} */
 const JS_PACKAGES = [
-    { dir: 'projects/runtimes/dxo-lite' },
+    // WASM artifact before @dxo/lite (dependency).
+    { dir: 'projects/runtimes/dxo-lite-unknown-wasm32', publishName: '@dxo/lite-unknown-wasm32' },
+    { dir: 'projects/runtimes/dxo-lite', publishName: '@dxo/lite' },
     { dir: 'projects/runtimes/dxo-core', publishName: '@dxo/core' },
     { dir: 'projects/runtimes/dxo', publishName: '@dxo/dxo' },
     { dir: 'projects/runtimes/dxo-nn', publishName: '@dxo/nn' },
@@ -281,6 +283,17 @@ function publishJs(version) {
         pkg.version = version;
         delete pkg.private;
         pkg.publishConfig = { ...(pkg.publishConfig ?? {}), access: 'public' };
+
+        if (name === '@dxo/lite-unknown-wasm32') {
+            const wasm = path.join(stage, 'lib/dxo_lite_bg.wasm');
+            const entry = path.join(stage, 'dist/index.js');
+            if (!fs.existsSync(wasm)) {
+                fail(`${name}: missing lib/dxo_lite_bg.wasm — run pnpm build:lite-wasm before publish`);
+            }
+            if (!fs.existsSync(entry)) {
+                fail(`${name}: missing dist/index.js — run pnpm build:lite-wasm before publish`);
+            }
+        }
         if (pkg.scripts) {
             delete pkg.scripts.prepack;
             delete pkg.scripts.prepare;
