@@ -1,9 +1,9 @@
 /**
- * Ensure lite WASM is built and copy `dxo_lite_bg.wasm` into homepage `public/`
- * so browser playground can fetch `/dxo_lite_bg.wasm`.
+ * Ensure lite WASM is available as homepage `public/dxo_lite_bg.wasm`.
  *
- * Cloudflare Pages sets `CF_PAGES=1` and cannot run wasm-pack — skip there.
- * Pass `--force` or `DXO_FORCE_WASM_BUILD=1` to rebuild even when lib wasm exists.
+ * Local: may build via wasm-pack (`build:lite-wasm`).
+ * Cloudflare Pages (`CF_PAGES=1`): no Rust — copy from installed `@dxo/lite-unknown-wasm32`
+ * (pulled by pinned `@dxo/lite`), never spawn wasm-pack.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -15,15 +15,46 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const wasmLib = path.join(root, 'projects/runtimes/dxo-lite-unknown-wasm32/lib/dxo_lite_bg.wasm');
 const publicDir = path.join(root, 'projects/homepage/public');
 const publicWasm = path.join(publicDir, 'dxo_lite_bg.wasm');
-const force = process.argv.includes('--force') || process.env.DXO_FORCE_WASM_BUILD === '1' || process.env.DXO_FORCE_WASM_BUILD === 'true';
-const skipRust = process.env.CF_PAGES === '1' || process.env.DXO_HOMEPAGE_SKIP_WASM === '1' || process.env.DXO_HOMEPAGE_SKIP_WASM === 'true';
+const force =
+    process.argv.includes('--force') ||
+    process.env.DXO_FORCE_WASM_BUILD === '1' ||
+    process.env.DXO_FORCE_WASM_BUILD === 'true';
+const skipRust =
+    process.env.CF_PAGES === '1' ||
+    process.env.DXO_HOMEPAGE_SKIP_WASM === '1' ||
+    process.env.DXO_HOMEPAGE_SKIP_WASM === 'true';
+
+function publishedWasmCandidates() {
+    return [
+        path.join(root, 'projects/homepage/node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
+        path.join(
+            root,
+            'projects/homepage/node_modules/@dxo/lite/node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm',
+        ),
+        path.join(root, 'node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
+        path.join(root, 'node_modules/@dxo/lite/node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
+    ];
+}
+
+function stageWasm(from) {
+    mkdirSync(publicDir, { recursive: true });
+    copyFileSync(from, publicWasm);
+    console.log(`stage-homepage-wasm: ${publicWasm} ← ${from}`);
+}
 
 if (skipRust) {
-    if (existsSync(publicWasm)) {
-        console.log(`stage-homepage-wasm: skip rust build (CF/skip); keep ${publicWasm}`);
-    } else {
-        console.log('stage-homepage-wasm: skip rust build (CF/skip); no public wasm (CPU fallback only)');
+    const fromPub = publishedWasmCandidates().find((p) => existsSync(p));
+    if (fromPub) {
+        stageWasm(fromPub);
+        process.exit(0);
     }
+    if (existsSync(publicWasm)) {
+        console.log(`stage-homepage-wasm: skip rust; keep existing ${publicWasm}`);
+        process.exit(0);
+    }
+    console.warn(
+        'stage-homepage-wasm: CF/skip and no published wasm in node_modules — CPU fallback only (pin @dxo/lite >= 0.0.10)',
+    );
     process.exit(0);
 }
 
@@ -46,6 +77,4 @@ if (!existsSync(wasmLib)) {
     process.exit(1);
 }
 
-mkdirSync(publicDir, { recursive: true });
-copyFileSync(wasmLib, publicWasm);
-console.log(`stage-homepage-wasm: ${publicWasm}`);
+stageWasm(wasmLib);

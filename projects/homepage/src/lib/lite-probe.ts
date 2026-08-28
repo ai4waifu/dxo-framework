@@ -22,10 +22,11 @@ function browserWasmUrl(): URL | undefined {
 
 void browserWasmUrl;
 
-/** Options for pinned registry `@dxo/lite` (0.0.9: CPU fallback; wasm url ignored until 0.0.10). */
+/** Options for pinned registry `@dxo/lite` (0.0.10+: interim WASM via lite-unknown-wasm32). */
 export function homepageLiteOptions() {
     return {
         fallback: 'cpu' as const,
+        wasm: typeof location !== 'undefined' ? { url: new URL('/dxo_lite_bg.wasm', location.origin) } : undefined,
     };
 }
 

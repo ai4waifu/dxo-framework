@@ -66,8 +66,8 @@ importers:
   projects/homepage:
     dependencies:
       '@dxo/lite':
-        specifier: 0.0.9
-        version: 0.0.9
+        specifier: 0.0.10
+        version: 0.0.10
       '@vmz/core':
         specifier: ^0.1.12
         version: 0.1.12
@@ -302,8 +302,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@dxo/lite@0.0.9':
-    resolution: {integrity: sha512-NoL+Q3PC/Y6kxCPGDHdy69RxqxC8foGDqxWD20jasL8eSH+pH5y0KaAAer+de1xFuSBhs8ng5ITIEIdawBhOjQ==}
+  '@dxo/lite-unknown-wasm32@0.0.10':
+    resolution: {integrity: sha512-iGbDWsF0MVa1GcMDWh+7e+FVQbrnENB2yY6dE0q65QZhDBq07ul85nTxyv5nkIiywD3L5qw1uiheWzf9GgZSmw==}
+
+  '@dxo/lite@0.0.10':
+    resolution: {integrity: sha512-1+hKDK3yB1hCD33jzAPvmhqYheJcW71vZq6ly/Cd3irdy09yuSdur6g3Z3TM7e9oesrWTawsLFmMZniEYUPBZA==}
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
@@ -651,7 +654,11 @@ snapshots:
   '@biomejs/cli-win32-x64@2.5.10':
     optional: true
 
-  '@dxo/lite@0.0.9': {}
+  '@dxo/lite-unknown-wasm32@0.0.10': {}
+
+  '@dxo/lite@0.0.10':
+    dependencies:
+      '@dxo/lite-unknown-wasm32': 0.0.10
 
   '@esbuild/aix-ppc64@0.28.2':
     optional: true

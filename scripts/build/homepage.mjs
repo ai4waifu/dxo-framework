@@ -1,6 +1,9 @@
 /**
  * Homepage entry for local vs Cloudflare Pages.
- * CF has no wasm-pack / Rust — use pinned registry `@dxo/lite` only (`homepage:cf`).
+ *
+ * CF (`CF_PAGES=1`) has no Rust/wasm-pack — install + build with pinned registry
+ * `@dxo/lite` only; `stage-homepage-wasm` copies published wasm into `public/`.
+ * Local: full lite-wasm + TS build, then homepage.
  */
 import { spawnSync } from 'node:child_process';
 
@@ -14,8 +17,9 @@ function run(cmd, args) {
 }
 
 if (process.env.CF_PAGES === '1') {
-    console.log('homepage: CF_PAGES=1 → homepage:cf (registry @dxo/lite, no wasm-pack)');
-    run('pnpm', ['run', 'homepage:cf']);
+    console.log('homepage: CF_PAGES=1 → registry `@dxo/lite` only (no wasm-pack)');
+    run('pnpm', ['--filter', '@dxo/homepage...', 'install']);
+    run('pnpm', ['--filter', '@dxo/homepage', 'run', 'build']);
 } else {
     run('pnpm', ['install']);
     run('pnpm', ['run', 'build:lite-wasm']);
