@@ -17,6 +17,8 @@ npm install @dxo/core@0.0.4
 | `tensor(data, shape, { requiresGrad? })` | CPU leaf; `shape` is required (product must match flat length) |
 | `zeros` / `ones` / `randn` | Same options; only `device: 'cpu'` in this slice |
 | `backend()` | `"cpu"` / `"cuda"` / … (DXO product labels; never an internal engine brand) |
+| TypedBuffer family | `TypedBuffer` / `TensorView` / `DeviceBuffer` / mapped·stream / `CodecHandle` + domain carriers (`ImageBuffer`, `TokenBuffer`, …) |
+| `ImageBuffer` / `decodeImageBuffer` | Pixel carrier + decode bridge stubs; not vision `Image` |
 | `t.add/mul/matmul/relu/reshape/transpose/sum/mean` | Eager ops; record Tape when `requiresGrad` and grad enabled |
 | `t.backward()` | **Scalar only** (`numel === 1`, typically shape `[1]`) |
 | `t.grad` | Row-major `number[]` or `undefined` |

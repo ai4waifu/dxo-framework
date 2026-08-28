@@ -3,7 +3,7 @@
  * Workspace-only until model-runtime-text / related gates close (not on publish-npm).
  */
 
-import { tensor, withoutGrad, type Tensor } from '@dxo/core';
+import { tensor, withoutGrad, type Tensor, type TokenBuffer } from '@dxo/core';
 import type { Module } from '@dxo/nn';
 import { TinyTransformer } from '@dxo/nn';
 import { decodeSafetensors, encodeSafetensors, type SafetensorSlice } from '@dxo/serialize';
@@ -15,6 +15,17 @@ export type TokenizerEncodeOptions = {
 export type EncodedBatch = {
     inputIds: number[][];
     attentionMask?: number[][];
+};
+
+/**
+ * Product-facing token batch. Prefer TokenBuffer for ids/mask when napi lands;
+ * nested number[][] is the interim Wave 3 surface only.
+ */
+export type TokenizedInput = {
+    inputIds: number[][] | TokenBuffer;
+    attentionMask?: number[][] | TokenBuffer;
+    positionIds?: number[][] | TokenBuffer;
+    offsets?: TokenBuffer;
 };
 
 export type Tokenizer = {

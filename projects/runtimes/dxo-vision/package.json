@@ -20,6 +20,9 @@
     "scripts": {
         "build": "tsc -p tsconfig.json"
     },
+    "dependencies": {
+        "@dxo/core": "workspace:*"
+    },
     "keywords": [
         "dxo",
         "vision",
