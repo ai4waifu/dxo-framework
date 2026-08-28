@@ -1,5 +1,5 @@
 /**
- * hub-provider: local digest stable; offline cache reuse; HF optional when network allows.
+ * hub-provider: local digest stable; offline HF cache reuse (no network).
  */
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';

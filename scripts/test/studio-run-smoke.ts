@@ -11,11 +11,11 @@ import { createInspectApiServer } from '@dxo/studio';
 import { Trainer } from '@dxo/train';
 
 /**
- * studio-run-smoke: real Trainer → inspect store → loopback API → refresh-stable reads.
- * Does not scrape stdout. UI is optional; this gate is API-level.
+ * studio-run-smoke: real Trainer → inspect store → loopback API → process-restart refresh recovery.
+ * Does not scrape stdout. API-level gate (browser matrix is a separate suite).
  */
 
-async function waitForHealth(baseUrl: string, attempts = 50): Promise<void> {
+async function waitForHealth(baseUrl: string, attempts = 80): Promise<void> {
     let last: unknown;
     for (let i = 0; i < attempts; i++) {
         try {
@@ -25,7 +25,22 @@ async function waitForHealth(baseUrl: string, attempts = 50): Promise<void> {
         } catch (err) {
             last = err;
         }
-        await new Promise((r) => setTimeout(r, 20));
+        await new Promise((r) => setTimeout(r, 25));
+    }
+    throw last instanceof Error ? last : new Error(String(last));
+}
+
+async function fetchOk(url: string, attempts = 40): Promise<Response> {
+    let last: unknown;
+    for (let i = 0; i < attempts; i++) {
+        try {
+            const res = await fetch(url);
+            if (res.ok || res.status < 500) return res;
+            last = new Error(`status ${res.status}`);
+        } catch (err) {
+            last = err;
+        }
+        await new Promise((r) => setTimeout(r, 25));
     }
     throw last instanceof Error ? last : new Error(String(last));
 }
@@ -43,6 +58,37 @@ function makeSamples(n: number) {
         });
     }
     return samples;
+}
+
+type Snapshot = {
+    runId: string;
+    status: string;
+    metricNames: string[];
+    eventCount: number;
+    checkpointCount: number;
+    graphView: string;
+    hasLinear: boolean;
+};
+
+async function readSnapshot(baseUrl: string, runId: string): Promise<Snapshot> {
+    const runs = await (await fetchOk(`${baseUrl}/api/runs`)).json();
+    assert.equal(runs.runs.length, 1);
+    assert.equal(runs.runs[0].runId, runId);
+
+    const metrics = await (await fetchOk(`${baseUrl}/api/runs/${runId}/metrics`)).json();
+    const eventsRes = await (await fetchOk(`${baseUrl}/api/runs/${runId}/events`)).json();
+    const ck = await (await fetchOk(`${baseUrl}/api/runs/${runId}/checkpoints`)).json();
+    const graphRes = await (await fetchOk(`${baseUrl}/api/runs/${runId}/model-graph`)).json();
+
+    return {
+        runId: runs.runs[0].runId,
+        status: runs.runs[0].meta.status,
+        metricNames: metrics.metrics.map((m: { name: string }) => m.name).sort(),
+        eventCount: eventsRes.events.length,
+        checkpointCount: ck.checkpoints.length,
+        graphView: graphRes.graph.view,
+        hasLinear: graphRes.graph.nodes.some((n: { kind: string }) => n.kind === 'Linear'),
+    };
 }
 
 const runsRoot = await mkdtemp(path.join(tmpdir(), 'dxo-studio-runs-'));
@@ -86,37 +132,31 @@ try {
     assert.ok(events.some((e) => e.type === 'artifact/ref'));
     assert.ok(events.some((e) => e.type === 'run/end'));
 
-    const api = await createInspectApiServer({ host: '127.0.0.1', port: 0, runsRoot });
+    const api1 = await createInspectApiServer({ host: '127.0.0.1', port: 0, runsRoot });
+    let before: Snapshot;
     try {
-        // Non-blocking accept loop can race the first client on some CI hosts (ECONNRESET).
-        await waitForHealth(api.url);
-
-        const runs1 = await (await fetch(`${api.url}/api/runs`)).json();
-        assert.equal(runs1.runs.length, 1);
-        assert.equal(runs1.runs[0].runId, runId);
-
-        const metrics = await (await fetch(`${api.url}/api/runs/${runId}/metrics`)).json();
-        assert.ok(metrics.metrics.some((m: { name: string }) => m.name === 'loss'));
-
-        const eventsRes = await (await fetch(`${api.url}/api/runs/${runId}/events`)).json();
-        assert.ok(eventsRes.events.length >= events.length - 1);
-
-        const ck = await (await fetch(`${api.url}/api/runs/${runId}/checkpoints`)).json();
-        assert.ok(ck.checkpoints.length >= 1);
-
-        const graphRes = await (await fetch(`${api.url}/api/runs/${runId}/model-graph`)).json();
-        assert.equal(graphRes.graph.view, 'module');
-        assert.ok(graphRes.graph.nodes.some((n: { kind: string }) => n.kind === 'Linear'));
-
-        // Refresh / second read — same store, same content.
-        const runs2 = await (await fetch(`${api.url}/api/runs`)).json();
-        assert.deepEqual(runs2.runs[0].meta.runId, runs1.runs[0].meta.runId);
-        assert.equal(runs2.runs[0].meta.status, 'ok');
+        await waitForHealth(api1.url);
+        before = await readSnapshot(api1.url, runId);
+        assert.equal(before.status, 'ok');
+        assert.ok(before.metricNames.includes('loss'));
+        assert.ok(before.checkpointCount >= 1);
+        assert.equal(before.graphView, 'module');
+        assert.ok(before.hasLinear);
     } finally {
-        await api.close();
+        await api1.close();
     }
 
-    console.log(`studio-run-smoke ok: run=${runId} events=${events.length}`);
+    // Process-restart refresh recovery: reopen against the same durable store.
+    const api2 = await createInspectApiServer({ host: '127.0.0.1', port: 0, runsRoot });
+    try {
+        await waitForHealth(api2.url);
+        const after = await readSnapshot(api2.url, runId);
+        assert.deepEqual(after, before!);
+    } finally {
+        await api2.close();
+    }
+
+    console.log(`studio-run-smoke ok: run=${runId} events=${events.length} restart-refresh=ok`);
 } finally {
     await rm(runsRoot, { recursive: true, force: true });
 }

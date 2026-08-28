@@ -6,12 +6,15 @@
  * Output: `artifacts/dxo-gpu-verify.tgz`
  */
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const require = createRequire(import.meta.url);
+const tsxCli = require.resolve('tsx/cli');
 const outDir = path.join(root, 'artifacts');
 const outTar = path.join(outDir, 'dxo-gpu-verify.tgz');
 
@@ -74,7 +77,23 @@ try {
         ),
     );
 
-    const verifyScripts = ['gpu-matmul.ts', 'titan-event-dep.ts'];
+    // Suite list from scripts/verify/suites.ts (requiresGpu || includeInGpuArtifact).
+    const listR = spawnSync(process.execPath, [tsxCli, path.join(root, 'scripts/verify/run.ts'), '--list-gpu-artifact'], {
+        cwd: root,
+        encoding: 'utf8',
+    });
+    if (listR.status !== 0) {
+        console.error(listR.stderr || listR.stdout || 'failed to read gpu artifact suites from registry');
+        process.exit(listR.status ?? 1);
+    }
+    const verifyScripts = listR.stdout
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
+    if (!verifyScripts.length) {
+        console.error('pack-gpu-artifact: registry returned no GPU suites');
+        process.exit(1);
+    }
     for (const name of verifyScripts) {
         const src = path.join(root, 'scripts/test', name);
         if (existsSync(src)) cpSync(src, path.join(stage, 'scripts', name));
@@ -98,6 +117,7 @@ try {
         ),
     );
 
+    const defaultsJson = JSON.stringify(verifyScripts);
     writeFileSync(
         path.join(stage, 'run-verifies.mjs'),
         `#!/usr/bin/env node
@@ -108,7 +128,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const tests = process.argv.slice(2);
-const defaults = ['gpu-matmul.ts', 'titan-event-dep.ts'];
+const defaults = ${defaultsJson};
 const list = (tests.length ? tests : defaults).filter((n) => existsSync(path.join(root, 'scripts', n)));
 if (!list.length) {
   console.error('no verify scripts found');

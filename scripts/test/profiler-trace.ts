@@ -11,6 +11,36 @@ import { type ProfileTraceV0, profileTraceUnavailable, RunRecorder } from '@dxo/
 import { Linear } from '@dxo/nn';
 import { createInspectApiServer } from '@dxo/studio';
 
+async function waitForHealth(baseUrl: string, attempts = 80): Promise<void> {
+    let last: unknown;
+    for (let i = 0; i < attempts; i++) {
+        try {
+            const res = await fetch(`${baseUrl}/api/health`);
+            if (res.ok) return;
+            last = new Error(`health status ${res.status}`);
+        } catch (err) {
+            last = err;
+        }
+        await new Promise((r) => setTimeout(r, 25));
+    }
+    throw last instanceof Error ? last : new Error(String(last));
+}
+
+async function fetchOk(url: string, attempts = 40): Promise<Response> {
+    let last: unknown;
+    for (let i = 0; i < attempts; i++) {
+        try {
+            const res = await fetch(url);
+            if (res.ok || res.status < 500) return res;
+            last = new Error(`status ${res.status}`);
+        } catch (err) {
+            last = err;
+        }
+        await new Promise((r) => setTimeout(r, 25));
+    }
+    throw last instanceof Error ? last : new Error(String(last));
+}
+
 const linear = new Linear(2, 1, { requiresGrad: false });
 const moduleG = moduleGraphFromModule(linear);
 const execG = executionGraphFromModule(linear, [1, 2]);
@@ -55,11 +85,13 @@ try {
 
     const api = await createInspectApiServer({ host: '127.0.0.1', port: 0, runsRoot });
     try {
-        const g = await (await fetch(`${api.url}/api/runs/prof-run/model-graph`)).json();
+        await waitForHealth(api.url);
+
+        const g = await (await fetchOk(`${api.url}/api/runs/prof-run/model-graph`)).json();
         assert.equal(g.graph.format, 'dxo-model-graph-bundle');
         assert.equal(g.graph.kernel.view, 'kernel');
 
-        const pr = await (await fetch(`${api.url}/api/runs/prof-run/profile-trace`)).json();
+        const pr = await (await fetchOk(`${api.url}/api/runs/prof-run/profile-trace`)).json();
         assert.equal(pr.profileTrace.availability, 'unavailable');
         assert.equal(pr.profileTrace.spans.length, 0);
     } finally {

@@ -1,46 +1,17 @@
+/**
+ * Backward-compatible entry: `node scripts/verify.mjs …` → tsx scripts/verify/run.ts
+ */
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const id = process.argv[2];
 const require = createRequire(import.meta.url);
-
-const suites = {
-    smoke: 'scripts/test/smoke.ts',
-    'tensor-cpu': 'scripts/test/tensor-cpu.ts',
-    'autograd-fd': 'scripts/test/autograd-fd.ts',
-    'nn-forward': 'scripts/test/nn-forward.ts',
-    'mnist-linear': 'scripts/test/mnist-linear.ts',
-    'g3-contract': 'scripts/test/g3-contract.ts',
-    'data-iter': 'scripts/test/data-iter.ts',
-    'serialize-roundtrip': 'scripts/test/serialize-roundtrip.ts',
-    'trainer-loop': 'scripts/test/trainer-loop.ts',
-    'gpu-matmul': 'scripts/test/gpu-matmul.ts',
-    'lite-webgpu-smoke': 'scripts/test/lite-webgpu-smoke.ts',
-    'runtime-contract-lite': 'scripts/test/runtime-contract-lite.ts',
-    'runtime-contract-core': 'scripts/test/runtime-contract-core.ts',
-    'model-graph': 'scripts/test/model-graph.ts',
-    'studio-run-smoke': 'scripts/test/studio-run-smoke.ts',
-    'studio-ui-wave2': 'scripts/test/studio-ui-wave2.ts',
-    'model-app-image': 'scripts/test/model-app-image.ts',
-    'framework-core-transformer': 'scripts/test/framework-core-transformer.ts',
-    'framework-core-cnn': 'scripts/test/framework-core-cnn.ts',
-    'model-runtime-text': 'scripts/test/model-runtime-text.ts',
-    'profiler-trace': 'scripts/test/profiler-trace.ts',
-    'titan-event-dep': 'scripts/test/titan-event-dep.ts',
-    'hub-provider': 'scripts/test/hub-provider.ts',
-};
-
-if (!id || !(id in suites)) {
-    console.error(`usage: pnpm verify -- <${Object.keys(suites).join('|')}>`);
-    process.exit(1);
-}
-
-const script = path.join(root, suites[id]);
 const tsxCli = require.resolve('tsx/cli');
-const r = spawnSync(process.execPath, [tsxCli, script], {
+const runTs = path.join(root, 'scripts/verify/run.ts');
+
+const r = spawnSync(process.execPath, [tsxCli, runTs, ...process.argv.slice(2)], {
     cwd: root,
     stdio: 'inherit',
     env: process.env,
