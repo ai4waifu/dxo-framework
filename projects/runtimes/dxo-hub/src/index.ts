@@ -11,15 +11,19 @@ import { pipeline } from 'node:stream/promises';
 
 export type HubCacheMode = 'reuse' | 'offline';
 
+export type HubProvider = 'local' | 'hf' | 'modelscope' | 's3' | 'r2';
+
 export type HubModelOptions = {
     revision?: string;
     files?: string[];
     cache?: HubCacheMode;
     signal?: AbortSignal;
+    /** Collection / dataset manifest id when resolving a model set (Wave 4). */
+    collection?: string;
 };
 
 export type HubResolvedArtifact = {
-    provider: 'local' | 'hf';
+    provider: HubProvider;
     uri: string;
     revision: string;
     digest: string;
@@ -35,14 +39,27 @@ function defaultCacheRoot(): string {
     return process.env.DXO_HUB_CACHE?.trim() || path.join(homedir(), '.cache', 'dxo', 'hub');
 }
 
-function parseRef(ref: string): { provider: 'local' | 'hf'; rest: string } {
-    if (ref.startsWith('local:')) {
-        return { provider: 'local', rest: ref.slice('local:'.length) };
+function parseRef(ref: string): { provider: HubProvider; rest: string } {
+    const schemes: HubProvider[] = ['local', 'hf', 'modelscope', 's3', 'r2'];
+    for (const scheme of schemes) {
+        const prefix = `${scheme}:`;
+        if (ref.startsWith(prefix)) {
+            return { provider: scheme, rest: ref.slice(prefix.length) };
+        }
     }
-    if (ref.startsWith('hf:')) {
-        return { provider: 'hf', rest: ref.slice('hf:'.length) };
-    }
-    throw new Error(`@dxo/hub model() requires explicit scheme local: or hf:, got ${JSON.stringify(ref)}`);
+    throw new Error(
+        `@dxo/hub model() requires explicit scheme local:|hf:|modelscope:|s3:|r2:, got ${JSON.stringify(ref)}`,
+    );
+}
+
+function unsupportedRemoteProvider(provider: HubProvider, ref: string): never {
+    const err = new Error(
+        `@dxo/hub provider ${provider} is reserved for hub-remote-cache (Wave 4); ref=${JSON.stringify(ref)}`,
+    ) as Error & { code: string; phase: string; recoverable: boolean };
+    err.code = 'HUB_PROVIDER_UNAVAILABLE';
+    err.phase = 'resolve';
+    err.recoverable = false;
+    throw err;
 }
 
 async function listFilesRecursive(root: string): Promise<string[]> {
@@ -178,7 +195,10 @@ export function createHub(): Hub {
             if (provider === 'local') {
                 return resolveLocal(rest, options, ref);
             }
-            return resolveHf(rest, options, ref);
+            if (provider === 'hf') {
+                return resolveHf(rest, options, ref);
+            }
+            unsupportedRemoteProvider(provider, ref);
         },
     };
 }
