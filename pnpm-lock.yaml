@@ -63,8 +63,8 @@ importers:
   projects/homepage:
     dependencies:
       '@dxo/lite':
-        specifier: workspace:*
-        version: link:../runtimes/dxo-lite
+        specifier: 0.0.9
+        version: 0.0.9
       '@vmz/core':
         specifier: ^0.1.12
         version: 0.1.12
@@ -288,6 +288,9 @@ packages:
     engines: {node: '>=14.21.3'}
     cpu: [x64]
     os: [win32]
+
+  '@dxo/lite@0.0.9':
+    resolution: {integrity: sha512-NoL+Q3PC/Y6kxCPGDHdy69RxqxC8foGDqxWD20jasL8eSH+pH5y0KaAAer+de1xFuSBhs8ng5ITIEIdawBhOjQ==}
 
   '@esbuild/aix-ppc64@0.28.2':
     resolution: {integrity: sha512-XExcO+dvLKvVtNTibSTBej1NCAbaGhWn9Ww1ZPx80qsahhPFe/8jgWP0IchNe0F3HwkU7n8ejhH8bjonqht8mQ==}
@@ -634,6 +637,8 @@ snapshots:
 
   '@biomejs/cli-win32-x64@2.5.10':
     optional: true
+
+  '@dxo/lite@0.0.9': {}
 
   '@esbuild/aix-ppc64@0.28.2':
     optional: true
