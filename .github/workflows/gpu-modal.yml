@@ -73,7 +73,7 @@ jobs:
       # Pack a real npm package (modal dep) into artifacts/ — never npm install at monorepo root.
       - name: Pack Modal GPU runner
         run: node scripts/ci/pack-modal-runner.mjs
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v8
         with:
           name: dxo-gpu-verify
           path: artifacts

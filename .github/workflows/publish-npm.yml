@@ -167,7 +167,7 @@ jobs:
         run: pnpm run build:ts
 
       - name: Download native artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: native-*
           path: dist/native-artifacts
