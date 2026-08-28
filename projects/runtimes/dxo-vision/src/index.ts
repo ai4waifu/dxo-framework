@@ -6,6 +6,7 @@
 
 import type { ImageBuffer, Tensor } from '@dxo/core';
 
+export type { TensorStateSlice } from '@dxo/nn';
 export { VisionError } from './errors.js';
 export {
     Classifier,
@@ -23,7 +24,7 @@ export {
     type LabelSpace,
     type LabelSpaceOptions,
 } from './labels.js';
-export { defineResNet, ResNet } from './resnet.js';
+export { defineResNet, RESNET18_STAGE_BLOCKS, RESNET18_STAGE_CHANNELS, ResNet } from './resnet.js';
 export type {
     Device,
     ResNetDepth,

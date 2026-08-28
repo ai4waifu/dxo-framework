@@ -79,13 +79,11 @@ import {
     assert.equal(zhDecoded.topK[0]!.label, '乙');
 }
 
-// Preview forward must not invent logits.
+// depth=18 forward works for 32×32 (GAP-free path); non-1×1 spatial covered in vision-resnet-state.
 {
     const backbone = new ResNet({ depth: 18 });
-    assert.throws(
-        () => backbone.forward(tensor([0, 0, 0], [1, 3, 1, 1])),
-        (err: unknown) => err instanceof VisionError && err.code === 'UNSUPPORTED',
-    );
+    const feats = backbone.forward(tensor(new Array(1 * 3 * 32 * 32).fill(0.01), [1, 3, 32, 32]));
+    assert.deepEqual([...feats.shape], [1, 512]);
 }
 
 console.log('vision-compose-contract ok: ResNet/compose/LabelSpace');

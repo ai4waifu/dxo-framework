@@ -243,6 +243,18 @@ export const SUITES: SuiteDef[] = [
         timeoutMs: 60_000,
     },
     {
+        id: 'vision-resnet-state',
+        script: 'scripts/test/vision-resnet-state.ts',
+        group: 'contract',
+        packages: ['@dxo/vision', '@dxo/core', '@dxo/nn'],
+        platforms: ['all'],
+        backend: ['cpu'],
+        requiresGpu: false,
+        requiresNetwork: false,
+        allowSkip: false,
+        timeoutMs: 120_000,
+    },
+    {
         id: 'titan-event-dep',
         script: 'scripts/test/titan-event-dep.ts',
         group: 'contract',
