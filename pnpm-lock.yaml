@@ -263,6 +263,13 @@ importers:
       '@dxo/nn':
         specifier: workspace:*
         version: link:../dxo-nn
+      '@dxo/serialize':
+        specifier: workspace:*
+        version: link:../dxo-serialize
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
 
   projects/runtimes/dxo-win32-x64: {}
 

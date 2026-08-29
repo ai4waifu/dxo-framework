@@ -21,7 +21,11 @@
     },
     "dependencies": {
         "@dxo/core": "workspace:*",
-        "@dxo/nn": "workspace:*"
+        "@dxo/nn": "workspace:*",
+        "@dxo/serialize": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.0"
     },
     "keywords": [
         "dxo",

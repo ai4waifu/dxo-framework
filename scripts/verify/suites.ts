@@ -245,14 +245,16 @@ export const SUITES: SuiteDef[] = [
     {
         id: 'vision-resnet-state',
         script: 'scripts/test/vision-resnet-state.ts',
-        group: 'contract',
+        /** Heavy ResNet forward — not ordinary cloud CPU CI; runs in GPU artifact pack / Modal. */
+        group: 'gpu-model',
         packages: ['@dxo/vision', '@dxo/core', '@dxo/nn'],
         platforms: ['all'],
-        backend: ['cpu'],
+        backend: ['cpu', 'cuda'],
         requiresGpu: false,
         requiresNetwork: false,
         allowSkip: false,
         timeoutMs: 120_000,
+        includeInGpuArtifact: true,
     },
     {
         id: 'titan-event-dep',

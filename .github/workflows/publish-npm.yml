@@ -130,12 +130,27 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          conclusion="$(gh run list --repo "${{ github.repository }}" --commit "${{ github.sha }}" --workflow ci.yml --json conclusion -q '.[0].conclusion // empty')"
-          if [[ "$conclusion" != "success" ]]; then
-            echo "Refusing npm publish: CI workflow conclusion on ${{ github.sha }} is '${conclusion:-missing}' (need success)" >&2
-            exit 1
-          fi
-          echo "CI success confirmed for tagged commit"
+          sha="${{ github.sha }}"
+          repo="${{ github.repository }}"
+          # Tag push often races ordinary CI: do not read .[0] while status=in_progress
+          # (conclusion is empty → false "missing"). Wait for a completed CI run.
+          for attempt in $(seq 1 90); do
+            json="$(gh run list --repo "$repo" --commit "$sha" --workflow ci.yml --limit 5 --json conclusion,status,databaseId)"
+            completed="$(echo "$json" | jq -r '[.[] | select(.status=="completed")] | .[0].conclusion // empty')"
+            open="$(echo "$json" | jq -r '[.[] | select(.status!="completed")] | length')"
+            if [[ "$completed" == "success" ]]; then
+              echo "CI success confirmed for tagged commit (attempt $attempt)"
+              exit 0
+            fi
+            if [[ "$completed" == "failure" || "$completed" == "cancelled" || "$completed" == "timed_out" ]]; then
+              echo "Refusing npm publish: CI on $sha concluded '$completed'" >&2
+              exit 1
+            fi
+            echo "waiting for CI on $sha (open=$open completed='${completed:-none}') attempt=$attempt/90"
+            sleep 20
+          done
+          echo "Refusing npm publish: timed out waiting for CI success on $sha" >&2
+          exit 1
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
