@@ -1,7 +1,11 @@
 import type { Tensor } from '@dxo/core';
-import { BatchNorm2d, Conv2d, Module, Relu, type TensorStateSlice } from '@dxo/nn';
+import type { TensorStateSlice } from '@dxo/nn';
+import { BatchNorm2d, Conv2d, Module, Relu } from '@dxo/nn';
 
-/** DXO-native residual block (not a torchvision key mirror). */
+/**
+ * DXO-native BasicBlock (not a torchvision key mirror).
+ * Keys: `{prefix}.conv1|bn1|conv2|bn2[.weight|.bias]` and optional `{prefix}.down.conv|bn`.
+ */
 export class BasicBlock extends Module {
     readonly conv1: Conv2d;
     readonly bn1: BatchNorm2d;
@@ -10,14 +14,16 @@ export class BasicBlock extends Module {
     readonly relu: Relu;
     readonly downConv: Conv2d | null;
     readonly downBn: BatchNorm2d | null;
+    readonly prefix: string;
 
-    constructor(inChannels: number, outChannels: number, opts: { stride?: number; requiresGrad?: boolean } = {}) {
+    constructor(prefix: string, inChannels: number, outChannels: number, opts: { stride?: number; requiresGrad?: boolean } = {}) {
         super();
+        this.prefix = prefix;
         const stride = opts.stride ?? 1;
         const rg = opts.requiresGrad ?? true;
         this.conv1 = new Conv2d(inChannels, outChannels, 3, { stride, padding: 1, requiresGrad: rg });
         this.bn1 = new BatchNorm2d(outChannels, { requiresGrad: rg });
-        this.conv2 = new Conv2d(outChannels, outChannels, 3, { stride: 1, padding: 1, requiresGrad: rg });
+        this.conv2 = new Conv2d(outChannels, outChannels, 3, { padding: 1, requiresGrad: rg });
         this.bn2 = new BatchNorm2d(outChannels, { requiresGrad: rg });
         this.relu = new Relu();
         if (stride !== 1 || inChannels !== outChannels) {
@@ -39,57 +45,48 @@ export class BasicBlock extends Module {
         return this.relu.forward(h.add(skip));
     }
 
-    async state(prefix: string): Promise<Record<string, TensorStateSlice>> {
-        const out: Record<string, TensorStateSlice> = {};
+    async state(): Promise<Record<string, TensorStateSlice>> {
+        const p = this.prefix;
         const c1 = await this.conv1.state();
         const b1 = await this.bn1.state();
         const c2 = await this.conv2.state();
         const b2 = await this.bn2.state();
-        out[`${prefix}.conv1.weight`] = c1.weight;
-        out[`${prefix}.conv1.bias`] = c1.bias;
-        out[`${prefix}.bn1.weight`] = b1.weight;
-        out[`${prefix}.bn1.bias`] = b1.bias;
-        out[`${prefix}.conv2.weight`] = c2.weight;
-        out[`${prefix}.conv2.bias`] = c2.bias;
-        out[`${prefix}.bn2.weight`] = b2.weight;
-        out[`${prefix}.bn2.bias`] = b2.bias;
+        const out: Record<string, TensorStateSlice> = {
+            [`${p}.conv1.weight`]: c1.weight,
+            [`${p}.conv1.bias`]: c1.bias,
+            [`${p}.bn1.weight`]: b1.weight,
+            [`${p}.bn1.bias`]: b1.bias,
+            [`${p}.conv2.weight`]: c2.weight,
+            [`${p}.conv2.bias`]: c2.bias,
+            [`${p}.bn2.weight`]: b2.weight,
+            [`${p}.bn2.bias`]: b2.bias,
+        };
         if (this.downConv && this.downBn) {
             const dc = await this.downConv.state();
             const db = await this.downBn.state();
-            out[`${prefix}.downsample.conv.weight`] = dc.weight;
-            out[`${prefix}.downsample.conv.bias`] = dc.bias;
-            out[`${prefix}.downsample.bn.weight`] = db.weight;
-            out[`${prefix}.downsample.bn.bias`] = db.bias;
+            out[`${p}.down.conv.weight`] = dc.weight;
+            out[`${p}.down.conv.bias`] = dc.bias;
+            out[`${p}.down.bn.weight`] = db.weight;
+            out[`${p}.down.bn.bias`] = db.bias;
         }
         return out;
     }
 
-    loadState(prefix: string, saved: Record<string, TensorStateSlice>, opts: { requiresGrad?: boolean } = {}): void {
+    loadState(saved: Record<string, TensorStateSlice>, opts: { requiresGrad?: boolean } = {}): void {
+        const p = this.prefix;
         const rg = opts.requiresGrad ?? true;
-        const take = (k: string) => {
-            const t = saved[k];
-            if (!t) throw new Error(`BasicBlock.loadState: missing '${k}'`);
-            return t;
+        const need = (k: string) => {
+            const s = saved[k];
+            if (!s) throw new Error(`BasicBlock.loadState: missing '${k}'`);
+            return s;
         };
-        this.conv1.loadState({ weight: take(`${prefix}.conv1.weight`), bias: take(`${prefix}.conv1.bias`) }, { requiresGrad: rg });
-        this.bn1.loadState({ weight: take(`${prefix}.bn1.weight`), bias: take(`${prefix}.bn1.bias`) }, { requiresGrad: rg });
-        this.conv2.loadState({ weight: take(`${prefix}.conv2.weight`), bias: take(`${prefix}.conv2.bias`) }, { requiresGrad: rg });
-        this.bn2.loadState({ weight: take(`${prefix}.bn2.weight`), bias: take(`${prefix}.bn2.bias`) }, { requiresGrad: rg });
+        this.conv1.loadState({ weight: need(`${p}.conv1.weight`), bias: need(`${p}.conv1.bias`) }, { requiresGrad: rg });
+        this.bn1.loadState({ weight: need(`${p}.bn1.weight`), bias: need(`${p}.bn1.bias`) }, { requiresGrad: rg });
+        this.conv2.loadState({ weight: need(`${p}.conv2.weight`), bias: need(`${p}.conv2.bias`) }, { requiresGrad: rg });
+        this.bn2.loadState({ weight: need(`${p}.bn2.weight`), bias: need(`${p}.bn2.bias`) }, { requiresGrad: rg });
         if (this.downConv && this.downBn) {
-            this.downConv.loadState(
-                {
-                    weight: take(`${prefix}.downsample.conv.weight`),
-                    bias: take(`${prefix}.downsample.conv.bias`),
-                },
-                { requiresGrad: rg },
-            );
-            this.downBn.loadState(
-                {
-                    weight: take(`${prefix}.downsample.bn.weight`),
-                    bias: take(`${prefix}.downsample.bn.bias`),
-                },
-                { requiresGrad: rg },
-            );
+            this.downConv.loadState({ weight: need(`${p}.down.conv.weight`), bias: need(`${p}.down.conv.bias`) }, { requiresGrad: rg });
+            this.downBn.loadState({ weight: need(`${p}.down.bn.weight`), bias: need(`${p}.down.bn.bias`) }, { requiresGrad: rg });
         }
     }
 }

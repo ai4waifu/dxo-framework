@@ -206,3 +206,16 @@ export function createHub(): Hub {
 export function hubVersion(): string {
     return 'dxo-hub@0';
 }
+
+export type {
+    Asset,
+    AssetBase,
+    AssetCatalog,
+    AssetKind,
+    AssetSource,
+    DatasetAsset,
+    NeuralAsset,
+    NeuralAssetTraining,
+    WeightAsset,
+} from './asset.js';
+export { defineAsset, defineAssets } from './asset.js';

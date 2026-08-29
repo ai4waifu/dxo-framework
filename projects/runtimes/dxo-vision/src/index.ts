@@ -24,7 +24,8 @@ export {
     type LabelSpace,
     type LabelSpaceOptions,
 } from './labels.js';
-export { defineResNet, RESNET18_STAGE_BLOCKS, RESNET18_STAGE_CHANNELS, ResNet } from './resnet.js';
+export type { Neural, NeuralSignature } from './neural.js';
+export { defineResNet, ResNet } from './resnet.js';
 export type {
     Device,
     ResNetDepth,

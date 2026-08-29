@@ -79,11 +79,13 @@ import {
     assert.equal(zhDecoded.topK[0]!.label, '乙');
 }
 
-// depth=18 forward works for 32×32 (GAP-free path); non-1×1 spatial covered in vision-resnet-state.
+// Tiny spatial is not the supported verify path; depth≠18 stays UNSUPPORTED.
 {
-    const backbone = new ResNet({ depth: 18 });
-    const feats = backbone.forward(tensor(new Array(1 * 3 * 32 * 32).fill(0.01), [1, 3, 32, 32]));
-    assert.deepEqual([...feats.shape], [1, 512]);
+    const deep = new ResNet({ depth: 34 });
+    assert.throws(
+        () => deep.forward(tensor(new Array(1 * 3 * 32 * 32).fill(0), [1, 3, 32, 32])),
+        (err: unknown) => err instanceof VisionError && err.code === 'UNSUPPORTED',
+    );
 }
 
 console.log('vision-compose-contract ok: ResNet/compose/LabelSpace');

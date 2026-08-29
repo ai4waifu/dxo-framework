@@ -1,4 +1,5 @@
 import type { Device } from '@dxo/core';
+import type { NeuralSignature } from './neural.js';
 
 /** Soft graph port — connectivity only; no labels / language. */
 export type TensorPort = {
@@ -36,7 +37,7 @@ export type ResNetOptions = {
     trainable?: boolean;
 };
 
-export type ResNetSignature = {
+export type ResNetSignature = NeuralSignature & {
     input: { image: TensorPort };
     output: { features: TensorPort };
 };
