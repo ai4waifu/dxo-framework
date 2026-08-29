@@ -38,7 +38,7 @@ const loss = logits.mean();
 model.zeroGrad();
 loss.backward();
 const grads = model.parameters().map((p) => p.grad);
-assert.ok(grads.some((g) => g && g.some((x) => Math.abs(x) > 0)));
+assert.ok(grads.some((g) => g?.some((x) => Math.abs(x) > 0)));
 
 // --- Save / load roundtrip ---
 const named: Record<string, { shape: number[]; data: number[] }> = {};

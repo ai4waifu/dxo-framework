@@ -200,4 +200,3 @@ export class Trainer {
         return { epochs, steps, aborted, finalMeanLoss, lastCheckpoint, lastState };
     }
 }
-

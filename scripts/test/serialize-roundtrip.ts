@@ -1,10 +1,7 @@
 import assert from 'node:assert/strict';
 import { tensor } from '@dxo/core';
 import { FullyConnected } from '@dxo/nn';
-import {
-    decodeState,
-    encodeState,
-} from '@dxo/serialize';
+import { decodeState, encodeState } from '@dxo/serialize';
 
 const model = new FullyConnected(2, 1, { requiresGrad: false });
 model.loadState({
@@ -23,10 +20,13 @@ const x = tensor([1, 2], [1, 2]);
 assert.deepEqual(await clone.forward(x).toArray(), await model.forward(x).toArray());
 assert.deepEqual(await clone.weight.toArray(), await model.weight.toArray());
 
-const stBytes = encodeState({
-    weight: round.weight,
-    bias: round.bias,
-}, { format: 'safetensors' });
+const stBytes = encodeState(
+    {
+        weight: round.weight,
+        bias: round.bias,
+    },
+    { format: 'safetensors' },
+);
 const stRound = decodeState(stBytes, { format: 'safetensors' });
 assert.deepEqual(stRound.weight!.data, round.weight.data);
 assert.deepEqual(stRound.bias!.data, round.bias.data);

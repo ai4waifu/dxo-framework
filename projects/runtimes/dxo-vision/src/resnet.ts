@@ -3,14 +3,7 @@ import { BatchNormalization2d, Convolution2d, MaxPooling2d, NeuralNetwork, ReLU,
 import { BasicBlock } from './basic-block.js';
 import { unsupported, VisionError } from './errors.js';
 import { loadWeights } from './load-weights.js';
-import {
-    type ResNetDepth,
-    type ResNetOptions,
-    type ResNetPorts,
-    resnetFeatureChannels,
-    type TensorPort,
-    type WeightSource,
-} from './types.js';
+import { type ResNetDepth, type ResNetOptions, type ResNetPorts, resnetFeatureChannels, type TensorPort, type WeightSource } from './types.js';
 
 /** DXO-native ResNet-18 layout: stages [2,2,2,2], channels 64→512. No classification `fc`. */
 const RESNET18_BLOCKS = [2, 2, 2, 2] as const;
@@ -42,7 +35,9 @@ function buildSignature(depth: ResNetDepth, inChannels: number): ResNetPorts {
  * depth=18 is wired; other depths throw `UNSUPPORTED` on forward/state.
  */
 export class ResNet extends NeuralNetwork {
-    protected semanticName(): string { return 'resnet'; }
+    protected semanticName(): string {
+        return 'resnet';
+    }
     readonly depth: ResNetDepth;
     readonly inChannels: number;
     readonly zeroInitResidual: boolean;
@@ -132,11 +127,7 @@ export class ResNet extends NeuralNetwork {
         if (this.depth !== 18 || !this.stages) {
             return [];
         }
-        const names: string[] = [
-            'stem.convolution.weight',
-            'stem.batch_normalization.weight',
-            'stem.batch_normalization.bias',
-        ];
+        const names: string[] = ['stem.convolution.weight', 'stem.batch_normalization.weight', 'stem.batch_normalization.bias'];
         for (const stage of this.stages) {
             for (const block of stage) {
                 const p = block.canonicalName();
@@ -189,10 +180,7 @@ export class ResNet extends NeuralNetwork {
             if (!s) throw new VisionError('MISSING_STATE_KEY', `ResNet.loadState: missing '${k}'`);
             return s;
         };
-        this.stemConv.loadState(
-            { weight: need('stem.convolution.weight') },
-            { requiresGrad: rg },
-        );
+        this.stemConv.loadState({ weight: need('stem.convolution.weight') }, { requiresGrad: rg });
         this.stemBn.loadState(
             {
                 weight: need('stem.batch_normalization.weight'),
@@ -255,15 +243,21 @@ export function defineResNet(options?: ResNetOptions): ResNet {
 }
 
 class Stem extends NeuralNetwork {
-    protected semanticName(): string { return 'stem'; }
-    forward(x: Tensor): Tensor { return x; }
+    protected semanticName(): string {
+        return 'stem';
+    }
+    forward(x: Tensor): Tensor {
+        return x;
+    }
     registerChild<T extends NeuralNetwork>(child: T, options: { name: string }): T {
         return super.registerChild(child, options);
     }
 }
 
 class Stage extends NeuralNetwork {
-    protected semanticName(): string { return 'stage'; }
+    protected semanticName(): string {
+        return 'stage';
+    }
     forward(x: Tensor): Tensor {
         let out = x;
         for (const block of this.blocks) out = block.forward(out);

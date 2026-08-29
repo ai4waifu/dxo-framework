@@ -33,7 +33,11 @@ export abstract class NeuralNetwork {
         validateName(localName, true);
         if (this.#reserved.has(localName)) throw new Error(`RESERVED_NAME: '${localName}'`);
         if (this.#children.has(localName)) throw new Error(`DUPLICATE_CHILD_NAME: '${localName}'`);
-        if (mode === 'singleton' && options.name === undefined && [...this.#children.values()].some((item) => item.semanticName() === semanticName)) {
+        if (
+            mode === 'singleton' &&
+            options.name === undefined &&
+            [...this.#children.values()].some((item) => item.semanticName() === semanticName)
+        ) {
             throw new Error(`DUPLICATE_SINGLETON_NODE: '${semanticName}'`);
         }
         if (child.#parent) throw new Error('DUPLICATE_CHILD_NAME: child is already registered');
@@ -112,7 +116,9 @@ export function relu(x: Tensor): Tensor {
 
 /** Element-wise ReLU module. */
 export class ReLU extends Layer {
-    protected semanticName(): string { return 'relu'; }
+    protected semanticName(): string {
+        return 'relu';
+    }
     forward(x: Tensor): Tensor {
         return x.relu();
     }
@@ -127,7 +133,9 @@ export class FullyConnected extends Layer {
     weight: Tensor;
     bias: Tensor;
 
-    protected semanticName(): string { return 'fully_connected'; }
+    protected semanticName(): string {
+        return 'fully_connected';
+    }
 
     constructor(
         readonly inFeatures: number,
@@ -202,7 +210,9 @@ export interface EmbeddingState {
 export class Embedding extends Layer {
     weight: Tensor;
 
-    protected semanticName(): string { return 'embedding'; }
+    protected semanticName(): string {
+        return 'embedding';
+    }
 
     constructor(
         readonly numEmbeddings: number,
@@ -244,7 +254,9 @@ export class LayerNormalization extends Layer {
     weight: Tensor;
     bias: Tensor;
 
-    protected semanticName(): string { return 'layer_normalization'; }
+    protected semanticName(): string {
+        return 'layer_normalization';
+    }
 
     constructor(
         readonly normalizedShape: number,
@@ -290,7 +302,9 @@ export class SelfAttention extends Layer {
     qkv: FullyConnected;
     proj: FullyConnected;
 
-    protected semanticName(): string { return 'self_attention'; }
+    protected semanticName(): string {
+        return 'self_attention';
+    }
 
     constructor(
         readonly embedDim: number,
@@ -336,7 +350,9 @@ export class TransformerBlock extends NeuralNetwork {
     fc1: FullyConnected;
     fc2: FullyConnected;
 
-    protected semanticName(): string { return 'transformer_block'; }
+    protected semanticName(): string {
+        return 'transformer_block';
+    }
 
     constructor(embedDim: number, numHeads: number, opts: { requiresGrad?: boolean } = {}) {
         super();
@@ -481,7 +497,9 @@ export class Convolution2d extends Layer {
     weight: Tensor;
     bias: Tensor | null;
 
-    protected semanticName(): string { return 'convolution'; }
+    protected semanticName(): string {
+        return 'convolution';
+    }
 
     constructor(
         readonly inChannels: number,
@@ -525,7 +543,9 @@ export class Convolution2d extends Layer {
 
 /** Max pooling 2D NCHW. */
 export class MaxPooling2d extends Layer {
-    protected semanticName(): string { return 'max_pooling'; }
+    protected semanticName(): string {
+        return 'max_pooling';
+    }
     constructor(
         readonly kernelSize: number,
         opts: { stride?: number; padding?: number } = {},
@@ -559,7 +579,9 @@ export class BatchNormalization2d extends Layer {
     readonly runningVariance: Tensor | null;
     readonly numBatchesTracked: Tensor | null;
 
-    protected semanticName(): string { return 'batch_normalization'; }
+    protected semanticName(): string {
+        return 'batch_normalization';
+    }
 
     constructor(
         readonly numFeatures: number,
@@ -589,7 +611,8 @@ export class BatchNormalization2d extends Layer {
         if (this.bias) out.bias = { shape: [...this.bias.shape], data: await this.bias.toArray() };
         if (this.runningMean) out.running_mean = { shape: [...this.runningMean.shape], data: await this.runningMean.toArray() };
         if (this.runningVariance) out.running_variance = { shape: [...this.runningVariance.shape], data: await this.runningVariance.toArray() };
-        if (this.numBatchesTracked) out.num_batches_tracked = { shape: [...this.numBatchesTracked.shape], data: await this.numBatchesTracked.toArray() };
+        if (this.numBatchesTracked)
+            out.num_batches_tracked = { shape: [...this.numBatchesTracked.shape], data: await this.numBatchesTracked.toArray() };
         return out;
     }
 

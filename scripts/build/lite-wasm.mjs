@@ -7,7 +7,7 @@
  * wasm-pack `--out-dir` is resolved relative to the **crate** directory, not cwd.
  */
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -48,7 +48,7 @@ if (existsSync(staleNested)) rmSync(staleNested, { recursive: true, force: true 
 // Ensure Node ESM can resolve the glue from the TS rebind.
 const gluePkg = path.join(libDir, 'package.json');
 if (!existsSync(gluePkg)) {
-    writeFileSync(gluePkg, JSON.stringify({ type: 'module' }, null, 2) + '\n');
+    writeFileSync(gluePkg, `${JSON.stringify({ type: 'module' }, null, 2)}\n`);
 }
 
 console.log(`lite-wasm lib ← ${libDir}`);

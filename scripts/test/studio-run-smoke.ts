@@ -141,7 +141,7 @@ try {
         assert.ok(before.metricNames.includes('loss'));
         assert.ok(before.checkpointCount >= 1);
         assert.equal(before.graphView, 'module');
-    assert.ok(before.hasFullyConnected);
+        assert.ok(before.hasFullyConnected);
     } finally {
         await api1.close();
     }

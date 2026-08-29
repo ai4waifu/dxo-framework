@@ -1,5 +1,3 @@
-import type { Tensor } from '@dxo/core';
-import type { TensorStateSlice } from '@dxo/nn';
 import type { TensorPort } from './types.js';
 
 /** Soft ports for graph connectivity — no labels / language. */

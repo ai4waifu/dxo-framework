@@ -37,7 +37,7 @@ export function kernelGraphUnavailable(reason: string): ModelGraphV0 {
  * If none exist, returns unavailable — does not fabricate timing.
  */
 export function kernelGraphFromProfile(trace: ProfileTraceV0 | null | undefined): ModelGraphV0 {
-    if (!trace || trace.format !== 'dxo-profile') {
+    if (trace?.format !== 'dxo-profile') {
         return kernelGraphUnavailable('no ProfileTraceV0 from runtime / inspect');
     }
     const spans = (trace.spans ?? []).filter(

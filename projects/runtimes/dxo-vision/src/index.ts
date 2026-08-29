@@ -16,12 +16,12 @@ export {
     type LinearHeadOptions,
 } from './heads.js';
 export {
+    type BilingualLabelSpaceOptions,
     type ClassificationDecode,
     type ClassificationTopK,
-    defineBilingualLabelSpace,
-    type BilingualLabelSpaceOptions,
     type DecodeClassificationOptions,
     decodeClassification,
+    defineBilingualLabelSpace,
     defineLabelSpace,
     type LabelSpace,
     type LabelSpaceOptions,

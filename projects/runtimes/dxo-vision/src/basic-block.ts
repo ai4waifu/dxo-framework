@@ -8,7 +8,9 @@ import { BatchNormalization2d, Convolution2d, NeuralNetwork, ReLU } from '@dxo/n
  * and optional `{prefix}.downsample.convolution|batch_normalization` (singleton downsample).
  */
 export class BasicBlock extends NeuralNetwork {
-    protected semanticName(): string { return 'basic_block'; }
+    protected semanticName(): string {
+        return 'basic_block';
+    }
     readonly convolution_1: Convolution2d;
     readonly batch_normalization_1: BatchNormalization2d;
     readonly convolution_2: Convolution2d;
@@ -88,18 +90,12 @@ export class BasicBlock extends NeuralNetwork {
             if (!s) throw new Error(`BasicBlock.loadState: missing '${k}'`);
             return s;
         };
-        this.convolution_1.loadState(
-            { weight: need(`${p}.convolution_1.weight`) },
-            { requiresGrad: rg },
-        );
+        this.convolution_1.loadState({ weight: need(`${p}.convolution_1.weight`) }, { requiresGrad: rg });
         this.batch_normalization_1.loadState(
             { weight: need(`${p}.batch_normalization_1.weight`), bias: need(`${p}.batch_normalization_1.bias`) },
             { requiresGrad: rg },
         );
-        this.convolution_2.loadState(
-            { weight: need(`${p}.convolution_2.weight`) },
-            { requiresGrad: rg },
-        );
+        this.convolution_2.loadState({ weight: need(`${p}.convolution_2.weight`) }, { requiresGrad: rg });
         this.batch_normalization_2.loadState(
             { weight: need(`${p}.batch_normalization_2.weight`), bias: need(`${p}.batch_normalization_2.bias`) },
             { requiresGrad: rg },
@@ -132,6 +128,10 @@ class Downsample extends NeuralNetwork {
         this.registerChild(batchNormalization, { name: 'batch_normalization' });
     }
 
-    protected semanticName(): string { return 'downsample'; }
-    forward(x: Tensor): Tensor { return this.batchNormalization.forward(this.convolution.forward(x)); }
+    protected semanticName(): string {
+        return 'downsample';
+    }
+    forward(x: Tensor): Tensor {
+        return this.batchNormalization.forward(this.convolution.forward(x));
+    }
 }
