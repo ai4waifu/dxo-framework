@@ -32,7 +32,7 @@
         <CodeBlock
           :code="selfTestSample"
           caption="shell"
-          copyLabel="Copy"
+          copy-label="Copy"
           @copy="() => this.copySelfTest()"
         />
       </Card>

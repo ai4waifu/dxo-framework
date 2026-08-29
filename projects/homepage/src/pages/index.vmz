@@ -25,7 +25,7 @@
           <CodeBlock
             :code="installSample"
             caption="shell"
-            copyLabel="Copy"
+            copy-label="Copy"
             @copy="() => this.copyInstall()"
           />
         </Card>

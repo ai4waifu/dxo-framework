@@ -43,7 +43,7 @@
         <CodeBlock
           :code="result"
           caption="output"
-          copyLabel="Copy"
+          copy-label="Copy"
           @copy="() => this.copyResult()"
         />
       </Card>
