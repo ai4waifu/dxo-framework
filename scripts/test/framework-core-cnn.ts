@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { tensor, withoutGrad } from '@dxo/core';
 import { BatchNormalization2d, Convolution2d, MaxPooling2d, TinyCnn } from '@dxo/nn';
-import { packTensors, unpackTensors } from '@dxo/serialize';
+import { decodeState, encodeState } from '@dxo/serialize';
 
 // --- Conv2d forward shape ---
 {
@@ -51,8 +51,7 @@ assert.ok(model.conv.bias.grad?.some((g) => Math.abs(g) > 0));
 
 // --- Named serialize roundtrip ---
 const named = await model.state();
-const packed = packTensors(named);
-const restored = unpackTensors(packed);
+const restored = decodeState(encodeState(named, { format: 'safetensors' }), { format: 'safetensors' });
 const clone = new TinyCnn(1, 3, { channels: 4, spatial: 8, requiresGrad: false });
 clone.loadState(restored, { requiresGrad: false });
 const a = await withoutGrad(() => model.forward(images)).toArray();

@@ -5,7 +5,7 @@
 import assert from 'node:assert/strict';
 import { embedding, tensor, withoutGrad } from '@dxo/core';
 import { Embedding, LayerNormalization, TinyTransformer } from '@dxo/nn';
-import { decodeSafetensors, encodeSafetensors, packTensors, unpackTensors } from '@dxo/serialize';
+import { decodeState, encodeState } from '@dxo/serialize';
 
 // --- Embedding gather ---
 {
@@ -47,8 +47,7 @@ for (let i = 0; i < params.length; i++) {
     const p = params[i]!;
     named[`p${i}`] = { shape: [...p.shape], data: await p.toArray() };
 }
-const packed = packTensors(named);
-const restored = unpackTensors(packed);
+const restored = decodeState(encodeState(named, { format: 'safetensors' }), { format: 'safetensors' });
 assert.deepEqual(Object.keys(restored).sort(), Object.keys(named).sort());
 for (const key of Object.keys(named)) {
     assert.deepEqual(restored[key]!.data, named[key]!.data);
@@ -60,9 +59,9 @@ assert.deepEqual([...logits2.shape], [2, 4, 8]);
 
 // --- Named state ↔ safetensors reload ---
 const namedState = await model.state();
-const st = encodeSafetensors(namedState);
+const st = encodeState(namedState, { format: 'safetensors' });
 const reloaded = new TinyTransformer(8, 4, 8, 2, 1, { requiresGrad: false });
-reloaded.loadState(decodeSafetensors(st), { requiresGrad: false });
+reloaded.loadState(decodeState(st, { format: 'safetensors' }), { requiresGrad: false });
 const logits3 = withoutGrad(() => reloaded.forward(tokens));
 const a = await logits2.toArray();
 const b = await logits3.toArray();
