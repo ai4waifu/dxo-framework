@@ -22,15 +22,20 @@
 
       <section class="dxo-home__grid" aria-label="Quick start">
         <Card title="Install" description="Pinned registry package for browser / CF Pages.">
-          <CodeBlock code={installSample} caption="shell" copyLabel="Copy" onCopy={() => this.copyInstall()} />
+          <CodeBlock
+            :code="installSample"
+            caption="shell"
+            copyLabel="Copy"
+            @copy="() => this.copyInstall()"
+          />
         </Card>
         <Card title="@dxo/lite runtime probe" description="createRuntime · CPU fallback · optional WASM.">
           <dl class="dxo-home__probe">
-            <div><dt>version</dt><dd>{liteVersion}</dd></div>
-            <div><dt>backend</dt><dd>{liteBackend}</dd></div>
-            <div><dt>wasm</dt><dd>{liteWasm}</dd></div>
-            <div><dt>Tensor</dt><dd>{liteTensorClass}</dd></div>
-            <div><dt>matmul</dt><dd>{liteMatmul}</dd></div>
+            <div><dt>version</dt><dd>{{ liteVersion }}</dd></div>
+            <div><dt>backend</dt><dd>{{ liteBackend }}</dd></div>
+            <div><dt>wasm</dt><dd>{{ liteWasm }}</dd></div>
+            <div><dt>Tensor</dt><dd>{{ liteTensorClass }}</dd></div>
+            <div><dt>matmul</dt><dd>{{ liteMatmul }}</dd></div>
           </dl>
           <Callout tone="info">
             Async createRuntime probes WebGPU only; host f32 until DXO GPU WASM. Never WebGL.

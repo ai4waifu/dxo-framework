@@ -15,10 +15,10 @@
     },
     "dependencies": {
         "@dxo/lite": "0.0.10",
-        "@vmz/core": "0.1.14",
-        "@vmz/ui": "0.1.14"
+        "@vmz/core": "0.1.17",
+        "@vmz/ui": "0.1.17"
     },
     "devDependencies": {
-        "@vmz/vmz": "0.1.14"
+        "@vmz/vmz": "0.1.17"
     }
 }

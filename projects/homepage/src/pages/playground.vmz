@@ -15,32 +15,37 @@
         staged under public/ (CF copies public/** into the CDN root).
       </p>
 
-      <Card title="Runtime" description={status}>
+      <Card title="Runtime" :description="status">
         <dl class="dxo-play__probe">
-          <div><dt>lite</dt><dd>{liteVersion}</dd></div>
-          <div><dt>backend</dt><dd>{backend}</dd></div>
-          <div><dt>wasm</dt><dd>{wasmVersion}</dd></div>
-          <div><dt>interimHostF32</dt><dd>{wasmInterim}</dd></div>
-          <div><dt>webgpu probe</dt><dd>{webgpu}</dd></div>
+          <div><dt>lite</dt><dd>{{ liteVersion }}</dd></div>
+          <div><dt>backend</dt><dd>{{ backend }}</dd></div>
+          <div><dt>wasm</dt><dd>{{ wasmVersion }}</dd></div>
+          <div><dt>interimHostF32</dt><dd>{{ wasmInterim }}</dd></div>
+          <div><dt>webgpu probe</dt><dd>{{ webgpu }}</dd></div>
         </dl>
       </Card>
 
       <Card title="2×2 f32 ops" description="Row-major matrices · four numbers each.">
         <label class="dxo-play__field">
           <span>A</span>
-          <input type="text" value={aText} onInput={onA} spellcheck="false" autocomplete="off" />
+          <input type="text" :value="aText" @input="onA" spellcheck="false" autocomplete="off" />
         </label>
         <label class="dxo-play__field">
           <span>B</span>
-          <input type="text" value={bText} onInput={onB} spellcheck="false" autocomplete="off" />
+          <input type="text" :value="bText" @input="onB" spellcheck="false" autocomplete="off" />
         </label>
         <div class="dxo-play__actions">
-          <Button type="button" variant="primary" onClick={() => this.runMatmul()}>matmul</Button>
-          <Button type="button" variant="secondary" onClick={() => this.runAdd()}>add</Button>
-          <Button type="button" variant="ghost" onClick={() => this.loadIdentity()}>A·I demo</Button>
-          <Button type="button" variant="ghost" onClick={() => this.loadOnes()}>ones</Button>
+          <Button type="button" variant="primary" @click="() => this.runMatmul()">matmul</Button>
+          <Button type="button" variant="secondary" @click="() => this.runAdd()">add</Button>
+          <Button type="button" variant="ghost" @click="() => this.loadIdentity()">A·I demo</Button>
+          <Button type="button" variant="ghost" @click="() => this.loadOnes()">ones</Button>
         </div>
-        <CodeBlock code={result} caption="output" copyLabel="Copy" onCopy={() => this.copyResult()} />
+        <CodeBlock
+          :code="result"
+          caption="output"
+          copyLabel="Copy"
+          @copy="() => this.copyResult()"
+        />
       </Card>
     </main>
   </div>

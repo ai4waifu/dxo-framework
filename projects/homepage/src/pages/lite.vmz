@@ -17,23 +17,23 @@
 
       <Card title="Probe results" description="Live createRuntime capabilities.">
         <dl class="dxo-lite-page__probe">
-          <div><dt>version()</dt><dd>{liteVersion}</dd></div>
-          <div><dt>capabilities.backend</dt><dd>{liteBackend}</dd></div>
-          <div><dt>wasm</dt><dd>{liteWasm}</dd></div>
-          <div><dt>webgpu</dt><dd>{liteWebgpu}</dd></div>
-          <div><dt>gpuBackendReady</dt><dd>{liteGpuReady}</dd></div>
-          <div><dt>webglTensorBackend</dt><dd>{liteWebgl}</dd></div>
-          <div><dt>Tensor</dt><dd>{liteTensorClass}</dd></div>
-          <div><dt>matmul identity</dt><dd>{liteMatmul}</dd></div>
+          <div><dt>version()</dt><dd>{{ liteVersion }}</dd></div>
+          <div><dt>capabilities.backend</dt><dd>{{ liteBackend }}</dd></div>
+          <div><dt>wasm</dt><dd>{{ liteWasm }}</dd></div>
+          <div><dt>webgpu</dt><dd>{{ liteWebgpu }}</dd></div>
+          <div><dt>gpuBackendReady</dt><dd>{{ liteGpuReady }}</dd></div>
+          <div><dt>webglTensorBackend</dt><dd>{{ liteWebgl }}</dd></div>
+          <div><dt>Tensor</dt><dd>{{ liteTensorClass }}</dd></div>
+          <div><dt>matmul identity</dt><dd>{{ liteMatmul }}</dd></div>
         </dl>
       </Card>
 
       <Card title="Node self-test" description="CI / local verify without a browser.">
         <CodeBlock
-          code={selfTestSample}
+          :code="selfTestSample"
           caption="shell"
           copyLabel="Copy"
-          onCopy={() => this.copySelfTest()}
+          @copy="() => this.copySelfTest()"
         />
       </Card>
     </main>
