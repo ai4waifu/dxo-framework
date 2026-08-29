@@ -5,6 +5,7 @@
 #![allow(unsafe_code)] // `tensor_f32` reads Node `Buffer` bytes as f32 via a validated slice view.
 
 use std::fmt;
+use std::fs;
 
 use dxo_core::{DeviceKind, Tensor as CoreTensor};
 use napi::bindgen_prelude::*;
@@ -544,4 +545,222 @@ pub fn read_inspect_events_json(run_id: String, runs_root: Option<String>) -> Re
 #[napi]
 pub fn default_inspect_runs_root() -> String {
     dxo_studio::default_runs_root().display().to_string()
+}
+
+/// Metadata for a tensor found in an external weight container.
+#[napi(object)]
+#[derive(Debug, Clone)]
+pub struct ExternalTensorInfo {
+    /// Tensor name as stored by the container.
+    pub name: String,
+    /// Element data type (for example `F32`).
+    pub dtype: String,
+    /// Tensor dimensions.
+    pub shape: Vec<u32>,
+    /// Number of encoded payload bytes, when available.
+    pub nbytes: Option<f64>,
+}
+
+/// Read-only graph node summary used by inspect tooling.
+#[napi(object)]
+#[derive(Debug, Clone)]
+pub struct GraphNodeInfo {
+    /// Stable node identifier.
+    pub id: String,
+    /// Operation/type name.
+    pub op: String,
+    /// Input value names.
+    pub inputs: Vec<String>,
+    /// Output value names.
+    pub outputs: Vec<String>,
+    /// Optional shape/dtype summary encoded as JSON.
+    pub shape_dtype_json: Option<String>,
+    /// Node attributes encoded as JSON.
+    pub attributes_json: Option<String>,
+}
+
+/// Read-only graph view summary. This is intentionally not a runtime Graph.
+#[napi(object)]
+#[derive(Debug, Clone)]
+pub struct GraphInspectSummary {
+    /// Graph name, when provided.
+    pub name: Option<String>,
+    /// Graph inputs and outputs as value names.
+    pub inputs: Vec<String>,
+    /// Graph output value names.
+    pub outputs: Vec<String>,
+    /// Node summaries in source order.
+    pub nodes: Vec<GraphNodeInfo>,
+    /// Canonical JSON fixture suitable for later conversion/import tooling.
+    pub fixture_json: String,
+}
+
+fn string_list(value: Option<&serde_json::Value>) -> Vec<String> {
+    value
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect())
+        .unwrap_or_default()
+}
+
+/// Inspect a DXO graph-view JSON document without constructing or executing a graph.
+#[napi]
+pub fn inspect_dxo_graph_view(graph_json: String) -> Result<GraphInspectSummary> {
+    let value: serde_json::Value =
+        serde_json::from_str(&graph_json).map_err(|e| Error::from_reason(format!("graph inspect: invalid JSON: {e}")))?;
+    let root = value.as_object().ok_or_else(|| Error::from_reason("graph inspect: root must be an object"))?;
+    let nodes_value =
+        root.get("nodes").and_then(|v| v.as_array()).ok_or_else(|| Error::from_reason("graph inspect: missing nodes array"))?;
+    let mut nodes = Vec::with_capacity(nodes_value.len());
+    for (index, node) in nodes_value.iter().enumerate() {
+        let obj =
+            node.as_object().ok_or_else(|| Error::from_reason(format!("graph inspect: node {index} must be an object")))?;
+        let id = obj
+            .get("id")
+            .or_else(|| obj.get("name"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| Error::from_reason(format!("graph inspect: node {index} missing id")))?;
+        let op = obj.get("op").or_else(|| obj.get("type")).and_then(|v| v.as_str()).unwrap_or("unknown");
+        let inputs = string_list(obj.get("inputs"));
+        let outputs = string_list(obj.get("outputs"));
+        let shape_dtype_json = obj.get("shape").or_else(|| obj.get("dtype")).map(|v| v.to_string());
+        let attributes_json = obj.get("attributes").or_else(|| obj.get("attrs")).map(|v| v.to_string());
+        nodes.push(GraphNodeInfo { id: id.to_owned(), op: op.to_owned(), inputs, outputs, shape_dtype_json, attributes_json });
+    }
+    Ok(GraphInspectSummary {
+        name: root.get("name").and_then(|v| v.as_str()).map(str::to_owned),
+        inputs: string_list(root.get("inputs")),
+        outputs: string_list(root.get("outputs")),
+        nodes,
+        fixture_json: serde_json::to_string(&value).map_err(|e| Error::from_reason(e.to_string()))?,
+    })
+}
+
+/// Inspect an external ONNX graph. ONNX protobuf parsing is intentionally
+/// unavailable until a bounded, non-executing reader is added.
+#[napi]
+pub fn inspect_onnx_graph(_data: Buffer) -> Result<GraphInspectSummary> {
+    Err(Error::from_reason(
+        "onnx graph inspect: protobuf initializer/node reader is not available in this build; graph execution/import is unsupported",
+    ))
+}
+
+fn safetensors_infos(bytes: &[u8]) -> Result<Vec<ExternalTensorInfo>> {
+    if bytes.len() < 8 {
+        return Err(Error::from_reason("safetensors: buffer too short"));
+    }
+    let header_len = u64::from_le_bytes(bytes[..8].try_into().unwrap()) as usize;
+    if header_len == 0 || 8 + header_len > bytes.len() {
+        return Err(Error::from_reason("safetensors: invalid header length"));
+    }
+    let header: serde_json::Value = serde_json::from_slice(&bytes[8..8 + header_len])
+        .map_err(|e| Error::from_reason(format!("safetensors: invalid header JSON: {e}")))?;
+    let obj = header.as_object().ok_or_else(|| Error::from_reason("safetensors: header must be an object"))?;
+    let mut out = Vec::new();
+    for (name, value) in obj {
+        if name == "__metadata__" {
+            continue;
+        }
+        let info = value.as_object().ok_or_else(|| Error::from_reason(format!("safetensors: invalid entry '{name}'")))?;
+        let dtype = info
+            .get("dtype")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| Error::from_reason(format!("safetensors: missing dtype for '{name}'")))?;
+        let shape = info
+            .get("shape")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| Error::from_reason(format!("safetensors: missing shape for '{name}'")))?
+            .iter()
+            .map(|v| {
+                v.as_u64()
+                    .and_then(|n| u32::try_from(n).ok())
+                    .ok_or_else(|| Error::from_reason(format!("safetensors: invalid shape for '{name}'")))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let offsets = info
+            .get("data_offsets")
+            .and_then(|v| v.as_array())
+            .ok_or_else(|| Error::from_reason(format!("safetensors: missing data_offsets for '{name}'")))?;
+        if offsets.len() != 2 {
+            return Err(Error::from_reason(format!("safetensors: invalid data_offsets for '{name}'")));
+        }
+        let begin = offsets[0].as_u64().ok_or_else(|| Error::from_reason("safetensors: invalid offset"))? as usize;
+        let end = offsets[1].as_u64().ok_or_else(|| Error::from_reason("safetensors: invalid offset"))? as usize;
+        if end < begin || 8 + header_len + end > bytes.len() {
+            return Err(Error::from_reason(format!("safetensors: data range out of bounds for '{name}'")));
+        }
+        out.push(ExternalTensorInfo {
+            name: name.clone(),
+            dtype: dtype.to_string(),
+            shape,
+            nbytes: Some((end - begin) as f64),
+        });
+    }
+    Ok(out)
+}
+
+/// Inspect external weights without loading a model graph or executing pickle.
+/// `format` is `safetensors`; `pth` is deliberately rejected unless it is a
+/// tensor-only safetensors payload (PyTorch pickle is never executed).
+#[napi]
+pub fn inspect_external_weights(format: String, data: Buffer) -> Result<Vec<ExternalTensorInfo>> {
+    match format.to_ascii_lowercase().as_str() {
+        "safetensors" | "safetensor" => safetensors_infos(data.as_ref()),
+        "pth" | "pt" => Err(Error::from_reason(
+            "pth inspect: restricted tensor-only reader unavailable for pickle containers; refusing to execute arbitrary pickle",
+        )),
+        "onnx" => Err(Error::from_reason(
+            "onnx inspect: initializer reader is not available in this build (graph import is intentionally unsupported)",
+        )),
+        other => Err(Error::from_reason(format!("unsupported external weight format '{other}'"))),
+    }
+}
+
+/// Inspect an external weight file by path. This performs metadata-only parsing.
+#[napi]
+pub fn inspect_external_weights_file(format: String, path: String) -> Result<Vec<ExternalTensorInfo>> {
+    let bytes = fs::read(path).map_err(|e| Error::from_reason(e.to_string()))?;
+    inspect_external_weights(format, Buffer::from(bytes))
+}
+
+#[cfg(test)]
+mod external_weight_tests {
+    use super::*;
+
+    #[test]
+    fn inspects_safetensors_header_without_loading_payload() {
+        let header = br#"{"w":{"dtype":"F32","shape":[2,3],"data_offsets":[0,24]},"__metadata__":{"format":"pt"}}"#;
+        let mut bytes = Vec::with_capacity(8 + header.len() + 24);
+        bytes.extend_from_slice(&(header.len() as u64).to_le_bytes());
+        bytes.extend_from_slice(header);
+        bytes.resize(8 + header.len() + 24, 0);
+        let infos = safetensors_infos(&bytes).expect("valid safetensors");
+        assert_eq!(infos.len(), 1);
+        assert_eq!(infos[0].name, "w");
+        assert_eq!(infos[0].shape, vec![2, 3]);
+        assert_eq!(infos[0].nbytes, Some(24.0));
+    }
+
+    #[test]
+    fn refuses_pickle_and_onnx_until_safe_readers_exist() {
+        let err = inspect_external_weights("pth".into(), Buffer::from(vec![])).unwrap_err();
+        assert!(err.reason.contains("refusing to execute"));
+        let err = inspect_external_weights("onnx".into(), Buffer::from(vec![])).unwrap_err();
+        assert!(err.reason.contains("not available"));
+    }
+
+    #[test]
+    fn inspects_dxo_graph_view_as_read_only_fixture() {
+        let json = r#"{"name":"demo","inputs":["x"],"outputs":["y"],"nodes":[{"id":"n1","op":"Relu","inputs":["x"],"outputs":["y"],"shape":[2,3],"dtype":"F32","attributes":{"alpha":0}}]}"#;
+        let summary = inspect_dxo_graph_view(json.to_owned()).expect("valid graph view");
+        assert_eq!(summary.name.as_deref(), Some("demo"));
+        assert_eq!(summary.nodes[0].op, "Relu");
+        assert!(summary.fixture_json.contains("n1"));
+    }
+
+    #[test]
+    fn onnx_graph_inspect_is_explicitly_non_executing() {
+        let err = inspect_onnx_graph(Buffer::from(vec![])).unwrap_err();
+        assert!(err.reason.contains("not available"));
+        assert!(err.reason.contains("execution/import"));
+    }
 }
