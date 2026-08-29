@@ -35,12 +35,12 @@
           <input type="text" value={bText} onInput={onB} spellcheck="false" autocomplete="off" />
         </label>
         <div class="dxo-play__actions">
-          <Button type="button" variant="primary" onClick={runMatmul}>matmul</Button>
-          <Button type="button" variant="secondary" onClick={runAdd}>add</Button>
-          <Button type="button" variant="ghost" onClick={loadIdentity}>A·I demo</Button>
-          <Button type="button" variant="ghost" onClick={loadOnes}>ones</Button>
+          <Button type="button" variant="primary" onClick={() => this.runMatmul()}>matmul</Button>
+          <Button type="button" variant="secondary" onClick={() => this.runAdd()}>add</Button>
+          <Button type="button" variant="ghost" onClick={() => this.loadIdentity()}>A·I demo</Button>
+          <Button type="button" variant="ghost" onClick={() => this.loadOnes()}>ones</Button>
         </div>
-        <CodeBlock code={result} caption="output" copyLabel="Copy" onCopy={copyResult} />
+        <CodeBlock code={result} caption="output" copyLabel="Copy" onCopy={() => this.copyResult()} />
       </Card>
     </main>
   </div>

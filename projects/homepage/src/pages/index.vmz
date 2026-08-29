@@ -22,7 +22,7 @@
 
       <section class="dxo-home__grid" aria-label="Quick start">
         <Card title="Install" description="Pinned registry package for browser / CF Pages.">
-          <CodeBlock code={installSample} caption="shell" copyLabel="Copy" onCopy={copyInstall} />
+          <CodeBlock code={installSample} caption="shell" copyLabel="Copy" onCopy={() => this.copyInstall()} />
         </Card>
         <Card title="@dxo/lite runtime probe" description="createRuntime · CPU fallback · optional WASM.">
           <dl class="dxo-home__probe">

@@ -33,7 +33,7 @@
           code={selfTestSample}
           caption="shell"
           copyLabel="Copy"
-          onCopy={copySelfTest}
+          onCopy={() => this.copySelfTest()}
         />
       </Card>
     </main>
