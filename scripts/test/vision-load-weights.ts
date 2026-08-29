@@ -41,7 +41,7 @@ const bytes = encodeSafetensors(st);
     await writeFile(file, encodeSafetensors(withFc));
     const dst = new ResNet({ depth: 18, trainable: false });
     await loadWeights(dst, { path: file, scope: 'backbone' });
-    assert.deepEqual((await dst.state())['stem.conv.weight']!.shape, st['stem.conv.weight']!.shape);
+    assert.deepEqual((await dst.state())['stem.convolution.weight']!.shape, st['stem.convolution.weight']!.shape);
 
     await assert.rejects(
         () => loadWeights(new ResNet({ depth: 18, trainable: false }), { path: file, scope: 'all' }),
