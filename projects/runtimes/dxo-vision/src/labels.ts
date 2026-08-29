@@ -5,11 +5,13 @@ export type LabelSpace = {
     id: string;
     labels: readonly string[];
     size: number;
+    localized?: Readonly<Record<string, readonly string[]>>;
 };
 
 export type LabelSpaceOptions = {
     id: string;
     labels: readonly string[];
+    localized?: Record<string, readonly string[]>;
 };
 
 export function defineLabelSpace(options: LabelSpaceOptions): LabelSpace {
@@ -19,11 +21,36 @@ export function defineLabelSpace(options: LabelSpaceOptions): LabelSpace {
     if (!Array.isArray(options.labels) || options.labels.length === 0) {
         throw new VisionError('INVALID_LABEL_SPACE', 'defineLabelSpace requires a non-empty labels array');
     }
+    const localized = options.localized
+        ? Object.fromEntries(Object.entries(options.localized).map(([locale, labels]) => [locale, Object.freeze([...labels])]))
+        : undefined;
+    if (localized && Object.values(localized).some((labels) => labels.length !== options.labels.length)) {
+        throw new VisionError('INVALID_LABEL_SPACE', 'localized label arrays must match the primary label count');
+    }
     return {
         id: options.id,
         labels: Object.freeze([...options.labels]),
         size: options.labels.length,
+        ...(localized ? { localized } : {}),
     };
+}
+
+export type BilingualLabelSpaceOptions = {
+    id: string;
+    english: readonly string[];
+    chinese: readonly string[];
+};
+
+/** Define aligned English/Chinese labels for the same logits indices. */
+export function defineBilingualLabelSpace(options: BilingualLabelSpaceOptions): LabelSpace {
+    if (options.english.length !== options.chinese.length) {
+        throw new VisionError('INVALID_LABEL_SPACE', 'English and Chinese labels must have the same length');
+    }
+    return defineLabelSpace({
+        id: options.id,
+        labels: options.english,
+        localized: { en: options.english, zh: options.chinese },
+    });
 }
 
 export type ClassificationTopK = {
@@ -40,6 +67,7 @@ export type ClassificationDecode = {
 export type DecodeClassificationOptions = {
     labels: LabelSpace;
     topK?: number;
+    locale?: string;
 };
 
 /**
@@ -62,6 +90,10 @@ export async function decodeClassification(logits: Tensor, options: DecodeClassi
     // Use last row for batched [N, C]; full vector for [C].
     const offset = shape.length === 1 ? 0 : (shape[0]! - 1) * classDim;
     const scores = data.slice(offset, offset + classDim);
+    const localized = options.locale && labels.localized?.[options.locale];
+    if (options.locale && !localized) {
+        throw new VisionError('UNKNOWN_LABEL_LOCALE', `label space '${labels.id}' has no locale '${options.locale}'`);
+    }
     const order = scores
         .map((score, index) => ({ score, index }))
         .sort((a, b) => b.score - a.score)
@@ -72,7 +104,7 @@ export async function decodeClassification(logits: Tensor, options: DecodeClassi
         topK: order.map(({ score, index }) => ({
             index,
             score,
-            label: labels.labels[index]!,
+            label: (localized ?? labels.labels)[index]!,
         })),
     };
 }

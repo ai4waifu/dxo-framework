@@ -4,6 +4,7 @@ import {
     Classifier,
     compose,
     decodeClassification,
+    defineBilingualLabelSpace,
     defineLabelSpace,
     defineResNet,
     LinearHead,
@@ -77,6 +78,14 @@ import {
     const zh = defineLabelSpace({ id: 'toy-3-zh', labels: ['甲', '乙', '丙'] });
     const zhDecoded = await decodeClassification(logits, { labels: zh, topK: 1 });
     assert.equal(zhDecoded.topK[0]!.label, '乙');
+
+    const bilingual = defineBilingualLabelSpace({
+        id: 'toy-3-bilingual',
+        english: ['one', 'two', 'three'],
+        chinese: ['一', '二', '三'],
+    });
+    const bilingualDecoded = await decodeClassification(logits, { labels: bilingual, topK: 1, locale: 'zh' });
+    assert.equal(bilingualDecoded.topK[0]!.label, '二');
 }
 
 // Tiny spatial is not the supported verify path; depth≠18 stays UNSUPPORTED.

@@ -471,13 +471,13 @@ export class TinyTransformer extends NeuralNetwork {
 
 export interface Conv2dState {
     weight: TensorStateSlice;
-    bias: TensorStateSlice;
+    bias?: TensorStateSlice;
 }
 
 /** 2D convolution NCHW / OIHW. */
 export class Convolution2d extends Layer {
     weight: Tensor;
-    bias: Tensor;
+    bias: Tensor | null;
 
     protected semanticName(): string { return 'convolution'; }
 
@@ -485,7 +485,7 @@ export class Convolution2d extends Layer {
         readonly inChannels: number,
         readonly outChannels: number,
         readonly kernelSize: number,
-        opts: { stride?: number; padding?: number; requiresGrad?: boolean } = {},
+        opts: { stride?: number; padding?: number; bias?: boolean; requiresGrad?: boolean } = {},
     ) {
         super();
         this.stride = opts.stride ?? 1;
@@ -496,7 +496,7 @@ export class Convolution2d extends Layer {
         const n = outChannels * inChannels * kernelSize * kernelSize;
         const raw = randnValues([n]).map((v) => v * scale);
         this.weight = tensor(raw, [outChannels, inChannels, kernelSize, kernelSize], { requiresGrad: rg });
-        this.bias = zeros([outChannels], { requiresGrad: rg });
+        this.bias = opts.bias === false ? null : zeros([outChannels], { requiresGrad: rg });
     }
 
     readonly stride: number;
@@ -507,16 +507,17 @@ export class Convolution2d extends Layer {
     }
 
     async state(): Promise<Conv2dState> {
-        return {
+        const state: Conv2dState = {
             weight: { shape: [...this.weight.shape], data: await this.weight.toArray() },
-            bias: { shape: [...this.bias.shape], data: await this.bias.toArray() },
         };
+        if (this.bias) state.bias = { shape: [...this.bias.shape], data: await this.bias.toArray() };
+        return state;
     }
 
     loadState(saved: Conv2dState, opts: { requiresGrad?: boolean } = {}): void {
         const rg = opts.requiresGrad ?? true;
         this.weight = tensor(saved.weight.data, saved.weight.shape, { requiresGrad: rg });
-        this.bias = tensor(saved.bias.data, saved.bias.shape, { requiresGrad: rg });
+        this.bias = saved.bias ? tensor(saved.bias.data, saved.bias.shape, { requiresGrad: rg }) : null;
     }
 }
 
@@ -621,7 +622,7 @@ export class TinyCnn extends NeuralNetwork {
         const f = await this.fc.state();
         return {
             'conv.weight': c.weight,
-            'conv.bias': c.bias,
+            'conv.bias': c.bias!,
             'bn.weight': b.weight,
             'bn.bias': b.bias,
             'fc.weight': f.weight,

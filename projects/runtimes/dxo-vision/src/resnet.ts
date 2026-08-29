@@ -80,7 +80,7 @@ export class ResNet extends NeuralNetwork {
 
     #buildResNet18(requiresGrad: boolean): void {
         const rg = requiresGrad;
-        this.stemConv = new Convolution2d(this.inChannels, 64, 7, { stride: 2, padding: 3, requiresGrad: rg });
+        this.stemConv = new Convolution2d(this.inChannels, 64, 7, { stride: 2, padding: 3, bias: false, requiresGrad: rg });
         this.stemBn = new BatchNormalization2d(64, { requiresGrad: rg });
         this.stemRelu = new ReLU();
         this.stemPool = new MaxPooling2d(3, { stride: 2, padding: 1 });
@@ -134,7 +134,6 @@ export class ResNet extends NeuralNetwork {
         }
         const names: string[] = [
             'stem.convolution.weight',
-            'stem.convolution.bias',
             'stem.batch_normalization.weight',
             'stem.batch_normalization.bias',
         ];
@@ -143,18 +142,15 @@ export class ResNet extends NeuralNetwork {
                 const p = block.canonicalName();
                 names.push(
                     `${p}.convolution_1.weight`,
-                    `${p}.convolution_1.bias`,
                     `${p}.batch_normalization_1.weight`,
                     `${p}.batch_normalization_1.bias`,
                     `${p}.convolution_2.weight`,
-                    `${p}.convolution_2.bias`,
                     `${p}.batch_normalization_2.weight`,
                     `${p}.batch_normalization_2.bias`,
                 );
                 if (block.downConvolution) {
                     names.push(
                         `${p}.downsample.convolution.weight`,
-                        `${p}.downsample.convolution.bias`,
                         `${p}.downsample.batch_normalization.weight`,
                         `${p}.downsample.batch_normalization.bias`,
                     );
@@ -172,7 +168,6 @@ export class ResNet extends NeuralNetwork {
         const b = await this.stemBn.state();
         const out: Record<string, TensorStateSlice> = {
             'stem.convolution.weight': c.weight,
-            'stem.convolution.bias': c.bias,
             'stem.batch_normalization.weight': b.weight,
             'stem.batch_normalization.bias': b.bias,
         };
@@ -195,7 +190,7 @@ export class ResNet extends NeuralNetwork {
             return s;
         };
         this.stemConv.loadState(
-            { weight: need('stem.convolution.weight'), bias: need('stem.convolution.bias') },
+            { weight: need('stem.convolution.weight') },
             { requiresGrad: rg },
         );
         this.stemBn.loadState(

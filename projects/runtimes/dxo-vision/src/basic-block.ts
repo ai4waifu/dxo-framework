@@ -20,9 +20,9 @@ export class BasicBlock extends NeuralNetwork {
         super();
         const stride = opts.stride ?? 1;
         const rg = opts.requiresGrad ?? true;
-        this.convolution_1 = new Convolution2d(inChannels, outChannels, 3, { stride, padding: 1, requiresGrad: rg });
+        this.convolution_1 = new Convolution2d(inChannels, outChannels, 3, { stride, padding: 1, bias: false, requiresGrad: rg });
         this.batch_normalization_1 = new BatchNormalization2d(outChannels, { requiresGrad: rg });
-        this.convolution_2 = new Convolution2d(outChannels, outChannels, 3, { padding: 1, requiresGrad: rg });
+        this.convolution_2 = new Convolution2d(outChannels, outChannels, 3, { padding: 1, bias: false, requiresGrad: rg });
         this.batch_normalization_2 = new BatchNormalization2d(outChannels, { requiresGrad: rg });
         this.relu = new ReLU();
         this.registerChild(this.convolution_1, { name: 'convolution_1', mode: 'repeatable' });
@@ -31,7 +31,7 @@ export class BasicBlock extends NeuralNetwork {
         this.registerChild(this.batch_normalization_2, { name: 'batch_normalization_2', mode: 'repeatable' });
         this.registerChild(this.relu, { name: 'relu' });
         if (stride !== 1 || inChannels !== outChannels) {
-            this.downConvolution = new Convolution2d(inChannels, outChannels, 1, { stride, requiresGrad: rg });
+            this.downConvolution = new Convolution2d(inChannels, outChannels, 1, { stride, bias: false, requiresGrad: rg });
             this.downBatchNormalization = new BatchNormalization2d(outChannels, { requiresGrad: rg });
             const downsample = new Downsample(this.downConvolution, this.downBatchNormalization);
             this.registerChild(downsample, { name: 'downsample' });
@@ -64,11 +64,9 @@ export class BasicBlock extends NeuralNetwork {
         const b2 = await this.batch_normalization_2.state();
         const out: Record<string, TensorStateSlice> = {
             [`${p}.convolution_1.weight`]: c1.weight,
-            [`${p}.convolution_1.bias`]: c1.bias,
             [`${p}.batch_normalization_1.weight`]: b1.weight,
             [`${p}.batch_normalization_1.bias`]: b1.bias,
             [`${p}.convolution_2.weight`]: c2.weight,
-            [`${p}.convolution_2.bias`]: c2.bias,
             [`${p}.batch_normalization_2.weight`]: b2.weight,
             [`${p}.batch_normalization_2.bias`]: b2.bias,
         };
@@ -76,7 +74,6 @@ export class BasicBlock extends NeuralNetwork {
             const dc = await this.downConvolution.state();
             const db = await this.downBatchNormalization.state();
             out[`${p}.downsample.convolution.weight`] = dc.weight;
-            out[`${p}.downsample.convolution.bias`] = dc.bias;
             out[`${p}.downsample.batch_normalization.weight`] = db.weight;
             out[`${p}.downsample.batch_normalization.bias`] = db.bias;
         }
@@ -92,7 +89,7 @@ export class BasicBlock extends NeuralNetwork {
             return s;
         };
         this.convolution_1.loadState(
-            { weight: need(`${p}.convolution_1.weight`), bias: need(`${p}.convolution_1.bias`) },
+            { weight: need(`${p}.convolution_1.weight`) },
             { requiresGrad: rg },
         );
         this.batch_normalization_1.loadState(
@@ -100,7 +97,7 @@ export class BasicBlock extends NeuralNetwork {
             { requiresGrad: rg },
         );
         this.convolution_2.loadState(
-            { weight: need(`${p}.convolution_2.weight`), bias: need(`${p}.convolution_2.bias`) },
+            { weight: need(`${p}.convolution_2.weight`) },
             { requiresGrad: rg },
         );
         this.batch_normalization_2.loadState(
@@ -111,7 +108,6 @@ export class BasicBlock extends NeuralNetwork {
             this.downConvolution.loadState(
                 {
                     weight: need(`${p}.downsample.convolution.weight`),
-                    bias: need(`${p}.downsample.convolution.bias`),
                 },
                 { requiresGrad: rg },
             );

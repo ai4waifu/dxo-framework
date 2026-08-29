@@ -18,6 +18,8 @@ export {
 export {
     type ClassificationDecode,
     type ClassificationTopK,
+    defineBilingualLabelSpace,
+    type BilingualLabelSpaceOptions,
     type DecodeClassificationOptions,
     decodeClassification,
     defineLabelSpace,
