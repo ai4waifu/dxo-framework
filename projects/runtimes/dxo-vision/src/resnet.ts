@@ -1,13 +1,12 @@
 import type { Tensor } from '@dxo/core';
-import { BatchNorm2d, Conv2d, MaxPool2d, Module, Relu, type TensorStateSlice } from '@dxo/nn';
+import { BatchNorm2d, Conv2d, MaxPool2d, NeuralNetwork, Relu, type TensorStateSlice } from '@dxo/nn';
 import { BasicBlock } from './basic-block.js';
 import { unsupported, VisionError } from './errors.js';
 import { loadWeights } from './load-weights.js';
-import type { Neural } from './neural.js';
 import {
     type ResNetDepth,
     type ResNetOptions,
-    type ResNetSignature,
+    type ResNetPorts,
     resnetFeatureChannels,
     type TensorPort,
     type WeightSource,
@@ -17,7 +16,7 @@ import {
 const RESNET18_BLOCKS = [2, 2, 2, 2] as const;
 const RESNET18_CHANNELS = [64, 128, 256, 512] as const;
 
-function buildSignature(depth: ResNetDepth, inChannels: number): ResNetSignature {
+function buildSignature(depth: ResNetDepth, inChannels: number): ResNetPorts {
     const features = resnetFeatureChannels(depth);
     return {
         input: {
@@ -39,17 +38,17 @@ function buildSignature(depth: ResNetDepth, inChannels: number): ResNetSignature
 
 /**
  * ResNet backbone Neural — `forward` yields feature Tensor, never labels.
- * DXO-native parameter names (`stem.*` / `stageN.blockM.*`); not a torchvision key mirror.
+ * Canonical `.state` paths follow Living `02` (snake_case, 1-based, full type names).
  * depth=18 is wired; other depths throw `UNSUPPORTED` on forward/state.
- * Extends `@dxo/nn` Module for parameter walk; public contract is Neural.
  */
-export class ResNet extends Module implements Neural<Tensor, Tensor> {
+export class ResNet extends NeuralNetwork {
+    protected semanticName(): string { return 'resnet'; }
     readonly depth: ResNetDepth;
     readonly inChannels: number;
     readonly zeroInitResidual: boolean;
     readonly norm: 'batchnorm';
     readonly device: ResNetOptions['device'];
-    readonly signature: ResNetSignature;
+    readonly signature: ResNetPorts;
     #trainable: boolean;
     #ready = true;
 
@@ -59,6 +58,8 @@ export class ResNet extends Module implements Neural<Tensor, Tensor> {
     stemRelu: Relu | null = null;
     stemPool: MaxPool2d | null = null;
     stages: BasicBlock[][] | null = null;
+    #stemScope: Stem | null = null;
+    #stageScopes: NeuralNetwork[] = [];
 
     constructor(options: ResNetOptions = {}) {
         super();
@@ -83,15 +84,26 @@ export class ResNet extends Module implements Neural<Tensor, Tensor> {
         this.stemBn = new BatchNorm2d(64, { requiresGrad: rg });
         this.stemRelu = new Relu();
         this.stemPool = new MaxPool2d(3, { stride: 2, padding: 1 });
+        this.#stemScope = new Stem();
+        this.registerChild(this.#stemScope, { name: 'stem' });
+        this.#stemScope.registerChild(this.stemConv, { name: 'convolution' });
+        this.#stemScope.registerChild(this.stemBn, { name: 'batch_normalization' });
+        this.#stemScope.registerChild(this.stemRelu, { name: 'relu' });
+        this.#stemScope.registerChild(this.stemPool, { name: 'max_pooling' });
         const stages: BasicBlock[][] = [];
         let inCh = 64;
         for (let s = 0; s < RESNET18_BLOCKS.length; s++) {
             const outCh = RESNET18_CHANNELS[s]!;
             const nBlocks = RESNET18_BLOCKS[s]!;
             const stage: BasicBlock[] = [];
+            const stageScope = new Stage();
+            this.registerChild(stageScope, { name: `stage_${s + 1}`, semanticName: 'stage', mode: 'repeatable' });
+            this.#stageScopes.push(stageScope);
             for (let b = 0; b < nBlocks; b++) {
                 const stride = s > 0 && b === 0 ? 2 : 1;
-                stage.push(new BasicBlock(`stage${s + 1}.block${b}`, inCh, outCh, { stride, requiresGrad: rg }));
+                const block = new BasicBlock(inCh, outCh, { stride, requiresGrad: rg });
+                stageScope.registerBlock(block);
+                stage.push(block);
                 inCh = outCh;
             }
             stages.push(stage);
@@ -115,28 +127,37 @@ export class ResNet extends Module implements Neural<Tensor, Tensor> {
         return this.#trainable;
     }
 
-    /** Flat DXO state keys (depth=18 only). */
+    /** Flat DXO canonical state keys (depth=18 only). */
     parameterNames(): string[] {
         if (this.depth !== 18 || !this.stages) {
             return [];
         }
-        // Synchronous name list without reading tensor data.
-        const names: string[] = ['stem.conv.weight', 'stem.conv.bias', 'stem.bn.weight', 'stem.bn.bias'];
+        const names: string[] = [
+            'stem.convolution.weight',
+            'stem.convolution.bias',
+            'stem.batch_normalization.weight',
+            'stem.batch_normalization.bias',
+        ];
         for (const stage of this.stages) {
             for (const block of stage) {
-                const p = block.prefix;
+                const p = block.canonicalName();
                 names.push(
-                    `${p}.conv1.weight`,
-                    `${p}.conv1.bias`,
-                    `${p}.bn1.weight`,
-                    `${p}.bn1.bias`,
-                    `${p}.conv2.weight`,
-                    `${p}.conv2.bias`,
-                    `${p}.bn2.weight`,
-                    `${p}.bn2.bias`,
+                    `${p}.convolution_1.weight`,
+                    `${p}.convolution_1.bias`,
+                    `${p}.batch_normalization_1.weight`,
+                    `${p}.batch_normalization_1.bias`,
+                    `${p}.convolution_2.weight`,
+                    `${p}.convolution_2.bias`,
+                    `${p}.batch_normalization_2.weight`,
+                    `${p}.batch_normalization_2.bias`,
                 );
-                if (block.downConv) {
-                    names.push(`${p}.down.conv.weight`, `${p}.down.conv.bias`, `${p}.down.bn.weight`, `${p}.down.bn.bias`);
+                if (block.downConvolution) {
+                    names.push(
+                        `${p}.downsample.convolution.weight`,
+                        `${p}.downsample.convolution.bias`,
+                        `${p}.downsample.batch_normalization.weight`,
+                        `${p}.downsample.batch_normalization.bias`,
+                    );
                 }
             }
         }
@@ -150,10 +171,10 @@ export class ResNet extends Module implements Neural<Tensor, Tensor> {
         const c = await this.stemConv.state();
         const b = await this.stemBn.state();
         const out: Record<string, TensorStateSlice> = {
-            'stem.conv.weight': c.weight,
-            'stem.conv.bias': c.bias,
-            'stem.bn.weight': b.weight,
-            'stem.bn.bias': b.bias,
+            'stem.convolution.weight': c.weight,
+            'stem.convolution.bias': c.bias,
+            'stem.batch_normalization.weight': b.weight,
+            'stem.batch_normalization.bias': b.bias,
         };
         for (const stage of this.stages) {
             for (const block of stage) {
@@ -173,8 +194,17 @@ export class ResNet extends Module implements Neural<Tensor, Tensor> {
             if (!s) throw new VisionError('MISSING_STATE_KEY', `ResNet.loadState: missing '${k}'`);
             return s;
         };
-        this.stemConv.loadState({ weight: need('stem.conv.weight'), bias: need('stem.conv.bias') }, { requiresGrad: rg });
-        this.stemBn.loadState({ weight: need('stem.bn.weight'), bias: need('stem.bn.bias') }, { requiresGrad: rg });
+        this.stemConv.loadState(
+            { weight: need('stem.convolution.weight'), bias: need('stem.convolution.bias') },
+            { requiresGrad: rg },
+        );
+        this.stemBn.loadState(
+            {
+                weight: need('stem.batch_normalization.weight'),
+                bias: need('stem.batch_normalization.bias'),
+            },
+            { requiresGrad: rg },
+        );
         for (const stage of this.stages) {
             for (const block of stage) {
                 block.loadState(saved, { requiresGrad: rg });
@@ -227,4 +257,25 @@ export class ResNet extends Module implements Neural<Tensor, Tensor> {
 
 export function defineResNet(options?: ResNetOptions): ResNet {
     return new ResNet(options);
+}
+
+class Stem extends NeuralNetwork {
+    protected semanticName(): string { return 'stem'; }
+    forward(x: Tensor): Tensor { return x; }
+    registerChild<T extends NeuralNetwork>(child: T, options: { name: string }): T {
+        return super.registerChild(child, options);
+    }
+}
+
+class Stage extends NeuralNetwork {
+    protected semanticName(): string { return 'stage'; }
+    forward(x: Tensor): Tensor {
+        let out = x;
+        for (const block of this.blocks) out = block.forward(out);
+        return out;
+    }
+    readonly blocks: BasicBlock[] = [];
+    registerBlock(block: BasicBlock): void {
+        this.blocks.push(this.registerChild(block, { mode: 'repeatable', name: `block_${this.blocks.length + 1}` }));
+    }
 }

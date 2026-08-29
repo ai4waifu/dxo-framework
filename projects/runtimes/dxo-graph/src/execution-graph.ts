@@ -1,4 +1,4 @@
-import type { Module } from '@dxo/nn';
+import type { NeuralNetwork } from '@dxo/nn';
 import { Linear, Relu, Sequential } from '@dxo/nn';
 import { type GraphEdge, type GraphNode, MODEL_GRAPH_FORMAT, MODEL_GRAPH_VERSION, type ModelGraphV0 } from './index.js';
 
@@ -104,7 +104,7 @@ export function executionGraphFromSequential(seq: Sequential, inputShape: number
     };
 }
 
-export function executionGraphFromModule(mod: Module, inputShape: number[], path = 'model'): ModelGraphV0 {
+export function executionGraphFromModule(mod: NeuralNetwork, inputShape: number[], path = 'model'): ModelGraphV0 {
     if (mod instanceof Sequential) return executionGraphFromSequential(mod, inputShape, path);
     if (mod instanceof Linear) return executionGraphFromLinear(mod, inputShape, path);
     return executionGraphUnavailable(`no execution lowering for ${mod.constructor.name}`);

@@ -25,13 +25,13 @@ export {
     type LabelSpaceOptions,
 } from './labels.js';
 export { type LoadWeightsOptions, type LoadWeightsScope, loadWeights } from './load-weights.js';
-export type { Neural, NeuralSignature } from './neural.js';
+export type { NetworkPorts } from './neural.js';
 export { defineResNet, ResNet } from './resnet.js';
 export type {
     Device,
     ResNetDepth,
     ResNetOptions,
-    ResNetSignature,
+    ResNetPorts,
     TensorPort,
     WeightSource,
 } from './types.js';

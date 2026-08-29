@@ -1,5 +1,5 @@
 import type { Tensor } from '@dxo/core';
-import { Linear, Module } from '@dxo/nn';
+import { Linear, NeuralNetwork } from '@dxo/nn';
 import { VisionError } from './errors.js';
 import type { ResNet } from './resnet.js';
 import type { TensorPort } from './types.js';
@@ -20,7 +20,7 @@ function resolveInFeatures(input: number | TensorPort): number {
 }
 
 /** Feature → logits only; no label names / language. */
-export class LinearHead extends Module {
+export class LinearHead extends NeuralNetwork {
     readonly outFeatures: number;
     #inFeatures: number | undefined;
     #linear: Linear | undefined;
@@ -69,7 +69,7 @@ export type ClassifierOptions = {
 };
 
 /** Backbone + head; `forward` returns logits Tensor. */
-export class Classifier extends Module {
+export class Classifier extends NeuralNetwork {
     readonly backbone: ResNet;
     readonly head: LinearHead;
 

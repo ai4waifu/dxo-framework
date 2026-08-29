@@ -1,4 +1,4 @@
-import type { Module } from '@dxo/nn';
+import type { NeuralNetwork } from '@dxo/nn';
 import { Linear, Relu, Sequential } from '@dxo/nn';
 import { type GraphEdge, type GraphNode, type GraphViewKind, MODEL_GRAPH_FORMAT, MODEL_GRAPH_VERSION, type ModelGraphV0 } from './index.js';
 
@@ -71,8 +71,8 @@ export function moduleGraphFromSequential(seq: Sequential, path = 'sequential'):
     return { format: MODEL_GRAPH_FORMAT, version: MODEL_GRAPH_VERSION, view: 'module', nodes, edges };
 }
 
-/** Build a module graph from any @dxo/nn Module (Linear or Sequential supported). */
-export function moduleGraphFromModule(mod: Module, path = 'model'): ModelGraphV0 {
+/** Build a model graph from any @dxo/nn Neural (Linear or Sequential supported). */
+export function moduleGraphFromModule(mod: NeuralNetwork, path = 'model'): ModelGraphV0 {
     if (mod instanceof Sequential) return moduleGraphFromSequential(mod, path);
     if (mod instanceof Linear) return moduleGraphFromLinear(mod, path);
     throw new Error(`moduleGraphFromModule: unsupported module ${mod.constructor.name}`);

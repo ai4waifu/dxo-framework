@@ -10,8 +10,66 @@ export interface LinearState {
     bias: TensorStateSlice;
 }
 
-export abstract class Module {
+export abstract class NeuralNetwork {
+    #parent: NeuralNetwork | undefined;
+    #localName: string | undefined;
+    #children = new Map<string, NeuralNetwork>();
+    #nextOrdinals = new Map<string, number>();
+    #reserved = new Set(['weight', 'bias', 'running_mean', 'running_variance', 'num_batches_tracked', 'state', 'grad']);
+
     abstract forward(x: Tensor): Tensor;
+
+    protected registerChild<T extends NeuralNetwork>(
+        child: T,
+        options: { name?: string; semanticName?: string; mode?: 'singleton' | 'repeatable' } = {},
+    ): T {
+        if ((child as NeuralNetwork) === this) throw new Error('DUPLICATE_CHILD_NAME: a NeuralNetwork cannot register itself');
+        const semanticName = options.semanticName ?? child.semanticName();
+        const mode = options.mode ?? 'singleton';
+        validateName(semanticName, false);
+        const localName = options.name ?? (mode === 'singleton' ? semanticName : this.allocateName(semanticName));
+        validateName(localName, true);
+        if (this.#reserved.has(localName)) throw new Error(`RESERVED_NAME: '${localName}'`);
+        if (this.#children.has(localName)) throw new Error(`DUPLICATE_CHILD_NAME: '${localName}'`);
+        if (mode === 'singleton' && options.name === undefined && [...this.#children.values()].some((item) => item.semanticName() === semanticName)) {
+            throw new Error(`DUPLICATE_SINGLETON_NODE: '${semanticName}'`);
+        }
+        if (child.#parent) throw new Error('DUPLICATE_CHILD_NAME: child is already registered');
+        child.#parent = this;
+        child.#localName = localName;
+        this.#children.set(localName, child);
+        return child;
+    }
+
+    protected semanticName(): string {
+        throw new Error('INVALID_CANONICAL_NAME: custom NeuralNetwork must declare semanticName');
+    }
+
+    protected canonicalPath(): string {
+        const own = this.#localName ?? '';
+        if (!this.#parent) return own;
+        const parent = this.#parent.canonicalPath();
+        return parent ? `${parent}.${own}` : own;
+    }
+
+    /** Internal canonical path used by composite Neural implementations. */
+    readonly canonicalName = (): string => this.canonicalPath();
+
+    protected registeredChildren(): ReadonlyMap<string, NeuralNetwork> {
+        return this.#children;
+    }
+
+    private allocateName(semanticName: string): string {
+        let ordinal = this.#nextOrdinals.get(semanticName) ?? 1;
+        for (;;) {
+            const candidate = `${semanticName}_${ordinal}`;
+            ordinal += 1;
+            if (!this.#children.has(candidate)) {
+                this.#nextOrdinals.set(semanticName, ordinal);
+                return candidate;
+            }
+        }
+    }
 
     parameters(): Tensor[] {
         const out: Tensor[] = [];
@@ -20,7 +78,7 @@ export abstract class Module {
                 out.push(value);
                 return;
             }
-            if (value instanceof Module) {
+            if (value instanceof NeuralNetwork) {
                 out.push(...value.parameters());
                 return;
             }
@@ -37,12 +95,22 @@ export abstract class Module {
     }
 }
 
+export abstract class Layer extends NeuralNetwork {}
+
+function validateName(name: string, segment: boolean): void {
+    const pattern = segment ? /^[a-z][a-z0-9_]*$/ : /^[a-z][a-z0-9_]*$/;
+    if (!pattern.test(name) || (!segment && name.includes('.'))) {
+        throw new Error(`INVALID_CANONICAL_NAME: '${name}'`);
+    }
+}
+
 export function relu(x: Tensor): Tensor {
     return x.relu();
 }
 
 /** Element-wise ReLU module. */
-export class Relu extends Module {
+export class Relu extends Layer {
+    protected semanticName(): string { return 'relu'; }
     forward(x: Tensor): Tensor {
         return x.relu();
     }
@@ -53,9 +121,11 @@ export class Relu extends Module {
  * Weight layout: `[inFeatures, outFeatures]`. Default leaves use `requiresGrad: true`.
  * After `optimizer.step(parameters())`, call `loadParameters` to install new leaves.
  */
-export class Linear extends Module {
+export class Linear extends Layer {
     weight: Tensor;
     bias: Tensor;
+
+    protected semanticName(): string { return 'fully_connected'; }
 
     constructor(
         readonly inFeatures: number,
@@ -107,9 +177,10 @@ export class Linear extends Module {
     }
 }
 
-export class Sequential extends Module {
-    constructor(readonly layers: Module[]) {
+export class Sequential extends NeuralNetwork {
+    constructor(readonly layers: NeuralNetwork[]) {
         super();
+        this.layers = layers.map((layer) => this.registerChild(layer, { mode: 'repeatable' }));
     }
 
     forward(x: Tensor): Tensor {
@@ -126,8 +197,10 @@ export interface EmbeddingState {
 }
 
 /** Token embedding: `forward(indices)` gathers rows from `[vocab, dim]`. */
-export class Embedding extends Module {
+export class Embedding extends Layer {
     weight: Tensor;
+
+    protected semanticName(): string { return 'embedding'; }
 
     constructor(
         readonly numEmbeddings: number,
@@ -165,9 +238,11 @@ export interface LayerNormState {
 }
 
 /** LayerNorm over the last dimension. */
-export class LayerNorm extends Module {
+export class LayerNorm extends Layer {
     weight: Tensor;
     bias: Tensor;
+
+    protected semanticName(): string { return 'layer_normalization'; }
 
     constructor(
         readonly normalizedShape: number,
@@ -209,9 +284,11 @@ export class LayerNorm extends Module {
  * Causal multi-head self-attention over `[B, T, C]`.
  * Head dim must divide `embedDim`.
  */
-export class MultiheadAttention extends Module {
+export class MultiheadAttention extends Layer {
     qkv: Linear;
     proj: Linear;
+
+    protected semanticName(): string { return 'self_attention'; }
 
     constructor(
         readonly embedDim: number,
@@ -250,12 +327,14 @@ export class MultiheadAttention extends Module {
 }
 
 /** One decoder block: LN → causal MHA → residual → LN → MLP → residual. */
-export class TransformerBlock extends Module {
+export class TransformerBlock extends NeuralNetwork {
     ln1: LayerNorm;
     attn: MultiheadAttention;
     ln2: LayerNorm;
     fc1: Linear;
     fc2: Linear;
+
+    protected semanticName(): string { return 'transformer_block'; }
 
     constructor(embedDim: number, numHeads: number, opts: { requiresGrad?: boolean } = {}) {
         super();
@@ -264,6 +343,11 @@ export class TransformerBlock extends Module {
         this.ln2 = new LayerNorm(embedDim, opts);
         this.fc1 = new Linear(embedDim, embedDim * 4, opts);
         this.fc2 = new Linear(embedDim * 4, embedDim, opts);
+        this.registerChild(this.ln1, { name: 'layer_normalization_1', mode: 'repeatable' });
+        this.registerChild(this.attn, { name: 'self_attention', mode: 'singleton' });
+        this.registerChild(this.ln2, { name: 'layer_normalization_2', mode: 'repeatable' });
+        this.registerChild(this.fc1, { name: 'fully_connected_1', mode: 'repeatable' });
+        this.registerChild(this.fc2, { name: 'fully_connected_2', mode: 'repeatable' });
     }
 
     forward(x: Tensor): Tensor {
@@ -274,7 +358,7 @@ export class TransformerBlock extends Module {
 }
 
 /** Tiny decoder-only LM: token + position embed → N blocks → LN → tied logits via Linear. */
-export class TinyTransformer extends Module {
+export class TinyTransformer extends NeuralNetwork {
     tokEmbed: Embedding;
     posEmbed: Embedding;
     blocks: TransformerBlock[];
@@ -295,6 +379,11 @@ export class TinyTransformer extends Module {
         this.blocks = Array.from({ length: numLayers }, () => new TransformerBlock(embedDim, numHeads, opts));
         this.lnF = new LayerNorm(embedDim, opts);
         this.head = new Linear(embedDim, vocabSize, opts);
+        this.registerChild(this.tokEmbed, { name: 'token_embedding' });
+        this.registerChild(this.posEmbed, { name: 'position_embedding' });
+        for (const block of this.blocks) this.registerChild(block, { mode: 'repeatable', semanticName: 'transformer_block' });
+        this.registerChild(this.lnF, { name: 'layer_normalization_final' });
+        this.registerChild(this.head, { name: 'fully_connected_head' });
     }
 
     /** `tokens` shape `[B, T]` with integer ids stored as f32. */
@@ -386,9 +475,11 @@ export interface Conv2dState {
 }
 
 /** 2D convolution NCHW / OIHW. */
-export class Conv2d extends Module {
+export class Conv2d extends Layer {
     weight: Tensor;
     bias: Tensor;
+
+    protected semanticName(): string { return 'convolution'; }
 
     constructor(
         readonly inChannels: number,
@@ -430,7 +521,8 @@ export class Conv2d extends Module {
 }
 
 /** Max pooling 2D NCHW. */
-export class MaxPool2d extends Module {
+export class MaxPool2d extends Layer {
+    protected semanticName(): string { return 'max_pooling'; }
     constructor(
         readonly kernelSize: number,
         opts: { stride?: number; padding?: number } = {},
@@ -454,9 +546,11 @@ export interface BatchNorm2dState {
 }
 
 /** Batch norm 2D (per-batch stats, training-style). */
-export class BatchNorm2d extends Module {
+export class BatchNorm2d extends Layer {
     weight: Tensor;
     bias: Tensor;
+
+    protected semanticName(): string { return 'batch_normalization'; }
 
     constructor(
         readonly numFeatures: number,
@@ -490,7 +584,7 @@ export class BatchNorm2d extends Module {
 }
 
 /** Tiny CNN: Conv → BN → ReLU → Pool → Linear. */
-export class TinyCnn extends Module {
+export class TinyCnn extends NeuralNetwork {
     conv: Conv2d;
     bn: BatchNorm2d;
     pool: MaxPool2d;

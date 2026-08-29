@@ -4,7 +4,7 @@
  */
 
 import { type Tensor, type TokenBuffer, tensor, withoutGrad } from '@dxo/core';
-import type { Module, TinyTransformer } from '@dxo/nn';
+import type { NeuralNetwork, TinyTransformer } from '@dxo/nn';
 import { decodeSafetensors, encodeSafetensors, type SafetensorSlice } from '@dxo/serialize';
 
 export type TokenizerEncodeOptions = {
@@ -182,7 +182,7 @@ function sampleToken(logits: number[], temperature: number, topP: number): numbe
  * Requires `tokens` shape `[1, T]` (batch 1) for the streaming preview path.
  */
 export async function* generate(
-    model: Module,
+    model: NeuralNetwork,
     tokens: Tensor,
     config: GenerationConfig = {},
     ctx: GenerateContext = {},

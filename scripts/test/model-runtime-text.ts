@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { type Tensor, tensor, withoutGrad } from '@dxo/core';
 import { createTokenizer, encodeTinyTransformerSafetensors, generate, loadTinyTransformerSafetensors } from '@dxo/llm';
-import { Module, TinyTransformer } from '@dxo/nn';
+import { NeuralNetwork, TinyTransformer } from '@dxo/nn';
 
 const tok = await createTokenizer('dxo-char-v0');
 assert.ok(tok.vocabSize > 4);
@@ -35,7 +35,7 @@ for (let i = 0; i < ref.length; i++) {
 }
 
 /** Deterministic LM: always argmax to a fixed non-special id so maxTokens is platform-stable. */
-class StubLm extends Module {
+class StubLm extends NeuralNetwork {
     private readonly vs: number;
     private readonly ft: number;
 
