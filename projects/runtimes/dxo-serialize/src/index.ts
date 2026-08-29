@@ -27,6 +27,11 @@ export interface TensorStateSlice {
     data: number[];
 }
 
+/** Canonical DXO named tensor state. All model, weight and checkpoint views use this shape. */
+export type State = Record<string, TensorStateSlice>;
+
+export type DxoStateFormat = 'safetensors';
+
 /** `@dxo/nn` Linear.state() shape (duplicated to avoid a hard nn dependency). */
 export interface LinearState {
     weight: TensorStateSlice;
@@ -108,6 +113,17 @@ export {
     encodeSafetensors,
     type SafetensorSlice,
 } from './safetensors.js';
+
+/** First-class DXO state codec. External formats are inspect/convert inputs, not runtime formats. */
+export function encodeState(state: State, options: { format: DxoStateFormat }): Uint8Array {
+    if (options.format !== 'safetensors') throw new Error(`unsupported DXO state format '${options.format}'`);
+    return encodeSafetensors(state);
+}
+
+export function decodeState(bytes: Uint8Array, options: { format: DxoStateFormat }): State {
+    if (options.format !== 'safetensors') throw new Error(`unsupported DXO state format '${options.format}'`);
+    return decodeSafetensors(bytes) as State;
+}
 
 function assertDocument(doc: StateDocument): asserts doc is StateDocumentV1 {
     if (!doc || typeof doc !== 'object') throw new Error('invalid state document');
