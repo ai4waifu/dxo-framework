@@ -1,26 +1,11 @@
-# 💾 @dxo/serialize
+# @dxo/serialize
 
-**Developer preview — API unstable (`0.0.x`).**
+Canonical DXO model state serialization. `State` is the sole model/checkpoint state type and safetensors is the only first-class wire format.
 
-Versioned module / tensor state codec for DXO. No Node FS dependency — encode to JSON string or plain objects; callers
-own persistence.
-
-## Contract (0.0.5)
-
-| API                                       | Behavior                                |
-|-------------------------------------------|-----------------------------------------|
-| `STATE_FORMAT` / `STATE_VERSION`          | `"dxo-state"` / `1`                     |
-| `packTensors` / `unpackTensors`           | Named `{ shape, data }` blobs           |
-| `encodeLinearState` / `decodeLinearState` | Interop with `@dxo/nn` `Linear.state()` |
-| `encodeJson` / `decodeJson`               | UTF-8 JSON document                     |
-| `encodeSafetensors` / `decodeSafetensors` | HF safetensors binary (F32 v0)          |
-
-```typescript
-import { encodeJson, encodeLinearState, decodeJson, decodeLinearState } from '@dxo/serialize';
-import { Linear } from '@dxo/nn';
-
-const model = new Linear(2, 1);
-const doc = encodeLinearState(model.state());
-const text = encodeJson(doc);
-model.loadState(decodeLinearState(decodeJson(text)));
+```ts
+import { encodeState, decodeState } from '@dxo/serialize';
+const bytes = encodeState(state);
+const restored = decodeState(bytes);
 ```
+
+`encodeSafetensors` and `decodeSafetensors` are available for low-level interop. JSON documents and model-specific checkpoint codecs are intentionally not part of the runtime API.

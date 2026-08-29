@@ -1,15 +1,15 @@
 import type { Tensor } from '@dxo/core';
 import type { Batch } from '@dxo/data';
-import type { FullyConnected, LinearState } from '@dxo/nn';
+import type { FullyConnected } from '@dxo/nn';
 import type { Optimizer } from '@dxo/optimizer';
-import { encodeLinearState, type StateDocument } from '@dxo/serialize';
+import { encodeState, type State } from '@dxo/serialize';
 
 /** Events yielded by {@link Trainer.fitIter} / {@link Trainer.run}. */
 export type TrainEvent =
     | { type: 'epoch_start'; epoch: number; epochs: number }
     | { type: 'batch'; epoch: number; step: number; loss: number }
     | { type: 'epoch_end'; epoch: number; meanLoss: number; steps: number }
-    | { type: 'checkpoint'; epoch: number; document: StateDocument; state: LinearState }
+    | { type: 'checkpoint'; epoch: number; state: State; bytes: Uint8Array; format: 'safetensors' }
     | { type: 'aborted'; reason: 'signal'; epoch: number; step: number }
     | { type: 'done'; epochs: number; steps: number; finalMeanLoss?: number };
 
@@ -19,7 +19,8 @@ export interface FitSummary {
     aborted: boolean;
     finalMeanLoss?: number;
     /** Last checkpoint document, if any was emitted. */
-    lastCheckpoint?: StateDocument;
+    lastCheckpoint?: Uint8Array;
+    lastState?: State;
 }
 
 export type BatchSource = Iterable<Batch> | AsyncIterable<Batch>;
@@ -93,7 +94,7 @@ export class Trainer {
 
     /**
      * Yield training events. Honors `signal.aborted` between batches.
-     * Checkpoint payloads are in-memory `dxo-state` documents — callers persist them.
+     * Checkpoint payloads are in-memory safetensors bytes — callers persist them.
      */
     async *fitIter(opts?: { signal?: AbortSignal }): AsyncGenerator<TrainEvent, void, undefined> {
         const signal = opts?.signal;
@@ -145,12 +146,13 @@ export class Trainer {
 
             const shouldCheckpoint = epoch % this.checkpointEvery === 0 || epoch === this.epochs;
             if (shouldCheckpoint) {
-                const state = await this.model.state();
+                const state = (await this.model.state()) as unknown as State;
                 yield {
                     type: 'checkpoint',
                     epoch,
                     state,
-                    document: encodeLinearState(state),
+                    bytes: encodeState(state),
+                    format: 'safetensors',
                 };
             }
         }
@@ -164,7 +166,8 @@ export class Trainer {
         let steps = 0;
         let aborted = false;
         let finalMeanLoss: number | undefined;
-        let lastCheckpoint: StateDocument | undefined;
+        let lastCheckpoint: Uint8Array | undefined;
+        let lastState: State | undefined;
 
         for await (const event of this.fitIter(opts)) {
             switch (event.type) {
@@ -176,7 +179,8 @@ export class Trainer {
                     finalMeanLoss = event.meanLoss;
                     break;
                 case 'checkpoint':
-                    lastCheckpoint = event.document;
+                    lastCheckpoint = event.bytes;
+                    lastState = event.state;
                     break;
                 case 'aborted':
                     aborted = true;
@@ -193,6 +197,7 @@ export class Trainer {
             }
         }
 
-        return { epochs, steps, aborted, finalMeanLoss, lastCheckpoint };
+        return { epochs, steps, aborted, finalMeanLoss, lastCheckpoint, lastState };
     }
 }
+

@@ -9,7 +9,8 @@ export type TrainEventLike =
     | {
           type: 'checkpoint';
           epoch: number;
-          document: unknown;
+          bytes: Uint8Array;
+          format: 'safetensors';
           state: unknown;
       }
     | { type: 'aborted'; reason: 'signal'; epoch: number; step: number }
@@ -84,7 +85,7 @@ export function trainEventToInspectEvents(runId: string, event: TrainEventLike):
 }
 
 export type RecordTrainIterOptions = RunRecorderOptions & {
-    checkpointEncoder?: (document: unknown) => string;
+    checkpointEncoder?: (bytes: Uint8Array) => string;
 };
 
 /**
@@ -95,14 +96,14 @@ export async function recordTrainIter(
     options: RecordTrainIterOptions = {},
 ): Promise<{ runId: string; recorder: RunRecorder; status: 'ok' | 'cancelled' }> {
     const recorder = await RunRecorder.open(options);
-    const encoder = options.checkpointEncoder ?? ((doc) => JSON.stringify(doc));
+    const encoder = options.checkpointEncoder ?? ((bytes) => Buffer.from(bytes).toString('base64'));
     let status: 'ok' | 'cancelled' = 'ok';
 
     try {
         for await (const event of events) {
             if (event.type === 'checkpoint') {
-                const name = `checkpoint-epoch-${event.epoch}.json`;
-                await recorder.writeArtifact(name, 'checkpoint', encoder(event.document));
+                const name = `checkpoint-epoch-${event.epoch}.safetensors`;
+                await recorder.writeArtifact(name, 'checkpoint', encoder(event.bytes));
             }
             if (event.type === 'aborted') {
                 status = 'cancelled';
@@ -120,3 +121,6 @@ export async function recordTrainIter(
 
     return { runId: recorder.runId, recorder, status };
 }
+
+
+
