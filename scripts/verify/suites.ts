@@ -245,15 +245,29 @@ export const SUITES: SuiteDef[] = [
     {
         id: 'vision-resnet-state',
         script: 'scripts/test/vision-resnet-state.ts',
-        /** Heavy ResNet forward — not ordinary cloud CPU CI; runs in GPU artifact pack / Modal. */
+        /** Heavy ResNet forward — GPU verify lane only; never ordinary cloud CPU CI. */
         group: 'gpu-model',
         packages: ['@dxo/vision', '@dxo/core', '@dxo/nn'],
         platforms: ['all'],
-        backend: ['cpu', 'cuda'],
-        requiresGpu: false,
+        backend: ['cuda'],
+        requiresGpu: true,
         requiresNetwork: false,
-        allowSkip: false,
+        allowSkip: true,
         timeoutMs: 120_000,
+        includeInGpuArtifact: true,
+    },
+    {
+        id: 'vision-load-weights',
+        script: 'scripts/test/vision-load-weights.ts',
+        /** Safetensors encode/decode + ResNet loadState — GPU artifact pack, not cloud CPU CI. */
+        group: 'gpu-model',
+        packages: ['@dxo/vision', '@dxo/core', '@dxo/nn', '@dxo/serialize'],
+        platforms: ['all'],
+        backend: ['cuda'],
+        requiresGpu: true,
+        requiresNetwork: false,
+        allowSkip: true,
+        timeoutMs: 180_000,
         includeInGpuArtifact: true,
     },
     {

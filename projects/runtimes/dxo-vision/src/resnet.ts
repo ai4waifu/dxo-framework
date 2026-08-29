@@ -2,6 +2,7 @@ import type { Tensor } from '@dxo/core';
 import { BatchNorm2d, Conv2d, MaxPool2d, Module, Relu, type TensorStateSlice } from '@dxo/nn';
 import { BasicBlock } from './basic-block.js';
 import { unsupported, VisionError } from './errors.js';
+import { loadWeights } from './load-weights.js';
 import type { Neural } from './neural.js';
 import {
     type ResNetDepth,
@@ -208,8 +209,13 @@ export class ResNet extends Module implements Neural<Tensor, Tensor> {
         return h.reshape([n, c]);
     }
 
-    async load(_weights: WeightSource, _options?: { scope?: 'all' | 'backbone' }): Promise<void> {
-        unsupported('ResNet.load', 'use loadWeights in a later preview; remote sources not wired');
+    async load(weights: WeightSource, options?: { scope?: 'all' | 'backbone' }): Promise<void> {
+        if (typeof weights === 'object' && weights !== null && 'path' in weights && !('provider' in weights)) {
+            await loadWeights(this, { path: weights.path, scope: options?.scope ?? 'backbone' });
+            this.#ready = true;
+            return;
+        }
+        unsupported('ResNet.load', 'remote WeightSource needs hub; convert pth to DXO safetensors in external scripts first');
     }
 
     async ready(): Promise<void> {

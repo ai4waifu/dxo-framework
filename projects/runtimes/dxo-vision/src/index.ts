@@ -24,6 +24,7 @@ export {
     type LabelSpace,
     type LabelSpaceOptions,
 } from './labels.js';
+export { type LoadWeightsOptions, type LoadWeightsScope, loadWeights } from './load-weights.js';
 export type { Neural, NeuralSignature } from './neural.js';
 export { defineResNet, ResNet } from './resnet.js';
 export type {
