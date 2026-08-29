@@ -74,8 +74,8 @@ export class BasicBlock extends NeuralNetwork {
             const dc = await this.downConvolution.state();
             const db = await this.downBatchNormalization.state();
             out[`${p}.downsample.convolution.weight`] = dc.weight;
-            out[`${p}.downsample.batch_normalization.weight`] = db.weight;
-            out[`${p}.downsample.batch_normalization.bias`] = db.bias;
+            out[`${p}.downsample.batch_normalization.weight`] = db.weight!;
+            out[`${p}.downsample.batch_normalization.bias`] = db.bias!;
         }
         return out;
     }
