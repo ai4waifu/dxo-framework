@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { batch, dataset } from '@dxo/data';
 import { FullyConnected } from '@dxo/nn';
 import { SGD } from '@dxo/optimizer';
-import { decodeLinearState, STATE_FORMAT, STATE_VERSION } from '@dxo/serialize';
+import { decodeState } from '@dxo/serialize';
 import { type TrainEvent, Trainer } from '@dxo/train';
 
 /**
@@ -63,11 +63,10 @@ const checkpoints = events.filter((e) => e.type === 'checkpoint');
 assert.equal(checkpoints.length, 2); // epochs 10 and 20
 const lastCk = checkpoints[checkpoints.length - 1]!;
 assert.ok(lastCk.type === 'checkpoint');
-assert.equal(lastCk.document.format, STATE_FORMAT);
-assert.equal(lastCk.document.version, STATE_VERSION);
+assert.equal(lastCk.format, 'safetensors');
 
 const restored = new FullyConnected(2, 1, { requiresGrad: false });
-restored.loadState(decodeLinearState(lastCk.document));
+restored.loadState(decodeState(lastCk.bytes, { format: 'safetensors' }));
 assert.deepEqual(await restored.weight.toArray(), await model.weight.toArray());
 assert.deepEqual(await restored.bias.toArray(), await model.bias.toArray());
 
