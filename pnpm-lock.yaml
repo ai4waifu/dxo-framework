@@ -72,12 +72,15 @@ importers:
         specifier: 0.0.10
         version: 0.0.10
       '@vmz/core':
-        specifier: ^0.1.12
-        version: 0.1.12
+        specifier: 0.1.14
+        version: 0.1.14
+      '@vmz/ui':
+        specifier: 0.1.14
+        version: 0.1.14
     devDependencies:
       '@vmz/vmz':
-        specifier: ^0.1.12
-        version: 0.1.12(typescript@5.9.3)
+        specifier: 0.1.14
+        version: 0.1.14(typescript@5.9.3)
 
   projects/runtimes/dxo:
     dependencies:
@@ -486,15 +489,33 @@ packages:
   '@vmz/core@0.1.12':
     resolution: {integrity: sha512-xbGPkZIXQPpPeypMyaX0ebqeVn9/X6vAG3wikBKD/WLpsKFbz17ub90RfPM+xDmoRHJPHuQPHQcp59slXlyC9g==}
 
+  '@vmz/core@0.1.14':
+    resolution: {integrity: sha512-7+CMVXfxoRC/lOD04Ens3F2qW2AG76XMWqpEYrErYK4GkRpofHtznHs0k7lJwzOSJEPF3RglJXheBWXzJ4B4NQ==}
+
   '@vmz/plugin@0.1.12':
     resolution: {integrity: sha512-o4Zv0zTVW4hJePfcIUTI4DQ8kpPHMnoBbgIOa3eqVQQVlVcTOukVAEGZZVvd320LpA92arxdXq/Lh6EL6md3LA==}
+
+  '@vmz/plugin@0.1.14':
+    resolution: {integrity: sha512-dLhyRiHPT74wJyJ/1oBVuJ5QtSK01r2RVa9xaZRoBXoV3DE6OUFTQ++sJsCppyBiehLonbJcktKkuv2orTRIiA==}
 
   '@vmz/protocol@0.1.12':
     resolution: {integrity: sha512-tnTFzBo56oY3rmRXo+Ce8KUNQw7hnsgQH36LP450XEP0NLdPef9nsqWwLISQYBLb8pklBWMEwFEgcDB6GDs69Q==}
     engines: {node: '>=20'}
 
+  '@vmz/protocol@0.1.14':
+    resolution: {integrity: sha512-wYc5M5/JwqwyP9yT7TmcSQu0qbB14YEgizJxf1P2lH2MkyKrW37VO6UctswB0jmrrsFEHrhFv2t3O6C6tn+/Dw==}
+    engines: {node: '>=20'}
+
+  '@vmz/ui@0.1.14':
+    resolution: {integrity: sha512-5tWJIZpXTwgi6UvfDqy87aaKCUYE1/cPuUocrHUwFsSwau+OsmwRpg7VWmqwuodMOExwPok2l1AmbFPz+r7+4A==}
+
   '@vmz/vmz-darwin-arm64@0.1.12':
     resolution: {integrity: sha512-tYdKUJHKK5PRuIynBoWaK2/WnsA/I3zDC/gnwXrMfssNB+DuPWrukF8X58djl9BACZZZeovhmjd7ZxGYxUfn5g==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@vmz/vmz-darwin-arm64@0.1.14':
+    resolution: {integrity: sha512-wwW4E2yApjAfpy9esn7iFGCxAWpitjreq6l5Y1Ag0ezVyLrgl/3p1P9D/wM38wIje/E7sRtwWxm2wITBn6MFKw==}
     cpu: [arm64]
     os: [darwin]
 
@@ -503,8 +524,18 @@ packages:
     cpu: [x64]
     os: [linux]
 
+  '@vmz/vmz-linux-x64@0.1.14':
+    resolution: {integrity: sha512-ZSsHFzargchudTtrUePMii7Jx7HCK0YlXsbWbm8xDwqZ0EAVYXoLG/TrG5eMIra0pSQyZkZyi4H4LGYsKxjq+g==}
+    cpu: [x64]
+    os: [linux]
+
   '@vmz/vmz-win32-x64@0.1.12':
     resolution: {integrity: sha512-iNabpWfhRzFo9W3CIeQMVBNmnBYBSJLh6TfPE35y3Q9g1n38uJy/z58h93gn/5OBkcPzTMZvW3mNyRXS9eDGlA==}
+    cpu: [x64]
+    os: [win32]
+
+  '@vmz/vmz-win32-x64@0.1.14':
+    resolution: {integrity: sha512-yItDtuFxotKY/cedSm8ozTVHvrRAA31BiegPG4Sjuu60Uzk1UTs1Kg4aPf6TJNdt4of3u48RG+lPBcVQv3Z6Jg==}
     cpu: [x64]
     os: [win32]
 
@@ -514,6 +545,21 @@ packages:
     peerDependencies:
       '@vmz/plugin-markdown-it': 0.1.12
       '@vmz/test': 0.1.12
+      typescript: ^5.8.3
+    peerDependenciesMeta:
+      '@vmz/plugin-markdown-it':
+        optional: true
+      '@vmz/test':
+        optional: true
+      typescript:
+        optional: true
+
+  '@vmz/vmz@0.1.14':
+    resolution: {integrity: sha512-gVfBrKeN8CUVo0vMGQeELtOeTszavAlifyLaC6D1Fg8yyboJ0sMRWwDBbSSxBEQS+kdY7aSVQhWeiP7+BuLyYg==}
+    hasBin: true
+    peerDependencies:
+      '@vmz/plugin-markdown-it': 0.1.14
+      '@vmz/test': 0.1.14
       typescript: ^5.8.3
     peerDependenciesMeta:
       '@vmz/plugin-markdown-it':
@@ -768,19 +814,46 @@ snapshots:
     transitivePeerDependencies:
       - canvas
 
+  '@vmz/core@0.1.14':
+    dependencies:
+      linkedom: 0.18.13
+    optionalDependencies:
+      '@vmz/vmz-darwin-arm64': 0.1.14
+      '@vmz/vmz-linux-x64': 0.1.14
+      '@vmz/vmz-win32-x64': 0.1.14
+    transitivePeerDependencies:
+      - canvas
+
   '@vmz/plugin@0.1.12':
     dependencies:
       '@vmz/protocol': 0.1.12
 
+  '@vmz/plugin@0.1.14':
+    dependencies:
+      '@vmz/protocol': 0.1.14
+
   '@vmz/protocol@0.1.12': {}
 
+  '@vmz/protocol@0.1.14': {}
+
+  '@vmz/ui@0.1.14': {}
+
   '@vmz/vmz-darwin-arm64@0.1.12':
+    optional: true
+
+  '@vmz/vmz-darwin-arm64@0.1.14':
     optional: true
 
   '@vmz/vmz-linux-x64@0.1.12':
     optional: true
 
+  '@vmz/vmz-linux-x64@0.1.14':
+    optional: true
+
   '@vmz/vmz-win32-x64@0.1.12':
+    optional: true
+
+  '@vmz/vmz-win32-x64@0.1.14':
     optional: true
 
   '@vmz/vmz@0.1.12(typescript@5.9.3)':
@@ -794,6 +867,21 @@ snapshots:
       '@vmz/vmz-darwin-arm64': 0.1.12
       '@vmz/vmz-linux-x64': 0.1.12
       '@vmz/vmz-win32-x64': 0.1.12
+      typescript: 5.9.3
+    transitivePeerDependencies:
+      - canvas
+
+  '@vmz/vmz@0.1.14(typescript@5.9.3)':
+    dependencies:
+      '@vmz/core': 0.1.14
+      '@vmz/plugin': 0.1.14
+      '@vmz/protocol': 0.1.14
+      jiti: 2.7.0
+      json5: 2.2.3
+    optionalDependencies:
+      '@vmz/vmz-darwin-arm64': 0.1.14
+      '@vmz/vmz-linux-x64': 0.1.14
+      '@vmz/vmz-win32-x64': 0.1.14
       typescript: 5.9.3
     transitivePeerDependencies:
       - canvas
