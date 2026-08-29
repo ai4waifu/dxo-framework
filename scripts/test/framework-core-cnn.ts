@@ -3,12 +3,12 @@
  */
 import assert from 'node:assert/strict';
 import { tensor, withoutGrad } from '@dxo/core';
-import { BatchNorm2d, Conv2d, MaxPool2d, TinyCnn } from '@dxo/nn';
+import { BatchNormalization2d, Convolution2d, MaxPooling2d, TinyCnn } from '@dxo/nn';
 import { packTensors, unpackTensors } from '@dxo/serialize';
 
 // --- Conv2d forward shape ---
 {
-    const conv = new Conv2d(1, 2, 3, { padding: 1, requiresGrad: false });
+    const conv = new Convolution2d(1, 2, 3, { padding: 1, requiresGrad: false });
     conv.weight = tensor(new Array(2 * 1 * 3 * 3).fill(0.1), [2, 1, 3, 3]);
     conv.bias = tensor([0, 0], [2]);
     const y = conv.forward(tensor(new Array(1 * 1 * 4 * 4).fill(1), [1, 1, 4, 4]));
@@ -17,7 +17,7 @@ import { packTensors, unpackTensors } from '@dxo/serialize';
 
 // --- MaxPool2d ---
 {
-    const pool = new MaxPool2d(2);
+    const pool = new MaxPooling2d(2);
     const y = pool.forward(tensor([1, 2, 3, 4, 5, 6, 7, 8], [1, 1, 2, 4]));
     assert.deepEqual([...y.shape], [1, 1, 1, 2]);
     assert.deepEqual(await y.toArray(), [6, 8]);
@@ -25,7 +25,7 @@ import { packTensors, unpackTensors } from '@dxo/serialize';
 
 // --- BatchNorm2d + backward ---
 {
-    const bn = new BatchNorm2d(1);
+    const bn = new BatchNormalization2d(1);
     const x = tensor([1, 2, 3, 4], [1, 1, 2, 2], { requiresGrad: true });
     const y = bn.forward(x);
     // E[xhat]=0 ⇒ mean(y) ignores gamma; mean(y^2) ignores beta when mean(y)=0.

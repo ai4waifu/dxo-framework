@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import { embedding, tensor, withoutGrad } from '@dxo/core';
-import { Embedding, LayerNorm, TinyTransformer } from '@dxo/nn';
+import { Embedding, LayerNormalization, TinyTransformer } from '@dxo/nn';
 import { decodeSafetensors, encodeSafetensors, packTensors, unpackTensors } from '@dxo/serialize';
 
 // --- Embedding gather ---
@@ -19,7 +19,7 @@ import { decodeSafetensors, encodeSafetensors, packTensors, unpackTensors } from
 
 // --- LayerNorm ---
 {
-    const ln = new LayerNorm(2, { requiresGrad: false });
+    const ln = new LayerNormalization(2, { requiresGrad: false });
     ln.weight = tensor([1, 1], [2]);
     ln.bias = tensor([0, 0], [2]);
     const y = ln.forward(tensor([1, 2, 3, 4], [2, 2]));

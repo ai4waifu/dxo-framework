@@ -1,6 +1,6 @@
 import type { Tensor } from '@dxo/core';
 import type { TensorStateSlice } from '@dxo/nn';
-import { BatchNorm2d, Conv2d, NeuralNetwork, Relu } from '@dxo/nn';
+import { BatchNormalization2d, Convolution2d, NeuralNetwork, ReLU } from '@dxo/nn';
 
 /**
  * DXO-native BasicBlock.
@@ -9,30 +9,30 @@ import { BatchNorm2d, Conv2d, NeuralNetwork, Relu } from '@dxo/nn';
  */
 export class BasicBlock extends NeuralNetwork {
     protected semanticName(): string { return 'basic_block'; }
-    readonly convolution_1: Conv2d;
-    readonly batch_normalization_1: BatchNorm2d;
-    readonly convolution_2: Conv2d;
-    readonly batch_normalization_2: BatchNorm2d;
-    readonly relu: Relu;
-    readonly downConvolution: Conv2d | null;
-    readonly downBatchNormalization: BatchNorm2d | null;
+    readonly convolution_1: Convolution2d;
+    readonly batch_normalization_1: BatchNormalization2d;
+    readonly convolution_2: Convolution2d;
+    readonly batch_normalization_2: BatchNormalization2d;
+    readonly relu: ReLU;
+    readonly downConvolution: Convolution2d | null;
+    readonly downBatchNormalization: BatchNormalization2d | null;
     constructor(inChannels: number, outChannels: number, opts: { stride?: number; requiresGrad?: boolean } = {}) {
         super();
         const stride = opts.stride ?? 1;
         const rg = opts.requiresGrad ?? true;
-        this.convolution_1 = new Conv2d(inChannels, outChannels, 3, { stride, padding: 1, requiresGrad: rg });
-        this.batch_normalization_1 = new BatchNorm2d(outChannels, { requiresGrad: rg });
-        this.convolution_2 = new Conv2d(outChannels, outChannels, 3, { padding: 1, requiresGrad: rg });
-        this.batch_normalization_2 = new BatchNorm2d(outChannels, { requiresGrad: rg });
-        this.relu = new Relu();
+        this.convolution_1 = new Convolution2d(inChannels, outChannels, 3, { stride, padding: 1, requiresGrad: rg });
+        this.batch_normalization_1 = new BatchNormalization2d(outChannels, { requiresGrad: rg });
+        this.convolution_2 = new Convolution2d(outChannels, outChannels, 3, { padding: 1, requiresGrad: rg });
+        this.batch_normalization_2 = new BatchNormalization2d(outChannels, { requiresGrad: rg });
+        this.relu = new ReLU();
         this.registerChild(this.convolution_1, { name: 'convolution_1', mode: 'repeatable' });
         this.registerChild(this.batch_normalization_1, { name: 'batch_normalization_1', mode: 'repeatable' });
         this.registerChild(this.convolution_2, { name: 'convolution_2', mode: 'repeatable' });
         this.registerChild(this.batch_normalization_2, { name: 'batch_normalization_2', mode: 'repeatable' });
         this.registerChild(this.relu, { name: 'relu' });
         if (stride !== 1 || inChannels !== outChannels) {
-            this.downConvolution = new Conv2d(inChannels, outChannels, 1, { stride, requiresGrad: rg });
-            this.downBatchNormalization = new BatchNorm2d(outChannels, { requiresGrad: rg });
+            this.downConvolution = new Convolution2d(inChannels, outChannels, 1, { stride, requiresGrad: rg });
+            this.downBatchNormalization = new BatchNormalization2d(outChannels, { requiresGrad: rg });
             const downsample = new Downsample(this.downConvolution, this.downBatchNormalization);
             this.registerChild(downsample, { name: 'downsample' });
         } else {
@@ -42,7 +42,7 @@ export class BasicBlock extends NeuralNetwork {
     }
 
     /** @deprecated Use downConvolution; kept for callers checking downsample presence. */
-    get downConv(): Conv2d | null {
+    get downConvolutionLayer(): Convolution2d | null {
         return this.downConvolution;
     }
 
@@ -128,8 +128,8 @@ export class BasicBlock extends NeuralNetwork {
 
 class Downsample extends NeuralNetwork {
     constructor(
-        readonly convolution: Conv2d,
-        readonly batchNormalization: BatchNorm2d,
+        readonly convolution: Convolution2d,
+        readonly batchNormalization: BatchNormalization2d,
     ) {
         super();
         this.registerChild(convolution, { name: 'convolution' });

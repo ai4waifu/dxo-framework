@@ -109,7 +109,7 @@ export function relu(x: Tensor): Tensor {
 }
 
 /** Element-wise ReLU module. */
-export class Relu extends Layer {
+export class ReLU extends Layer {
     protected semanticName(): string { return 'relu'; }
     forward(x: Tensor): Tensor {
         return x.relu();
@@ -121,7 +121,7 @@ export class Relu extends Layer {
  * Weight layout: `[inFeatures, outFeatures]`. Default leaves use `requiresGrad: true`.
  * After `optimizer.step(parameters())`, call `loadParameters` to install new leaves.
  */
-export class Linear extends Layer {
+export class FullyConnected extends Layer {
     weight: Tensor;
     bias: Tensor;
 
@@ -145,11 +145,11 @@ export class Linear extends Layer {
             return x.matmul(this.weight).add(this.bias);
         }
         if (x.shape.length < 2) {
-            throw new Error(`Linear expects rank >= 2, got [${x.shape.join(',')}]`);
+            throw new Error(`FullyConnected expects rank >= 2, got [${x.shape.join(',')}]`);
         }
         const last = x.shape[x.shape.length - 1]!;
         if (last !== this.inFeatures) {
-            throw new Error(`Linear inFeatures ${this.inFeatures} != last dim ${last}`);
+            throw new Error(`FullyConnected inFeatures ${this.inFeatures} != last dim ${last}`);
         }
         const leading = x.shape.slice(0, -1);
         const flat = leading.reduce((n, d) => n * d, 1);
@@ -159,7 +159,7 @@ export class Linear extends Layer {
 
     /** Replace parameter leaves after an optimizer step. */
     loadParameters(params: Tensor[]): void {
-        if (params.length < 2) throw new Error('Linear expects [weight, bias]');
+        if (params.length < 2) throw new Error('FullyConnected expects [weight, bias]');
         this.weight = params[0]!;
         this.bias = params[1]!;
     }
@@ -238,7 +238,7 @@ export interface LayerNormState {
 }
 
 /** LayerNorm over the last dimension. */
-export class LayerNorm extends Layer {
+export class LayerNormalization extends Layer {
     weight: Tensor;
     bias: Tensor;
 
@@ -262,7 +262,7 @@ export class LayerNorm extends Layer {
     }
 
     loadParameters(params: Tensor[]): void {
-        if (params.length < 2) throw new Error('LayerNorm expects [weight, bias]');
+        if (params.length < 2) throw new Error('LayerNormalization expects [weight, bias]');
         this.weight = params[0]!;
         this.bias = params[1]!;
     }
@@ -284,9 +284,9 @@ export class LayerNorm extends Layer {
  * Causal multi-head self-attention over `[B, T, C]`.
  * Head dim must divide `embedDim`.
  */
-export class MultiheadAttention extends Layer {
-    qkv: Linear;
-    proj: Linear;
+export class SelfAttention extends Layer {
+    qkv: FullyConnected;
+    proj: FullyConnected;
 
     protected semanticName(): string { return 'self_attention'; }
 
@@ -300,8 +300,8 @@ export class MultiheadAttention extends Layer {
             throw new Error(`embedDim ${embedDim} must be divisible by numHeads ${numHeads}`);
         }
         this.headDim = embedDim / numHeads;
-        this.qkv = new Linear(embedDim, embedDim * 3, opts);
-        this.proj = new Linear(embedDim, embedDim, opts);
+        this.qkv = new FullyConnected(embedDim, embedDim * 3, opts);
+        this.proj = new FullyConnected(embedDim, embedDim, opts);
     }
 
     readonly headDim: number;
@@ -309,7 +309,7 @@ export class MultiheadAttention extends Layer {
     forward(x: Tensor): Tensor {
         const [b, t, c] = x.shape;
         if (b === undefined || t === undefined || c === undefined || x.shape.length !== 3) {
-            throw new Error(`MultiheadAttention expects [B,T,C], got [${x.shape.join(',')}]`);
+            throw new Error(`SelfAttention expects [B,T,C], got [${x.shape.join(',')}]`);
         }
         if (c !== this.embedDim) {
             throw new Error(`expected embedDim ${this.embedDim}, got ${c}`);
@@ -328,21 +328,21 @@ export class MultiheadAttention extends Layer {
 
 /** One decoder block: LN → causal MHA → residual → LN → MLP → residual. */
 export class TransformerBlock extends NeuralNetwork {
-    ln1: LayerNorm;
-    attn: MultiheadAttention;
-    ln2: LayerNorm;
-    fc1: Linear;
-    fc2: Linear;
+    ln1: LayerNormalization;
+    attn: SelfAttention;
+    ln2: LayerNormalization;
+    fc1: FullyConnected;
+    fc2: FullyConnected;
 
     protected semanticName(): string { return 'transformer_block'; }
 
     constructor(embedDim: number, numHeads: number, opts: { requiresGrad?: boolean } = {}) {
         super();
-        this.ln1 = new LayerNorm(embedDim, opts);
-        this.attn = new MultiheadAttention(embedDim, numHeads, opts);
-        this.ln2 = new LayerNorm(embedDim, opts);
-        this.fc1 = new Linear(embedDim, embedDim * 4, opts);
-        this.fc2 = new Linear(embedDim * 4, embedDim, opts);
+        this.ln1 = new LayerNormalization(embedDim, opts);
+        this.attn = new SelfAttention(embedDim, numHeads, opts);
+        this.ln2 = new LayerNormalization(embedDim, opts);
+        this.fc1 = new FullyConnected(embedDim, embedDim * 4, opts);
+        this.fc2 = new FullyConnected(embedDim * 4, embedDim, opts);
         this.registerChild(this.ln1, { name: 'layer_normalization_1', mode: 'repeatable' });
         this.registerChild(this.attn, { name: 'self_attention', mode: 'singleton' });
         this.registerChild(this.ln2, { name: 'layer_normalization_2', mode: 'repeatable' });
@@ -362,8 +362,8 @@ export class TinyTransformer extends NeuralNetwork {
     tokEmbed: Embedding;
     posEmbed: Embedding;
     blocks: TransformerBlock[];
-    lnF: LayerNorm;
-    head: Linear;
+    lnF: LayerNormalization;
+    head: FullyConnected;
 
     constructor(
         readonly vocabSize: number,
@@ -377,8 +377,8 @@ export class TinyTransformer extends NeuralNetwork {
         this.tokEmbed = new Embedding(vocabSize, embedDim, opts);
         this.posEmbed = new Embedding(maxSeqLen, embedDim, opts);
         this.blocks = Array.from({ length: numLayers }, () => new TransformerBlock(embedDim, numHeads, opts));
-        this.lnF = new LayerNorm(embedDim, opts);
-        this.head = new Linear(embedDim, vocabSize, opts);
+        this.lnF = new LayerNormalization(embedDim, opts);
+        this.head = new FullyConnected(embedDim, vocabSize, opts);
         this.registerChild(this.tokEmbed, { name: 'token_embedding' });
         this.registerChild(this.posEmbed, { name: 'position_embedding' });
         for (const block of this.blocks) this.registerChild(block, { mode: 'repeatable', semanticName: 'transformer_block' });
@@ -475,7 +475,7 @@ export interface Conv2dState {
 }
 
 /** 2D convolution NCHW / OIHW. */
-export class Conv2d extends Layer {
+export class Convolution2d extends Layer {
     weight: Tensor;
     bias: Tensor;
 
@@ -521,7 +521,7 @@ export class Conv2d extends Layer {
 }
 
 /** Max pooling 2D NCHW. */
-export class MaxPool2d extends Layer {
+export class MaxPooling2d extends Layer {
     protected semanticName(): string { return 'max_pooling'; }
     constructor(
         readonly kernelSize: number,
@@ -546,7 +546,7 @@ export interface BatchNorm2dState {
 }
 
 /** Batch norm 2D (per-batch stats, training-style). */
-export class BatchNorm2d extends Layer {
+export class BatchNormalization2d extends Layer {
     weight: Tensor;
     bias: Tensor;
 
@@ -585,10 +585,10 @@ export class BatchNorm2d extends Layer {
 
 /** Tiny CNN: Conv → BN → ReLU → Pool → Linear. */
 export class TinyCnn extends NeuralNetwork {
-    conv: Conv2d;
-    bn: BatchNorm2d;
-    pool: MaxPool2d;
-    fc: Linear;
+    conv: Convolution2d;
+    bn: BatchNormalization2d;
+    pool: MaxPooling2d;
+    fc: FullyConnected;
 
     constructor(
         readonly inChannels: number,
@@ -599,11 +599,11 @@ export class TinyCnn extends NeuralNetwork {
         const ch = opts.channels ?? 4;
         const spatial = opts.spatial ?? 8;
         const rg = opts.requiresGrad ?? true;
-        this.conv = new Conv2d(inChannels, ch, 3, { padding: 1, requiresGrad: rg });
-        this.bn = new BatchNorm2d(ch, { requiresGrad: rg });
-        this.pool = new MaxPool2d(2);
+        this.conv = new Convolution2d(inChannels, ch, 3, { padding: 1, requiresGrad: rg });
+        this.bn = new BatchNormalization2d(ch, { requiresGrad: rg });
+        this.pool = new MaxPooling2d(2);
         const flat = ch * Math.floor(spatial / 2) * Math.floor(spatial / 2);
-        this.fc = new Linear(flat, numClasses, { requiresGrad: rg });
+        this.fc = new FullyConnected(flat, numClasses, { requiresGrad: rg });
     }
 
     forward(x: Tensor): Tensor {

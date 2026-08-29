@@ -5,7 +5,7 @@ import path from 'node:path';
 import { batch, dataset } from '@dxo/data';
 import { moduleGraphFromModule, serializeModelGraph } from '@dxo/graph';
 import { readEvents, readRunMeta, recordTrainIter } from '@dxo/inspect';
-import { Linear } from '@dxo/nn';
+import { FullyConnected } from '@dxo/nn';
 import { SGD } from '@dxo/optimizer';
 import { createInspectApiServer } from '@dxo/studio';
 import { Trainer } from '@dxo/train';
@@ -87,14 +87,14 @@ async function readSnapshot(baseUrl: string, runId: string): Promise<Snapshot> {
         eventCount: eventsRes.events.length,
         checkpointCount: ck.checkpoints.length,
         graphView: graphRes.graph.view,
-        hasLinear: graphRes.graph.nodes.some((n: { kind: string }) => n.kind === 'Linear'),
+        hasFullyConnected: graphRes.graph.nodes.some((n: { kind: string }) => n.kind === 'FullyConnected'),
     };
 }
 
 const runsRoot = await mkdtemp(path.join(tmpdir(), 'dxo-studio-runs-'));
 
 try {
-    const model = new Linear(2, 1);
+    const model = new FullyConnected(2, 1);
     model.loadState({
         weight: { shape: [2, 1], data: [0.1, -0.1] },
         bias: { shape: [1], data: [0] },
@@ -141,7 +141,7 @@ try {
         assert.ok(before.metricNames.includes('loss'));
         assert.ok(before.checkpointCount >= 1);
         assert.equal(before.graphView, 'module');
-        assert.ok(before.hasLinear);
+    assert.ok(before.hasFullyConnected);
     } finally {
         await api1.close();
     }

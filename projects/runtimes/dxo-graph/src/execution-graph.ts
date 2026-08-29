@@ -1,5 +1,5 @@
 import type { NeuralNetwork } from '@dxo/nn';
-import { Linear, Relu, Sequential } from '@dxo/nn';
+import { FullyConnected, ReLU, Sequential } from '@dxo/nn';
 import { type GraphEdge, type GraphNode, MODEL_GRAPH_FORMAT, MODEL_GRAPH_VERSION, type ModelGraphV0 } from './index.js';
 
 function node(id: string, kind: string, label: string, modulePath?: string, attrs?: Record<string, unknown>): GraphNode {
@@ -27,7 +27,7 @@ export function executionGraphUnavailable(reason: string): ModelGraphV0 {
  * Execution view for Linear: one matmul+bias op with concrete input/output shapes.
  * This is an *execution* sketch for a given input shape — not the module hierarchy.
  */
-export function executionGraphFromLinear(linear: Linear, inputShape: number[], path = 'linear'): ModelGraphV0 {
+export function executionGraphFromLinear(linear: FullyConnected, inputShape: number[], path = 'linear'): ModelGraphV0 {
     if (inputShape.length < 1) throw new Error('executionGraphFromLinear: empty inputShape');
     const last = inputShape[inputShape.length - 1]!;
     if (last !== linear.inFeatures) {
@@ -66,7 +66,7 @@ export function executionGraphFromSequential(seq: Sequential, inputShape: number
 
     seq.layers.forEach((layer, i) => {
         const id = `op_${i}`;
-        if (layer instanceof Linear) {
+        if (layer instanceof FullyConnected) {
             const last = shape[shape.length - 1]!;
             if (last !== layer.inFeatures) {
                 throw new Error(`executionGraphFromSequential: layer ${i} expects ${layer.inFeatures}, got ${last}`);
@@ -81,7 +81,7 @@ export function executionGraphFromSequential(seq: Sequential, inputShape: number
             );
             edges.push(edge(`e-${prev}-${id}`, prev, id, { shape: [...shape], dtype: 'f32', device: 'cpu' }));
             shape = outShape;
-        } else if (layer instanceof Relu) {
+        } else if (layer instanceof ReLU) {
             nodes.push(node(id, 'op', 'relu', `${path}/layer_${i}`, { op: 'relu' }));
             edges.push(edge(`e-${prev}-${id}`, prev, id, { shape: [...shape], dtype: 'f32', device: 'cpu' }));
         } else {
@@ -106,6 +106,6 @@ export function executionGraphFromSequential(seq: Sequential, inputShape: number
 
 export function executionGraphFromModule(mod: NeuralNetwork, inputShape: number[], path = 'model'): ModelGraphV0 {
     if (mod instanceof Sequential) return executionGraphFromSequential(mod, inputShape, path);
-    if (mod instanceof Linear) return executionGraphFromLinear(mod, inputShape, path);
+    if (mod instanceof FullyConnected) return executionGraphFromLinear(mod, inputShape, path);
     return executionGraphUnavailable(`no execution lowering for ${mod.constructor.name}`);
 }

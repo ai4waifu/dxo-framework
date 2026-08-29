@@ -1,5 +1,5 @@
 import type { Tensor } from '@dxo/core';
-import { Linear, NeuralNetwork } from '@dxo/nn';
+import { FullyConnected, NeuralNetwork } from '@dxo/nn';
 import { VisionError } from './errors.js';
 import type { ResNet } from './resnet.js';
 import type { TensorPort } from './types.js';
@@ -23,7 +23,7 @@ function resolveInFeatures(input: number | TensorPort): number {
 export class LinearHead extends NeuralNetwork {
     readonly outFeatures: number;
     #inFeatures: number | undefined;
-    #linear: Linear | undefined;
+    #linear: FullyConnected | undefined;
 
     constructor(options: LinearHeadOptions) {
         super();
@@ -44,7 +44,7 @@ export class LinearHead extends NeuralNetwork {
         }
         if (this.#linear && this.#inFeatures === inFeatures) return;
         this.#inFeatures = inFeatures;
-        this.#linear = new Linear(inFeatures, this.outFeatures);
+        this.#linear = new FullyConnected(inFeatures, this.outFeatures);
     }
 
     forward(features: Tensor): Tensor {

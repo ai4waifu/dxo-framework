@@ -1,5 +1,5 @@
 import type { NeuralNetwork } from '@dxo/nn';
-import { Linear, Relu, Sequential } from '@dxo/nn';
+import { FullyConnected, ReLU, Sequential } from '@dxo/nn';
 import { type GraphEdge, type GraphNode, type GraphViewKind, MODEL_GRAPH_FORMAT, MODEL_GRAPH_VERSION, type ModelGraphV0 } from './index.js';
 
 export function emptyModelGraph(view: GraphViewKind = 'module'): ModelGraphV0 {
@@ -25,10 +25,10 @@ function edge(id: string, source: string, target: string, tensor?: GraphEdge['te
     return { id, source, target, tensor };
 }
 
-export function moduleGraphFromLinear(linear: Linear, path = 'linear'): ModelGraphV0 {
+export function moduleGraphFromLinear(linear: FullyConnected, path = 'linear'): ModelGraphV0 {
     const nodes: GraphNode[] = [
         node('input', 'tensor', 'input'),
-        node('linear', 'Linear', 'Linear', path, {
+        node('linear', 'FullyConnected', 'FullyConnected', path, {
             inFeatures: linear.inFeatures,
             outFeatures: linear.outFeatures,
             params: ['weight', 'bias'],
@@ -49,15 +49,15 @@ export function moduleGraphFromSequential(seq: Sequential, path = 'sequential'):
 
     seq.layers.forEach((layer, i) => {
         const id = `layer_${i}`;
-        if (layer instanceof Linear) {
+        if (layer instanceof FullyConnected) {
             nodes.push(
-                node(id, 'Linear', `Linear(${layer.inFeatures}->${layer.outFeatures})`, `${path}/${id}`, {
+                node(id, 'FullyConnected', `FullyConnected(${layer.inFeatures}->${layer.outFeatures})`, `${path}/${id}`, {
                     inFeatures: layer.inFeatures,
                     outFeatures: layer.outFeatures,
                 }),
             );
-        } else if (layer instanceof Relu) {
-            nodes.push(node(id, 'Relu', 'Relu', `${path}/${id}`));
+        } else if (layer instanceof ReLU) {
+            nodes.push(node(id, 'ReLU', 'ReLU', `${path}/${id}`));
         } else {
             nodes.push(node(id, layer.constructor.name, layer.constructor.name, `${path}/${id}`));
         }
@@ -74,6 +74,6 @@ export function moduleGraphFromSequential(seq: Sequential, path = 'sequential'):
 /** Build a model graph from any @dxo/nn Neural (Linear or Sequential supported). */
 export function moduleGraphFromModule(mod: NeuralNetwork, path = 'model'): ModelGraphV0 {
     if (mod instanceof Sequential) return moduleGraphFromSequential(mod, path);
-    if (mod instanceof Linear) return moduleGraphFromLinear(mod, path);
+    if (mod instanceof FullyConnected) return moduleGraphFromLinear(mod, path);
     throw new Error(`moduleGraphFromModule: unsupported module ${mod.constructor.name}`);
 }

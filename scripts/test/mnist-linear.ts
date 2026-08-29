@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { tensor } from '@dxo/core';
-import { Linear } from '@dxo/nn';
+import { FullyConnected } from '@dxo/nn';
 import { SGD } from '@dxo/optimizer';
 
 /**
@@ -24,7 +24,7 @@ function makeBatch(n: number): { x: ReturnType<typeof tensor>; y: ReturnType<typ
 }
 
 const n = 32;
-const model = new Linear(2, 1);
+const model = new FullyConnected(2, 1);
 // Deterministic small init so the gate is reproducible.
 model.loadState({
     weight: { shape: [2, 1], data: [0.1, -0.1] },

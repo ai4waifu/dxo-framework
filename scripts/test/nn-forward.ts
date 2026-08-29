@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { tensor } from '@dxo/core';
-import { Linear, Sequential } from '@dxo/nn';
+import { FullyConnected, Sequential } from '@dxo/nn';
 
-const fc = new Linear(2, 3);
+const fc = new FullyConnected(2, 3);
 fc.weight = tensor(
     [
         1,
@@ -24,9 +24,9 @@ assert.deepEqual(
     [1.1, 2.2, 0.3],
 );
 
-const mlp = new Sequential([new Linear(2, 4), new Linear(4, 1)]);
+const mlp = new Sequential([new FullyConnected(2, 4), new FullyConnected(4, 1)]);
 
-const l0 = mlp.layers[0] as Linear;
+const l0 = mlp.layers[0] as FullyConnected;
 l0.weight = tensor(
     [
         1,
@@ -42,7 +42,7 @@ l0.weight = tensor(
 );
 l0.bias = tensor([0, 0, 0, 0], [4]);
 
-const l1 = mlp.layers[1] as Linear;
+const l1 = mlp.layers[1] as FullyConnected;
 l1.weight = tensor([1, 1, 1, 1], [4, 1]);
 l1.bias = tensor([0], [1]);
 

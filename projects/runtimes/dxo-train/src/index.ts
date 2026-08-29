@@ -1,6 +1,6 @@
 import type { Tensor } from '@dxo/core';
 import type { Batch } from '@dxo/data';
-import type { Linear, LinearState } from '@dxo/nn';
+import type { FullyConnected, LinearState } from '@dxo/nn';
 import type { Optimizer } from '@dxo/optimizer';
 import { encodeLinearState, type StateDocument } from '@dxo/serialize';
 
@@ -25,7 +25,7 @@ export interface FitSummary {
 export type BatchSource = Iterable<Batch> | AsyncIterable<Batch>;
 
 export interface TrainerOptions {
-    model: Linear;
+    model: FullyConnected;
     optimizer: Optimizer;
     /** Called each epoch so iterators restart (sync or async batches). */
     batches: () => BatchSource;
@@ -63,7 +63,7 @@ export function mseLoss(pred: Tensor, y: Tensor): Tensor {
  * GPU / multi-device is out of scope; declare CPU-only when GPU is deferred.
  */
 export class Trainer {
-    readonly model: Linear;
+    readonly model: FullyConnected;
     readonly optimizer: Optimizer;
     readonly epochs: number;
     readonly checkpointEvery: number;

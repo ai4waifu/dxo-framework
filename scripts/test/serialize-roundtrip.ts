@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { tensor } from '@dxo/core';
-import { Linear } from '@dxo/nn';
+import { FullyConnected } from '@dxo/nn';
 import {
     decodeJson,
     decodeLinearState,
@@ -14,7 +14,7 @@ import {
     unpackTensors,
 } from '@dxo/serialize';
 
-const model = new Linear(2, 1, { requiresGrad: false });
+const model = new FullyConnected(2, 1, { requiresGrad: false });
 model.loadState({
     weight: { shape: [2, 1], data: [0.25, -0.5] },
     bias: { shape: [1], data: [0.1] },
@@ -31,7 +31,7 @@ const round = decodeLinearState(decodeJson(text));
 assert.deepEqual(round.weight.data, [0.25, -0.5]);
 assert.ok(Math.abs(round.bias.data[0]! - 0.1) < 1e-5);
 
-const clone = new Linear(2, 1, { requiresGrad: false });
+const clone = new FullyConnected(2, 1, { requiresGrad: false });
 clone.loadState(round);
 const x = tensor([1, 2], [1, 2]);
 assert.deepEqual(await clone.forward(x).toArray(), await model.forward(x).toArray());

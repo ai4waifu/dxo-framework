@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { backend, isGradEnabled, tensor, withoutGrad } from '@dxo/core';
-import { Linear, Relu, Sequential } from '@dxo/nn';
+import { FullyConnected, ReLU, Sequential } from '@dxo/nn';
 import { SGD } from '@dxo/optimizer';
 
 assert.equal(backend(), 'cpu');
@@ -8,7 +8,7 @@ assert.equal(isGradEnabled(), true);
 
 // Linear is affine-only (negative pre-activation must survive).
 {
-    const fc = new Linear(1, 1, { requiresGrad: false });
+    const fc = new FullyConnected(1, 1, { requiresGrad: false });
     fc.weight = tensor([-2], [1, 1]);
     fc.bias = tensor([0], [1]);
     const out = fc.forward(tensor([1], [1, 1]));
@@ -17,9 +17,9 @@ assert.equal(isGradEnabled(), true);
 
 // Relu is explicit.
 {
-    const net = new Sequential([new Linear(1, 1, { requiresGrad: false }), new Relu()]);
-    (net.layers[0] as Linear).weight = tensor([-2], [1, 1]);
-    (net.layers[0] as Linear).bias = tensor([0], [1]);
+    const net = new Sequential([new FullyConnected(1, 1, { requiresGrad: false }), new ReLU()]);
+    (net.layers[0] as FullyConnected).weight = tensor([-2], [1, 1]);
+    (net.layers[0] as FullyConnected).bias = tensor([0], [1]);
     const out = net.forward(tensor([1], [1, 1]));
     assert.equal((await out.toArray())[0], 0);
 }
@@ -37,7 +37,7 @@ assert.equal(isGradEnabled(), true);
 
 // SGD returns new leaves; loadParameters installs them.
 {
-    const model = new Linear(2, 1);
+    const model = new FullyConnected(2, 1);
     model.loadState({
         weight: { shape: [2, 1], data: [0.5, -0.5] },
         bias: { shape: [1], data: [0] },

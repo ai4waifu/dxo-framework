@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { bundleModelGraphs, executionGraphFromModule, kernelGraphFromProfile, moduleGraphFromModule } from '@dxo/graph';
 import { type ProfileTraceV0, profileTraceUnavailable, RunRecorder } from '@dxo/inspect';
-import { Linear } from '@dxo/nn';
+import { FullyConnected } from '@dxo/nn';
 import { createInspectApiServer } from '@dxo/studio';
 
 async function waitForHealth(baseUrl: string, attempts = 80): Promise<void> {
@@ -41,7 +41,7 @@ async function fetchOk(url: string, attempts = 40): Promise<Response> {
     throw last instanceof Error ? last : new Error(String(last));
 }
 
-const linear = new Linear(2, 1, { requiresGrad: false });
+const linear = new FullyConnected(2, 1, { requiresGrad: false });
 const moduleG = moduleGraphFromModule(linear);
 const execG = executionGraphFromModule(linear, [1, 2]);
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { batch, dataset } from '@dxo/data';
-import { Linear } from '@dxo/nn';
+import { FullyConnected } from '@dxo/nn';
 import { SGD } from '@dxo/optimizer';
 import { decodeLinearState, STATE_FORMAT, STATE_VERSION } from '@dxo/serialize';
 import { type TrainEvent, Trainer } from '@dxo/train';
@@ -25,7 +25,7 @@ function makeSamples(n: number) {
 }
 
 const samples = makeSamples(32);
-const model = new Linear(2, 1);
+const model = new FullyConnected(2, 1);
 model.loadState({
     weight: { shape: [2, 1], data: [0.1, -0.1] },
     bias: { shape: [1], data: [0] },
@@ -66,13 +66,13 @@ assert.ok(lastCk.type === 'checkpoint');
 assert.equal(lastCk.document.format, STATE_FORMAT);
 assert.equal(lastCk.document.version, STATE_VERSION);
 
-const restored = new Linear(2, 1, { requiresGrad: false });
+const restored = new FullyConnected(2, 1, { requiresGrad: false });
 restored.loadState(decodeLinearState(lastCk.document));
 assert.deepEqual(await restored.weight.toArray(), await model.weight.toArray());
 assert.deepEqual(await restored.bias.toArray(), await model.bias.toArray());
 
 // Abort mid-run
-const model2 = new Linear(2, 1);
+const model2 = new FullyConnected(2, 1);
 model2.loadState({
     weight: { shape: [2, 1], data: [0.1, -0.1] },
     bias: { shape: [1], data: [0] },
@@ -99,7 +99,7 @@ for await (const event of trainer2.fitIter({ signal: ac.signal })) {
 assert.ok(sawAbort, 'expected aborted event');
 
 const summary = await new Trainer({
-    model: new Linear(2, 1),
+    model: new FullyConnected(2, 1),
     optimizer: new SGD(0.05),
     epochs: 1,
     batches: () => batch(dataset(samples), { batchSize: 16 }),

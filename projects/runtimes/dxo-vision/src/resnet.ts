@@ -1,5 +1,5 @@
 import type { Tensor } from '@dxo/core';
-import { BatchNorm2d, Conv2d, MaxPool2d, NeuralNetwork, Relu, type TensorStateSlice } from '@dxo/nn';
+import { BatchNormalization2d, Convolution2d, MaxPooling2d, NeuralNetwork, ReLU, type TensorStateSlice } from '@dxo/nn';
 import { BasicBlock } from './basic-block.js';
 import { unsupported, VisionError } from './errors.js';
 import { loadWeights } from './load-weights.js';
@@ -53,10 +53,10 @@ export class ResNet extends NeuralNetwork {
     #ready = true;
 
     /** Present only when depth === 18. */
-    stemConv: Conv2d | null = null;
-    stemBn: BatchNorm2d | null = null;
-    stemRelu: Relu | null = null;
-    stemPool: MaxPool2d | null = null;
+    stemConv: Convolution2d | null = null;
+    stemBn: BatchNormalization2d | null = null;
+    stemRelu: ReLU | null = null;
+    stemPool: MaxPooling2d | null = null;
     stages: BasicBlock[][] | null = null;
     #stemScope: Stem | null = null;
     #stageScopes: NeuralNetwork[] = [];
@@ -80,10 +80,10 @@ export class ResNet extends NeuralNetwork {
 
     #buildResNet18(requiresGrad: boolean): void {
         const rg = requiresGrad;
-        this.stemConv = new Conv2d(this.inChannels, 64, 7, { stride: 2, padding: 3, requiresGrad: rg });
-        this.stemBn = new BatchNorm2d(64, { requiresGrad: rg });
-        this.stemRelu = new Relu();
-        this.stemPool = new MaxPool2d(3, { stride: 2, padding: 1 });
+        this.stemConv = new Convolution2d(this.inChannels, 64, 7, { stride: 2, padding: 3, requiresGrad: rg });
+        this.stemBn = new BatchNormalization2d(64, { requiresGrad: rg });
+        this.stemRelu = new ReLU();
+        this.stemPool = new MaxPooling2d(3, { stride: 2, padding: 1 });
         this.#stemScope = new Stem();
         this.registerChild(this.#stemScope, { name: 'stem' });
         this.#stemScope.registerChild(this.stemConv, { name: 'convolution' });
