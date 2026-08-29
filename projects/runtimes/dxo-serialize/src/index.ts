@@ -1,3 +1,5 @@
+import { decodeSafetensors, encodeSafetensors } from './safetensors.js';
+
 /** Wire format name for DXO preview checkpoints. */
 export const STATE_FORMAT = 'dxo-state' as const;
 
