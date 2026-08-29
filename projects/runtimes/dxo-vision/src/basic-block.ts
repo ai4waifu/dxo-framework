@@ -64,11 +64,11 @@ export class BasicBlock extends NeuralNetwork {
         const b2 = await this.batch_normalization_2.state();
         const out: Record<string, TensorStateSlice> = {
             [`${p}.convolution_1.weight`]: c1.weight,
-            [`${p}.batch_normalization_1.weight`]: b1.weight,
-            [`${p}.batch_normalization_1.bias`]: b1.bias,
+            [`${p}.batch_normalization_1.weight`]: b1.weight!,
+            [`${p}.batch_normalization_1.bias`]: b1.bias!,
             [`${p}.convolution_2.weight`]: c2.weight,
-            [`${p}.batch_normalization_2.weight`]: b2.weight,
-            [`${p}.batch_normalization_2.bias`]: b2.bias,
+            [`${p}.batch_normalization_2.weight`]: b2.weight!,
+            [`${p}.batch_normalization_2.bias`]: b2.bias!,
         };
         if (this.downConvolution && this.downBatchNormalization) {
             const dc = await this.downConvolution.state();

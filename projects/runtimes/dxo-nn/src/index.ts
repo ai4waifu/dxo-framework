@@ -1,4 +1,4 @@
-export type { BatchNorm2dState, Conv2dState, EmbeddingState, LayerNormState, LinearState, TensorStateSlice } from './module.js';
+export type { BatchNorm2dState, Conv2dState, EmbeddingState, LayerNormState, LinearState, State, TensorStateSlice } from './module.js';
 export {
     BatchNormalization2d,
     Convolution2d,

@@ -5,6 +5,8 @@ export interface TensorStateSlice {
     data: number[];
 }
 
+export type State = Record<string, TensorStateSlice>;
+
 export interface LinearState {
     weight: TensorStateSlice;
     bias: TensorStateSlice;
@@ -542,45 +544,59 @@ export class MaxPooling2d extends Layer {
 }
 
 export interface BatchNorm2dState {
-    weight: TensorStateSlice;
-    bias: TensorStateSlice;
+    weight?: TensorStateSlice;
+    bias?: TensorStateSlice;
+    running_mean?: TensorStateSlice;
+    running_variance?: TensorStateSlice;
+    num_batches_tracked?: TensorStateSlice;
 }
 
 /** Batch norm 2D (per-batch stats, training-style). */
 export class BatchNormalization2d extends Layer {
-    weight: Tensor;
-    bias: Tensor;
+    weight: Tensor | null;
+    bias: Tensor | null;
+    readonly runningMean: Tensor | null;
+    readonly runningVariance: Tensor | null;
+    readonly numBatchesTracked: Tensor | null;
 
     protected semanticName(): string { return 'batch_normalization'; }
 
     constructor(
         readonly numFeatures: number,
-        opts: { eps?: number; requiresGrad?: boolean } = {},
+        opts: { eps?: number; affine?: boolean; trackRunningStatistics?: boolean; requiresGrad?: boolean } = {},
     ) {
         super();
         this.eps = opts.eps ?? 1e-5;
         const rg = opts.requiresGrad ?? true;
-        this.weight = ones([numFeatures], { requiresGrad: rg });
-        this.bias = zeros([numFeatures], { requiresGrad: rg });
+        const affine = opts.affine ?? true;
+        const track = opts.trackRunningStatistics ?? false;
+        this.weight = affine ? ones([numFeatures], { requiresGrad: rg }) : null;
+        this.bias = affine ? zeros([numFeatures], { requiresGrad: rg }) : null;
+        this.runningMean = track ? zeros([numFeatures]) : null;
+        this.runningVariance = track ? ones([numFeatures]) : null;
+        this.numBatchesTracked = track ? zeros([1]) : null;
     }
 
     readonly eps: number;
 
     forward(x: Tensor): Tensor {
-        return x.batchNorm2d(this.weight, this.bias, this.eps);
+        return x.batchNorm2d(this.weight ?? ones([this.numFeatures]), this.bias ?? zeros([this.numFeatures]), this.eps);
     }
 
     async state(): Promise<BatchNorm2dState> {
-        return {
-            weight: { shape: [...this.weight.shape], data: await this.weight.toArray() },
-            bias: { shape: [...this.bias.shape], data: await this.bias.toArray() },
-        };
+        const out: BatchNorm2dState = {};
+        if (this.weight) out.weight = { shape: [...this.weight.shape], data: await this.weight.toArray() };
+        if (this.bias) out.bias = { shape: [...this.bias.shape], data: await this.bias.toArray() };
+        if (this.runningMean) out.running_mean = { shape: [...this.runningMean.shape], data: await this.runningMean.toArray() };
+        if (this.runningVariance) out.running_variance = { shape: [...this.runningVariance.shape], data: await this.runningVariance.toArray() };
+        if (this.numBatchesTracked) out.num_batches_tracked = { shape: [...this.numBatchesTracked.shape], data: await this.numBatchesTracked.toArray() };
+        return out;
     }
 
     loadState(saved: BatchNorm2dState, opts: { requiresGrad?: boolean } = {}): void {
         const rg = opts.requiresGrad ?? true;
-        this.weight = tensor(saved.weight.data, saved.weight.shape, { requiresGrad: rg });
-        this.bias = tensor(saved.bias.data, saved.bias.shape, { requiresGrad: rg });
+        this.weight = saved.weight ? tensor(saved.weight.data, saved.weight.shape, { requiresGrad: rg }) : null;
+        this.bias = saved.bias ? tensor(saved.bias.data, saved.bias.shape, { requiresGrad: rg }) : null;
     }
 }
 
@@ -623,8 +639,8 @@ export class TinyCnn extends NeuralNetwork {
         return {
             'conv.weight': c.weight,
             'conv.bias': c.bias!,
-            'bn.weight': b.weight,
-            'bn.bias': b.bias,
+            'bn.weight': b.weight!,
+            'bn.bias': b.bias!,
             'fc.weight': f.weight,
             'fc.bias': f.bias,
         };

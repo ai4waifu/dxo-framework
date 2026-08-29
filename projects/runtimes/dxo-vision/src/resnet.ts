@@ -168,8 +168,8 @@ export class ResNet extends NeuralNetwork {
         const b = await this.stemBn.state();
         const out: Record<string, TensorStateSlice> = {
             'stem.convolution.weight': c.weight,
-            'stem.batch_normalization.weight': b.weight,
-            'stem.batch_normalization.bias': b.bias,
+            'stem.batch_normalization.weight': b.weight!,
+            'stem.batch_normalization.bias': b.bias!,
         };
         for (const stage of this.stages) {
             for (const block of stage) {
