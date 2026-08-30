@@ -65,7 +65,16 @@ fn cuda_state() -> Result<&'static CudaState, TensorError> {
         let runtime = Runtime::open(cache_path);
         Ok(CudaState { runtime: Mutex::new(runtime), device, session })
     });
-    init.as_ref().map_err(|msg| TensorError::Device(format!("CUDA unavailable: {msg}")))
+    init.as_ref().map_err(|msg| {
+        TensorError::from_diagnostic(
+            crate::diagnostic::Diagnostic::error("DXO_TITAN_BACKEND_UNAVAILABLE", format!("CUDA unavailable: {msg}"))
+                .with_arg("requested", "cuda")
+                .with_arg("available", "cpu")
+                .with_detail("debug", msg.clone())
+                .with_backend("cuda")
+                .with_operation("open"),
+        )
+    })
 }
 
 /// Whether a Titan CUDA session can be opened on this machine.
@@ -101,18 +110,18 @@ pub fn capability_fingerprint() -> Result<String, TensorError> {
 pub fn probe_event_dep() -> Result<(), TensorError> {
     let state = cuda_state()?;
     let session = state.session.clone();
-    let upload_stream = session.create_stream().map_err(|e| TensorError::Device(format!("create_stream: {e}")))?;
-    let compute_stream = session.create_stream().map_err(|e| TensorError::Device(format!("create_stream: {e}")))?;
-    let buf = session.allocate(16, 4).map_err(|e| TensorError::Device(format!("allocate: {e}")))?;
+    let upload_stream = session.create_stream().map_err(|e| TensorError::from_hal(e, "cuda"))?;
+    let compute_stream = session.create_stream().map_err(|e| TensorError::from_hal(e, "cuda"))?;
+    let buf = session.allocate(16, 4).map_err(|e| TensorError::from_hal(e, "cuda"))?;
     let bytes = 1.0f32.to_le_bytes();
     let upload_event = session
         .upload(upload_stream.as_ref(), buf.as_ref(), &bytes)
-        .map_err(|e| TensorError::Device(format!("upload: {e}")))?;
+        .map_err(|e| TensorError::from_hal(e, "cuda"))?;
     note_host_transfer();
     session
         .wait_event(compute_stream.as_ref(), upload_event.as_ref())
-        .map_err(|e| TensorError::Device(format!("wait_event: {e}")))?;
-    session.wait(upload_event.as_ref()).map_err(|e| TensorError::Device(format!("wait: {e}")))?;
+        .map_err(|e| TensorError::from_hal(e, "cuda"))?;
+    session.wait(upload_event.as_ref()).map_err(|e| TensorError::from_hal(e, "cuda"))?;
     Ok(())
 }
 
@@ -120,18 +129,35 @@ pub fn probe_event_dep() -> Result<(), TensorError> {
 pub fn upload_f32(shape: &[usize], data: &[f32]) -> Result<TensorHandle, TensorError> {
     let expected = shape.iter().try_fold(1usize, |n, d| n.checked_mul(*d)).unwrap_or(0);
     if data.len() != expected {
-        return Err(TensorError::Shape(format!("CUDA upload length mismatch: got {} expect {}", data.len(), expected)));
+        return Err(TensorError::invalid_shape(format!(
+            "CUDA upload length mismatch: got {} expect {}",
+            data.len(),
+            expected
+        )));
     }
     let state = cuda_state()?;
-    let handle = TensorHandle::from_f32_vec(state.session.clone(), shape.to_vec(), data)
-        .map_err(|e| TensorError::Device(format!("CUDA upload: {e}")))?;
+    let handle = TensorHandle::from_f32_vec(state.session.clone(), shape.to_vec(), data).map_err(|e| {
+        TensorError::from_diagnostic(
+            crate::diagnostic::Diagnostic::error("DXO_TITAN_UPLOAD_FAILED", format!("CUDA upload: {e}"))
+                .with_detail("debug", e.to_string())
+                .with_backend("cuda")
+                .with_operation("upload"),
+        )
+    })?;
     note_host_transfer();
     Ok(handle)
 }
 
 /// Explicit device→host readback (counts as one host transfer).
 pub fn download_f32(handle: &TensorHandle) -> Result<Vec<f32>, TensorError> {
-    let out = handle.to_vec_f32().map_err(|e| TensorError::Device(format!("CUDA readback: {e}")))?;
+    let out = handle.to_vec_f32().map_err(|e| {
+        TensorError::from_diagnostic(
+            crate::diagnostic::Diagnostic::error("DXO_TITAN_READBACK_FAILED", format!("CUDA readback: {e}"))
+                .with_detail("debug", e.to_string())
+                .with_backend("cuda")
+                .with_operation("readback"),
+        )
+    })?;
     note_host_transfer();
     Ok(out)
 }

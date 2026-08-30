@@ -12,7 +12,25 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
 fn map_err(err: dxo_core::TensorError) -> Error {
-    Error::from_reason(err.to_string())
+    let d = err.diagnostic();
+    let mut args = serde_json::Map::new();
+    for (k, v) in &d.args {
+        args.insert(k.clone(), serde_json::Value::String(v.to_display()));
+    }
+    let mut details = serde_json::Map::new();
+    for (k, v) in &d.details {
+        details.insert(k.clone(), serde_json::Value::String(v.clone()));
+    }
+    let payload = serde_json::json!({
+        "code": d.code,
+        "severity": d.severity.as_str(),
+        "message": d.message_dev,
+        "args": args,
+        "details": details,
+        "backend": d.backend,
+        "operation": d.operation,
+    });
+    Error::from_reason(format!("DXO_DIAGNOSTIC:{payload}"))
 }
 
 fn shape_to_usize(shape: Vec<u32>) -> Vec<usize> {

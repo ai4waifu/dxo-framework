@@ -27,17 +27,17 @@ pub const fn backend_label() -> &'static str {
 /// Exercise Titan HAL `wait_event` (upload stream → compute stream) via the CPU session.
 pub fn probe_event_dep() -> Result<(), TensorError> {
     let session = cpu_session();
-    let upload_stream = session.create_stream().map_err(|e| TensorError::Device(format!("create_stream: {e}")))?;
-    let compute_stream = session.create_stream().map_err(|e| TensorError::Device(format!("create_stream: {e}")))?;
-    let buf = session.allocate(16, 4).map_err(|e| TensorError::Device(format!("allocate: {e}")))?;
+    let upload_stream = session.create_stream().map_err(|e| TensorError::from_hal(e, "cpu"))?;
+    let compute_stream = session.create_stream().map_err(|e| TensorError::from_hal(e, "cpu"))?;
+    let buf = session.allocate(16, 4).map_err(|e| TensorError::from_hal(e, "cpu"))?;
     let bytes = 1.0f32.to_le_bytes();
     let upload_event = session
         .upload(upload_stream.as_ref(), buf.as_ref(), &bytes)
-        .map_err(|e| TensorError::Device(format!("upload: {e}")))?;
+        .map_err(|e| TensorError::from_hal(e, "cpu"))?;
     session
         .wait_event(compute_stream.as_ref(), upload_event.as_ref())
-        .map_err(|e| TensorError::Device(format!("wait_event: {e}")))?;
-    session.wait(upload_event.as_ref()).map_err(|e| TensorError::Device(format!("wait: {e}")))?;
+        .map_err(|e| TensorError::from_hal(e, "cpu"))?;
+    session.wait(upload_event.as_ref()).map_err(|e| TensorError::from_hal(e, "cpu"))?;
     Ok(())
 }
 

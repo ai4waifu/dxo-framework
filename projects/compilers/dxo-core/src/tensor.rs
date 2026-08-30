@@ -8,6 +8,7 @@ use rand::RngExt;
 use crate::autograd::{GradFn, GradSlot, accumulate_grad, is_grad_enabled, new_grad_slot, propagate, sum_to_shape};
 use crate::broadcast::{broadcast_offset, broadcast_shapes, for_each_index};
 use crate::cuda;
+use crate::diagnostic::Diagnostic;
 use crate::dtype::DType;
 use crate::shape::{Shape, Strides, contiguous_strides, is_contiguous, numel};
 use crate::storage::Storage;
@@ -30,7 +31,7 @@ impl DeviceKind {
         match s.trim().to_ascii_lowercase().as_str() {
             "cpu" => Ok(Self::Cpu),
             "cuda" => Ok(Self::Cuda),
-            other => Err(TensorError::Device(format!("unknown device '{other}' (supported: cpu, cuda)"))),
+            other => Err(TensorError::unknown_device(other)),
         }
     }
 
@@ -44,7 +45,7 @@ impl DeviceKind {
 }
 
 /// Shape / broadcast / matmul / autograd / device errors surfaced to napi.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TensorError {
     /// Invalid shape or numel mismatch.
     Shape(String),
@@ -54,12 +55,15 @@ pub enum TensorError {
     Autograd(String),
     /// Device placement / CUDA facade errors.
     Device(String),
+    /// Structured diagnostic (preferred wire path).
+    Diagnostic(Box<Diagnostic>),
 }
 
 impl fmt::Display for TensorError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Shape(msg) | Self::Broadcast(msg) | Self::Autograd(msg) | Self::Device(msg) => f.write_str(msg),
+            Self::Diagnostic(d) => f.write_str(&d.message_dev),
         }
     }
 }
@@ -123,7 +127,7 @@ impl Tensor {
     pub fn from_vec(data: Vec<f32>, shape: Vec<usize>) -> Result<Self, TensorError> {
         let n = numel(&shape)?;
         if data.len() != n {
-            return Err(TensorError::Shape(format!(
+            return Err(TensorError::invalid_shape(format!(
                 "data length {} does not match shape product {} (shape={shape:?})",
                 data.len(),
                 n
@@ -209,8 +213,15 @@ impl Tensor {
                     ));
                 }
                 if !cuda::is_available() {
-                    return Err(TensorError::Device(
-                        "CUDA unavailable (no driver/device). Build still supports cpu; gpu-matmul skips when unset.".into(),
+                    return Err(TensorError::from_diagnostic(
+                        crate::diagnostic::Diagnostic::error(
+                            "DXO_TITAN_BACKEND_UNAVAILABLE",
+                            "CUDA unavailable (no driver/device)",
+                        )
+                        .with_arg("requested", "cuda")
+                        .with_arg("available", "cpu")
+                        .with_backend("cuda")
+                        .with_operation("to"),
                     ));
                 }
                 let data = self.to_vec();
@@ -588,10 +599,7 @@ impl Tensor {
     /// Reverse-mode autodiff from a scalar output (shape `[1]` or numel 1).
     pub fn backward(&self) -> Result<(), TensorError> {
         if self.numel() != 1 {
-            return Err(TensorError::Autograd(format!(
-                "backward requires a scalar tensor (numel=1), got shape {:?}",
-                self.shape()
-            )));
+            return Err(TensorError::non_scalar(self.shape(), "backward"));
         }
         if !self.requires_grad {
             return Err(TensorError::Autograd("tensor does not require grad".into()));

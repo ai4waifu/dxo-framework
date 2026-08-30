@@ -1,0 +1,33 @@
+{
+  "dxo": {
+    "unknown": "Unknown error",
+    "backend": {
+      "device_unavailable": "Device {device} is not available in this preview",
+      "unavailable": "Backend {requested} is unavailable; available: {available}",
+      "device_error": "Device operation failed"
+    },
+    "tensor": {
+      "non_scalar": "{operation} requires a scalar tensor, got shape {shape}",
+      "invalid_shape": "Invalid tensor shape",
+      "broadcast_incompatible": "Incompatible broadcast shapes"
+    },
+    "autograd": {
+      "failed": "Autograd failed"
+    },
+    "titan": {
+      "device_not_found": "Titan device not found",
+      "device_lost": "Titan device lost",
+      "cross_device": "Cross-device operation is not allowed",
+      "cross_stream": "Invalid cross-stream dependency",
+      "event_wait_failed": "Titan event wait failed",
+      "allocation_failed": "Titan allocation failed",
+      "invalid_abi": "Titan kernel ABI mismatch",
+      "kernel_unsupported": "Titan kernel unsupported",
+      "kernel_launch_failed": "Titan kernel launch failed",
+      "readback_failed": "Titan readback failed",
+      "upload_failed": "Titan upload failed",
+      "backend_unavailable": "Titan backend {requested} is unavailable; available: {available}",
+      "unknown": "Titan error"
+    }
+  }
+}

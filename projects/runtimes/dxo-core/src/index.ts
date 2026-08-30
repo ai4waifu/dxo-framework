@@ -1,4 +1,6 @@
 import { Buffer } from 'node:buffer';
+import { DxoError, wrapNative } from './errors.js';
+import { formatDiagnostic } from './locale.js';
 import { loadNative } from './native.js';
 import type {
     NativeAdamState,
@@ -31,6 +33,16 @@ export type {
     NativeTensor,
 } from './native-types.js';
 
+export {
+    DxoError,
+    wrapNative,
+    rethrowAsDxoError,
+    type DxoDiagnostic,
+    type DxoErrorInit,
+    type DxoSeverity,
+} from './errors.js';
+export { formatDiagnostic, resolveLocale, type DxoLocale } from './locale.js';
+
 /**
  * Dense float32 tensor (CPU preview + optional CUDA matmul spike).
  *
@@ -54,7 +66,12 @@ export class Tensor {
     get device(): Device {
         const d = this.#handle.device;
         if (d === 'cpu' || d === 'cuda') return d;
-        throw new Error(`unexpected native device tag: ${d}`);
+        throw new DxoError({
+            code: 'DXO_BACKEND_UNAVAILABLE',
+            message: `unexpected native device tag: ${d}`,
+            args: { requested: d, available: 'cpu,cuda' },
+            operation: 'device',
+        });
     }
 
     get requiresGrad(): boolean {
@@ -83,153 +100,172 @@ export class Tensor {
     }
 
     add(other: Tensor): Tensor {
-        return new Tensor(this.#handle.add(other.#handle));
+        return new Tensor(wrapNative(() => this.#handle.add(other.#handle)));
     }
 
     /** `this - other` (broadcast-aware). */
     sub(other: Tensor): Tensor {
-        return new Tensor(this.#handle.sub(other.#handle));
+        return new Tensor(wrapNative(() => this.#handle.sub(other.#handle)));
     }
 
     neg(): Tensor {
-        return new Tensor(this.#handle.neg());
+        return new Tensor(wrapNative(() => this.#handle.neg()));
     }
 
     div(other: Tensor): Tensor {
-        return new Tensor(this.#handle.div(other.#handle));
+        return new Tensor(wrapNative(() => this.#handle.div(other.#handle)));
     }
 
     mul(other: Tensor): Tensor {
-        return new Tensor(this.#handle.mul(other.#handle));
+        return new Tensor(wrapNative(() => this.#handle.mul(other.#handle)));
     }
 
     matmul(other: Tensor): Tensor {
-        return new Tensor(this.#handle.matmul(other.#handle));
+        return new Tensor(wrapNative(() => this.#handle.matmul(other.#handle)));
     }
 
     reshape(shape: readonly number[]): Tensor {
-        return new Tensor(this.#handle.reshape([...shape]));
+        return new Tensor(wrapNative(() => this.#handle.reshape([...shape])));
     }
 
     transpose(): Tensor {
-        return new Tensor(this.#handle.transpose());
+        return new Tensor(wrapNative(() => this.#handle.transpose()));
     }
 
     relu(): Tensor {
-        return new Tensor(this.#handle.relu());
+        return new Tensor(wrapNative(() => this.#handle.relu()));
     }
 
     /** Sum all elements → scalar tensor of shape `[1]`. */
     sum(): Tensor {
-        return new Tensor(this.#handle.sum());
+        return new Tensor(wrapNative(() => this.#handle.sum()));
     }
 
     /** Mean of all elements → scalar tensor of shape `[1]`. */
     mean(): Tensor {
-        return new Tensor(this.#handle.mean());
+        return new Tensor(wrapNative(() => this.#handle.mean()));
     }
 
     max(): Tensor {
-        return new Tensor(this.#handle.maxAll());
+        return new Tensor(wrapNative(() => this.#handle.maxAll()));
     }
 
     softmax(): Tensor {
-        return new Tensor(this.#handle.softmax());
+        return new Tensor(wrapNative(() => this.#handle.softmax()));
     }
 
     logSoftmax(): Tensor {
-        return new Tensor(this.#handle.logSoftmax());
+        return new Tensor(wrapNative(() => this.#handle.logSoftmax()));
     }
 
     narrow(dim: number, start: number, len: number): Tensor {
-        return new Tensor(this.#handle.narrow(dim, start, len));
+        return new Tensor(wrapNative(() => this.#handle.narrow(dim, start, len)));
     }
 
     conv2d(weight: Tensor, bias: Tensor | null, stride: number, padding: number): Tensor {
-        return new Tensor(this.#handle.conv2d(weight.nativeHandle, bias ? bias.nativeHandle : null, stride, padding));
+        return new Tensor(
+            wrapNative(() => this.#handle.conv2d(weight.nativeHandle, bias ? bias.nativeHandle : null, stride, padding)),
+        );
     }
 
     maxPool2d(kernel: number, stride: number, padding: number): Tensor {
-        return new Tensor(this.#handle.maxPool2d(kernel, stride, padding));
+        return new Tensor(wrapNative(() => this.#handle.maxPool2d(kernel, stride, padding)));
     }
 
     batchNorm2d(gamma: Tensor, beta: Tensor, eps = 1e-5): Tensor {
-        return new Tensor(this.#handle.batchNorm2d(gamma.nativeHandle, beta.nativeHandle, eps));
+        return new Tensor(wrapNative(() => this.#handle.batchNorm2d(gamma.nativeHandle, beta.nativeHandle, eps)));
     }
 
     /** LayerNorm over the last dimension. */
     layerNorm(weight: Tensor, bias: Tensor, eps = 1e-5): Tensor {
-        return new Tensor(this.#handle.layerNorm(weight.nativeHandle, bias.nativeHandle, eps));
+        return new Tensor(wrapNative(() => this.#handle.layerNorm(weight.nativeHandle, bias.nativeHandle, eps)));
     }
 
     /** Batch matmul `[B,M,K] @ [B,K,N]`. */
     bmm(other: Tensor): Tensor {
-        return new Tensor(this.#handle.bmm(other.nativeHandle));
+        return new Tensor(wrapNative(() => this.#handle.bmm(other.nativeHandle)));
     }
 
     /** Swap the last two axes. */
     transposeLast(): Tensor {
-        return new Tensor(this.#handle.transposeLast());
+        return new Tensor(wrapNative(() => this.#handle.transposeLast()));
     }
 
     /** Swap two axes. */
     transposeDims(dim0: number, dim1: number): Tensor {
-        return new Tensor(this.#handle.transposeDims(dim0, dim1));
+        return new Tensor(wrapNative(() => this.#handle.transposeDims(dim0, dim1)));
     }
 
     /** Scaled dot-product attention; `this`/`k`/`v` are `[B,H,T,D]`. */
     scaledDotProductAttention(k: Tensor, v: Tensor, causal = false): Tensor {
-        return new Tensor(this.#handle.scaledDotProductAttention(k.nativeHandle, v.nativeHandle, causal));
+        return new Tensor(wrapNative(() => this.#handle.scaledDotProductAttention(k.nativeHandle, v.nativeHandle, causal)));
     }
 
     /** Retag logical dtype without changing host f32 payload. */
     castDtype(dtype: DType): Tensor {
-        return new Tensor(this.#handle.castDtype(dtype));
+        return new Tensor(wrapNative(() => this.#handle.castDtype(dtype)));
     }
 
     /** Values only — drops requiresGrad and tape edges. */
     detach(): Tensor {
-        return new Tensor(this.#handle.detach());
+        return new Tensor(wrapNative(() => this.#handle.detach()));
     }
 
     /** Move to `cpu` or `cuda` (CUDA requires detached tensor in this preview). */
     to(device: 'cpu' | 'cuda'): Tensor {
-        return new Tensor(this.#handle.to(device));
+        return new Tensor(wrapNative(() => this.#handle.to(device)));
     }
 
     /** Clear accumulated gradient on this leaf/intermediate slot. */
     zeroGrad(): void {
-        this.#handle.zeroGrad();
+        wrapNative(() => this.#handle.zeroGrad());
     }
 
     /** Reverse-mode from a scalar output. */
     backward(): void {
-        this.#handle.backward();
+        wrapNative(() => this.#handle.backward());
     }
 
     /** CPU preview: resolves immediately once host values are available. */
     async ready(): Promise<void> {}
 
     toFloat32Array(): Promise<Float32Array> {
-        return Promise.resolve(Float32Array.from(this.#handle.toArray()));
+        return Promise.resolve(Float32Array.from(wrapNative(() => this.#handle.toArray())));
     }
 
     async toArray(): Promise<number[]> {
-        return this.#handle.toArray();
+        return wrapNative(() => this.#handle.toArray());
     }
 
     async item(): Promise<number> {
         if (this.numel() !== 1) {
-            throw new Error(`item() requires a scalar tensor, got shape [${this.shape.join(',')}]`);
+            throw new DxoError({
+                code: 'DXO_TENSOR_NON_SCALAR',
+                message: `item() requires a scalar tensor, got shape [${this.shape.join(',')}]`,
+                args: { shape: `[${this.shape.join(',')}]`, operation: 'item' },
+                details: { shape: [...this.shape] },
+                operation: 'item',
+            });
         }
         const values = await this.toArray();
         return values[0]!;
+    }
+
+    /** Localize this error-like diagnostic from a thrown `DxoError` helper path. */
+    static formatError(err: DxoError, locale?: string | null): string {
+        return formatDiagnostic(err.toDiagnostic(), locale);
     }
 }
 
 function assertCpu(options: Pick<TensorOptions, 'device'>): void {
     if (options.device && options.device !== 'cpu') {
-        throw new Error(`device '${options.device}' is not available in this preview (cpu only)`);
+        throw new DxoError({
+            code: 'DXO_DEVICE_UNAVAILABLE',
+            message: `device '${options.device}' is not available in this preview (cpu only)`,
+            args: { device: options.device },
+            details: { requestedDevice: options.device },
+            operation: 'tensor',
+        });
     }
 }
 
@@ -240,66 +276,70 @@ export function tensor(data: TensorData, shape: readonly number[], options: Tens
     const rg = options.requiresGrad ?? false;
     if (data instanceof Float32Array) {
         const buf = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
-        return new Tensor(native.tensorF32(buf, [...shape], rg));
+        return new Tensor(wrapNative(() => native.tensorF32(buf, [...shape], rg)));
     }
     const flat = flattenData(data);
-    return new Tensor(native.tensor(flat, [...shape], rg));
+    return new Tensor(wrapNative(() => native.tensor(flat, [...shape], rg)));
 }
 
 export function zeros(shape: readonly number[], options: TensorOptions = {}): Tensor {
     assertCpu(options);
     const native = loadNative();
-    return new Tensor(native.zeros([...shape], options.requiresGrad ?? false));
+    return new Tensor(wrapNative(() => native.zeros([...shape], options.requiresGrad ?? false)));
 }
 
 export function ones(shape: readonly number[], options: TensorOptions = {}): Tensor {
     assertCpu(options);
     const native = loadNative();
-    return new Tensor(native.ones([...shape], options.requiresGrad ?? false));
+    return new Tensor(wrapNative(() => native.ones([...shape], options.requiresGrad ?? false)));
 }
 
 export function randn(shape: readonly number[], options: TensorOptions = {}): Tensor {
     assertCpu(options);
     const native = loadNative();
-    return new Tensor(native.randn([...shape], options.requiresGrad ?? false));
+    return new Tensor(wrapNative(() => native.randn([...shape], options.requiresGrad ?? false)));
 }
 
 /** Gather embedding rows: `weight` `[vocab, dim]`, `indices` integer ids. */
 export function embedding(weight: Tensor, indices: Tensor): Tensor {
-    return new Tensor(loadNative().embedding(weight.nativeHandle, indices.nativeHandle));
+    return new Tensor(wrapNative(() => loadNative().embedding(weight.nativeHandle, indices.nativeHandle)));
 }
 
 /** Clear gradients on every leaf in one napi call (train-batch path). */
 export function zeroGrads(params: readonly Tensor[]): void {
-    loadNative().zeroGrads(params.map((p) => p.nativeHandle));
+    wrapNative(() => loadNative().zeroGrads(params.map((p) => p.nativeHandle)));
 }
 
 /** Batch SGD in Rust; returns new `requiresGrad` leaves. */
 export function sgdStep(params: readonly Tensor[], lr: number): Tensor[] {
-    return loadNative()
-        .sgdStep(
-            params.map((p) => p.nativeHandle),
-            lr,
-        )
-        .map((h) => new Tensor(h));
+    return wrapNative(() =>
+        loadNative()
+            .sgdStep(
+                params.map((p) => p.nativeHandle),
+                lr,
+            )
+            .map((h) => new Tensor(h)),
+    );
 }
 
 /** `loss.backward()` then batch SGD in one engine call. */
 export function backwardSgdStep(loss: Tensor, params: readonly Tensor[], lr: number): Tensor[] {
-    return loadNative()
-        .backwardSgdStep(
-            loss.nativeHandle,
-            params.map((p) => p.nativeHandle),
-            lr,
-        )
-        .map((h) => new Tensor(h));
+    return wrapNative(() =>
+        loadNative()
+            .backwardSgdStep(
+                loss.nativeHandle,
+                params.map((p) => p.nativeHandle),
+                lr,
+            )
+            .map((h) => new Tensor(h)),
+    );
 }
 
 /** Native Adam moment state (opaque across steps). */
 export type AdamStateHandle = NativeAdamState;
 
 export function createAdamState(): AdamStateHandle {
-    return new (loadNative().AdamState)();
+    return wrapNative(() => new (loadNative().AdamState)());
 }
 
 /** Batch Adam in Rust; mutates `state` and returns new `requiresGrad` leaves. */
@@ -311,16 +351,18 @@ export function adamStep(
     beta2 = 0.999,
     eps = 1e-8,
 ): Tensor[] {
-    return loadNative()
-        .adamStep(
-            params.map((p) => p.nativeHandle),
-            state,
-            lr,
-            beta1,
-            beta2,
-            eps,
-        )
-        .map((h) => new Tensor(h));
+    return wrapNative(() =>
+        loadNative()
+            .adamStep(
+                params.map((p) => p.nativeHandle),
+                state,
+                lr,
+                beta1,
+                beta2,
+                eps,
+            )
+            .map((h) => new Tensor(h)),
+    );
 }
 
 /** Host draw for sync init paths (e.g. Linear weight init). */

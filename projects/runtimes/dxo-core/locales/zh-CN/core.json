@@ -1,0 +1,33 @@
+{
+  "dxo": {
+    "unknown": "未知错误",
+    "backend": {
+      "device_unavailable": "预览版中设备 {device} 不可用",
+      "unavailable": "后端 {requested} 不可用；可用后端：{available}",
+      "device_error": "设备操作失败"
+    },
+    "tensor": {
+      "non_scalar": "{operation} 需要标量张量，实际形状为 {shape}",
+      "invalid_shape": "张量形状无效",
+      "broadcast_incompatible": "广播形状不兼容"
+    },
+    "autograd": {
+      "failed": "自动微分失败"
+    },
+    "titan": {
+      "device_not_found": "未找到 Titan 设备",
+      "device_lost": "Titan 设备已丢失",
+      "cross_device": "不允许跨设备操作",
+      "cross_stream": "跨 stream 依赖无效",
+      "event_wait_failed": "Titan 事件等待失败",
+      "allocation_failed": "Titan 显存/内存分配失败",
+      "invalid_abi": "Titan kernel ABI 不匹配",
+      "kernel_unsupported": "不支持该 Titan kernel",
+      "kernel_launch_failed": "Titan kernel 启动失败",
+      "readback_failed": "Titan 回读失败",
+      "upload_failed": "Titan 上传失败",
+      "backend_unavailable": "Titan 后端 {requested} 不可用；可用：{available}",
+      "unknown": "Titan 错误"
+    }
+  }
+}

@@ -3574,12 +3574,12 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 [[package]]
 name = "titan-autotune"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#fb70a79c8b05f25f0d29d3324d29602e831c7c43"
+source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#62ff0546052ca5be5dbd49b4d213ba773362697b"
 
 [[package]]
 name = "titan-backend-cpu"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#fb70a79c8b05f25f0d29d3324d29602e831c7c43"
+source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#62ff0546052ca5be5dbd49b4d213ba773362697b"
 dependencies = [
  "titan-hal",
  "titan-kernel",
@@ -3589,7 +3589,7 @@ dependencies = [
 [[package]]
 name = "titan-backend-cuda"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#fb70a79c8b05f25f0d29d3324d29602e831c7c43"
+source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#62ff0546052ca5be5dbd49b4d213ba773362697b"
 dependencies = [
  "libloading 0.8.9",
  "titan-hal",
@@ -3600,7 +3600,7 @@ dependencies = [
 [[package]]
 name = "titan-graph"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#fb70a79c8b05f25f0d29d3324d29602e831c7c43"
+source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#62ff0546052ca5be5dbd49b4d213ba773362697b"
 dependencies = [
  "titan-tensor",
  "titan-types",
@@ -3609,7 +3609,7 @@ dependencies = [
 [[package]]
 name = "titan-hal"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#fb70a79c8b05f25f0d29d3324d29602e831c7c43"
+source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#62ff0546052ca5be5dbd49b4d213ba773362697b"
 dependencies = [
  "libloading 0.8.9",
  "titan-types",
@@ -3618,7 +3618,7 @@ dependencies = [
 [[package]]
 name = "titan-kernel"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#fb70a79c8b05f25f0d29d3324d29602e831c7c43"
+source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#62ff0546052ca5be5dbd49b4d213ba773362697b"
 dependencies = [
  "titan-hal",
  "titan-types",
@@ -3627,12 +3627,12 @@ dependencies = [
 [[package]]
 name = "titan-profiler"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#fb70a79c8b05f25f0d29d3324d29602e831c7c43"
+source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#62ff0546052ca5be5dbd49b4d213ba773362697b"
 
 [[package]]
 name = "titan-runtime"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#fb70a79c8b05f25f0d29d3324d29602e831c7c43"
+source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#62ff0546052ca5be5dbd49b4d213ba773362697b"
 dependencies = [
  "titan-autotune",
  "titan-backend-cpu",
@@ -3649,7 +3649,7 @@ dependencies = [
 [[package]]
 name = "titan-schema"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#fb70a79c8b05f25f0d29d3324d29602e831c7c43"
+source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#62ff0546052ca5be5dbd49b4d213ba773362697b"
 dependencies = [
  "titan-kernel",
  "titan-types",
@@ -3658,7 +3658,7 @@ dependencies = [
 [[package]]
 name = "titan-tensor"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#fb70a79c8b05f25f0d29d3324d29602e831c7c43"
+source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#62ff0546052ca5be5dbd49b4d213ba773362697b"
 dependencies = [
  "titan-hal",
  "titan-types",
@@ -3667,7 +3667,7 @@ dependencies = [
 [[package]]
 name = "titan-types"
 version = "0.1.0"
-source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#fb70a79c8b05f25f0d29d3324d29602e831c7c43"
+source = "git+https://github.com/ai4waifu/titan.rs.git?branch=dev#62ff0546052ca5be5dbd49b4d213ba773362697b"
 
 [[package]]
 name = "tokio"

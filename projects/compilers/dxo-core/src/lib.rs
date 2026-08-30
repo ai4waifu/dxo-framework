@@ -7,6 +7,7 @@ mod autograd;
 mod broadcast;
 mod conv;
 mod cuda;
+mod diagnostic;
 mod dtype;
 mod engine;
 mod ops;
@@ -17,6 +18,9 @@ mod tensor;
 mod transformer;
 
 pub use autograd::{is_grad_enabled, set_grad_enabled, without_grad};
+pub use diagnostic::{
+    Diagnostic, DiagnosticValue, Severity, from_hal_error, from_titan_error, titan_kind_to_code,
+};
 pub use optim::{AdamState, adam_step, backward_sgd_step, sgd_step, zero_grads};
 pub use cuda::{
     capability_fingerprint as cuda_capability_fingerprint, host_transfer_count, is_available as cuda_available,
