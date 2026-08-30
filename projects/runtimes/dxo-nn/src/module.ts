@@ -1,4 +1,4 @@
-import { embedding, ones, randnValues, Tensor, tensor, zeros } from '@dxo/core';
+import { embedding, ones, randnValues, Tensor, tensor, zeros, zeroGrads } from '@dxo/core';
 
 export interface TensorStateSlice {
     shape: number[];
@@ -97,7 +97,7 @@ export abstract class NeuralNetwork {
     }
 
     zeroGrad(): void {
-        for (const p of this.parameters()) p.zeroGrad();
+        zeroGrads(this.parameters());
     }
 }
 

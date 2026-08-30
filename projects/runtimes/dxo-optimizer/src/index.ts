@@ -1,44 +1,47 @@
-import { type Tensor, tensor } from '@dxo/core';
+import {
+    adamStep,
+    backwardSgdStep,
+    createAdamState,
+    sgdStep,
+    type AdamStateHandle,
+    type Tensor,
+} from '@dxo/core';
 
 /**
- * Optimizer contract (G3 / 0.0.4):
+ * Optimizer contract (G3 / train-batch):
  * `step` returns new `requiresGrad` leaves; callers must reassign onto the module
  * (e.g. `linear.loadParameters(opt.step(linear.parameters()))`).
+ * Updates run in Rust (`sgdStep` / `adamStep`) — no per-parameter `toArray` roundtrips.
  */
 export interface Optimizer {
     step(params: Tensor[]): Promise<Tensor[]>;
+    /**
+     * When set, Trainer may fuse `loss.backward()` + SGD in one native call using this lr.
+     * Only SGD exposes this; Adam keeps separate backward + `step`.
+     */
+    readonly fusedSgdLr?: number;
 }
 
 /**
  * Vanilla SGD: `p ← p - lr * grad`.
- * Does not mutate input tensors in place.
+ * Implemented as one native batch call; does not mutate input tensors.
  */
 export class SGD implements Optimizer {
+    readonly fusedSgdLr: number;
+
     constructor(readonly lr: number) {
         if (!(lr > 0)) throw new Error('SGD lr must be positive');
+        this.fusedSgdLr = lr;
     }
 
     async step(params: Tensor[]): Promise<Tensor[]> {
-        return Promise.all(
-            params.map(async (p) => {
-                const g = p.grad;
-                if (!g) return p;
-                const data = await p.toArray();
-                if (data.length !== g.length) {
-                    throw new Error(`SGD grad length mismatch: param=${data.length} grad=${g.length}`);
-                }
-                const next = data.map((v, i) => v - this.lr * g[i]!);
-                return tensor(next, [...p.shape], { requiresGrad: true });
-            }),
-        );
+        return sgdStep(params, this.lr);
     }
 }
 
-/** Adam (β1=0.9, β2=0.999, ε=1e-8); moment state keyed by parameter index. */
+/** Adam (β1=0.9, β2=0.999, ε=1e-8); moment state held in native `AdamState`. */
 export class Adam implements Optimizer {
-    private m: number[][] = [];
-    private v: number[][] = [];
-    private t = 0;
+    readonly #state: AdamStateHandle;
 
     constructor(
         readonly lr: number,
@@ -47,31 +50,18 @@ export class Adam implements Optimizer {
         readonly eps = 1e-8,
     ) {
         if (!(lr > 0)) throw new Error('Adam lr must be positive');
+        this.#state = createAdamState();
     }
 
     async step(params: Tensor[]): Promise<Tensor[]> {
-        this.t += 1;
-        return Promise.all(
-            params.map(async (p, idx) => {
-                const g = p.grad;
-                if (!g) return p;
-                const data = await p.toArray();
-                if (!this.m[idx] || this.m[idx]!.length !== data.length) {
-                    this.m[idx] = new Array(data.length).fill(0);
-                    this.v[idx] = new Array(data.length).fill(0);
-                }
-                const m = this.m[idx]!;
-                const v = this.v[idx]!;
-                const next = new Array<number>(data.length);
-                for (let i = 0; i < data.length; i++) {
-                    m[i] = this.beta1 * m[i]! + (1 - this.beta1) * g[i]!;
-                    v[i] = this.beta2 * v[i]! + (1 - this.beta2) * g[i]! * g[i]!;
-                    const mHat = m[i]! / (1 - this.beta1 ** this.t);
-                    const vHat = v[i]! / (1 - this.beta2 ** this.t);
-                    next[i] = data[i]! - (this.lr * mHat) / (Math.sqrt(vHat) + this.eps);
-                }
-                return tensor(next, [...p.shape], { requiresGrad: true });
-            }),
-        );
+        return adamStep(params, this.#state, this.lr, this.beta1, this.beta2, this.eps);
     }
+}
+
+/**
+ * Fused train step helper: `loss.backward()` + SGD in one engine call.
+ * Trainer may use this instead of separate backward + `optimizer.step`.
+ */
+export async function sgdTrainStep(loss: Tensor, params: Tensor[], lr: number): Promise<Tensor[]> {
+    return backwardSgdStep(loss, params, lr);
 }

@@ -1,4 +1,6 @@
-export type DType = 'f32' | 'f16' | 'bf16' | 'i64' | 'bool';
+export interface NativeAdamState {
+    readonly stepCount: number;
+}
 
 export interface NativeTensor {
     shape: number[];
@@ -96,6 +98,18 @@ export interface NativeAddon {
     cat(tensors: NativeTensor[], dim: number): NativeTensor;
     stack(tensors: NativeTensor[], dim: number): NativeTensor;
     embedding(weight: NativeTensor, indices: NativeTensor): NativeTensor;
+    zeroGrads(params: NativeTensor[]): void;
+    sgdStep(params: NativeTensor[], lr: number): NativeTensor[];
+    backwardSgdStep(loss: NativeTensor, params: NativeTensor[], lr: number): NativeTensor[];
+    AdamState: new () => NativeAdamState;
+    adamStep(
+        params: NativeTensor[],
+        state: NativeAdamState,
+        lr: number,
+        beta1: number,
+        beta2: number,
+        eps: number,
+    ): NativeTensor[];
     /** Loopback inspect HTTP serve (Rust `dxo-studio`). */
     createInspectApiServer(options?: NativeInspectApiServerOptions): NativeInspectApiServerHandle;
     listInspectRuns(runsRoot?: string | null): NativeInspectRunSummary[];

@@ -1,7 +1,7 @@
 import type { Tensor } from '@dxo/core';
 import type { Batch } from '@dxo/data';
 import type { FullyConnected } from '@dxo/nn';
-import type { Optimizer } from '@dxo/optimizer';
+import { sgdTrainStep, type Optimizer } from '@dxo/optimizer';
 import { encodeState, type State } from '@dxo/serialize';
 
 /** Events yielded by {@link Trainer.fitIter} / {@link Trainer.run}. */
@@ -128,8 +128,14 @@ export class Trainer {
                 if (!Number.isFinite(value)) {
                     throw new Error(`non-finite loss at epoch ${epoch} step ${globalStep + 1}: ${value}`);
                 }
-                loss.backward();
-                this.model.loadParameters(await this.optimizer.step(this.model.parameters()));
+                // Prefer fused Rust backward+SGD when optimizer exposes `fusedSgdLr`.
+                const fusedLr = this.optimizer.fusedSgdLr;
+                if (fusedLr !== undefined) {
+                    this.model.loadParameters(await sgdTrainStep(loss, this.model.parameters(), fusedLr));
+                } else {
+                    loss.backward();
+                    this.model.loadParameters(await this.optimizer.step(this.model.parameters()));
+                }
 
                 globalStep += 1;
                 epochSteps += 1;

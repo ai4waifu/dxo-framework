@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { loadNative } from './native.js';
 import type {
+    NativeAdamState,
     NativeDoctorReport,
     NativeInspectApiServerHandle,
     NativeInspectApiServerOptions,
@@ -266,6 +267,60 @@ export function randn(shape: readonly number[], options: TensorOptions = {}): Te
 /** Gather embedding rows: `weight` `[vocab, dim]`, `indices` integer ids. */
 export function embedding(weight: Tensor, indices: Tensor): Tensor {
     return new Tensor(loadNative().embedding(weight.nativeHandle, indices.nativeHandle));
+}
+
+/** Clear gradients on every leaf in one napi call (train-batch path). */
+export function zeroGrads(params: readonly Tensor[]): void {
+    loadNative().zeroGrads(params.map((p) => p.nativeHandle));
+}
+
+/** Batch SGD in Rust; returns new `requiresGrad` leaves. */
+export function sgdStep(params: readonly Tensor[], lr: number): Tensor[] {
+    return loadNative()
+        .sgdStep(
+            params.map((p) => p.nativeHandle),
+            lr,
+        )
+        .map((h) => new Tensor(h));
+}
+
+/** `loss.backward()` then batch SGD in one engine call. */
+export function backwardSgdStep(loss: Tensor, params: readonly Tensor[], lr: number): Tensor[] {
+    return loadNative()
+        .backwardSgdStep(
+            loss.nativeHandle,
+            params.map((p) => p.nativeHandle),
+            lr,
+        )
+        .map((h) => new Tensor(h));
+}
+
+/** Native Adam moment state (opaque across steps). */
+export type AdamStateHandle = NativeAdamState;
+
+export function createAdamState(): AdamStateHandle {
+    return new (loadNative().AdamState)();
+}
+
+/** Batch Adam in Rust; mutates `state` and returns new `requiresGrad` leaves. */
+export function adamStep(
+    params: readonly Tensor[],
+    state: AdamStateHandle,
+    lr: number,
+    beta1 = 0.9,
+    beta2 = 0.999,
+    eps = 1e-8,
+): Tensor[] {
+    return loadNative()
+        .adamStep(
+            params.map((p) => p.nativeHandle),
+            state,
+            lr,
+            beta1,
+            beta2,
+            eps,
+        )
+        .map((h) => new Tensor(h));
 }
 
 /** Host draw for sync init paths (e.g. Linear weight init). */

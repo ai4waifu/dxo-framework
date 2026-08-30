@@ -356,6 +356,69 @@ pub fn stack(tensors: Vec<&Tensor>, dim: u32) -> Result<Tensor> {
     Ok(Tensor { inner: CoreTensor::stack(&owned, dim as usize).map_err(map_err)? })
 }
 
+/// Clear gradients on every parameter in one napi call.
+#[napi]
+pub fn zero_grads(params: Vec<&Tensor>) {
+    let refs: Vec<&CoreTensor> = params.iter().map(|t| &t.inner).collect();
+    dxo_core::zero_grads(&refs);
+}
+
+/// Batch SGD: returns new `requiresGrad` leaves (CPU-only preview slice).
+#[napi]
+pub fn sgd_step(params: Vec<&Tensor>, lr: f64) -> Result<Vec<Tensor>> {
+    let refs: Vec<&CoreTensor> = params.iter().map(|t| &t.inner).collect();
+    let updated = dxo_core::sgd_step(&refs, lr as f32).map_err(map_err)?;
+    Ok(updated.into_iter().map(|inner| Tensor { inner }).collect())
+}
+
+/// `loss.backward()` then batch SGD in one engine call.
+#[napi]
+pub fn backward_sgd_step(loss: &Tensor, params: Vec<&Tensor>, lr: f64) -> Result<Vec<Tensor>> {
+    let refs: Vec<&CoreTensor> = params.iter().map(|t| &t.inner).collect();
+    let updated = dxo_core::backward_sgd_step(&loss.inner, &refs, lr as f32).map_err(map_err)?;
+    Ok(updated.into_iter().map(|inner| Tensor { inner }).collect())
+}
+
+/// Opaque Adam moment state held in native memory across steps.
+#[napi]
+#[derive(Debug)]
+pub struct AdamState {
+    inner: dxo_core::AdamState,
+}
+
+#[napi]
+impl AdamState {
+    /// Empty moment buffers (grown on first `adamStep`).
+    #[napi(constructor)]
+    pub fn new() -> Self {
+        Self {
+            inner: dxo_core::AdamState::default(),
+        }
+    }
+
+    /// Optimizer step counter after the last `adamStep`.
+    #[napi(getter)]
+    pub fn step_count(&self) -> u32 {
+        u32::try_from(self.inner.t).unwrap_or(u32::MAX)
+    }
+}
+
+/// Batch Adam; mutates `state` and returns new `requiresGrad` leaves.
+#[napi]
+pub fn adam_step(
+    params: Vec<&Tensor>,
+    state: &mut AdamState,
+    lr: f64,
+    beta1: f64,
+    beta2: f64,
+    eps: f64,
+) -> Result<Vec<Tensor>> {
+    let refs: Vec<&CoreTensor> = params.iter().map(|t| &t.inner).collect();
+    let updated =
+        dxo_core::adam_step(&refs, &mut state.inner, lr as f32, beta1 as f32, beta2 as f32, eps as f32).map_err(map_err)?;
+    Ok(updated.into_iter().map(|inner| Tensor { inner }).collect())
+}
+
 /// Create a tensor filled with zeros.
 #[napi]
 pub fn zeros(shape: Vec<u32>, requires_grad: Option<bool>) -> Result<Tensor> {

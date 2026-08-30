@@ -123,6 +123,18 @@ export const SUITES: SuiteDef[] = [
         timeoutMs: 120_000,
     },
     {
+        id: 'train-batch-rust',
+        script: 'scripts/test/train-batch-rust.ts',
+        group: 'cpu',
+        packages: ['@dxo/core', '@dxo/nn', '@dxo/optimizer', '@dxo/train'],
+        platforms: ['all'],
+        backend: ['cpu'],
+        requiresGpu: false,
+        requiresNetwork: false,
+        allowSkip: false,
+        timeoutMs: 120_000,
+    },
+    {
         id: 'framework-core-cnn',
         script: 'scripts/test/framework-core-cnn.ts',
         group: 'cpu',
