@@ -11,9 +11,7 @@ use titan_graph::{EffectContract, OpRequest, TensorSpec};
 use titan_hal::{BackendDriver, DeviceSession};
 use titan_runtime::Runtime;
 use titan_tensor::{Device, Tensor, TensorHandle};
-use titan_types::{
-    AliasContract, AttrMap, AttrValue, DType, Layout, MemoryEffect, OperatorId, Shape, SourceSpan, Strides,
-};
+use titan_types::{AliasContract, AttrMap, AttrValue, DType, Layout, MemoryEffect, OperatorId, Shape, SourceSpan, Strides};
 
 use crate::tensor::TensorError;
 
@@ -122,11 +120,7 @@ pub fn probe_event_dep() -> Result<(), TensorError> {
 pub fn upload_f32(shape: &[usize], data: &[f32]) -> Result<TensorHandle, TensorError> {
     let expected = shape.iter().try_fold(1usize, |n, d| n.checked_mul(*d)).unwrap_or(0);
     if data.len() != expected {
-        return Err(TensorError::Shape(format!(
-            "CUDA upload length mismatch: got {} expect {}",
-            data.len(),
-            expected
-        )));
+        return Err(TensorError::Shape(format!("CUDA upload length mismatch: got {} expect {}", data.len(), expected)));
     }
     let state = cuda_state()?;
     let handle = TensorHandle::from_f32_vec(state.session.clone(), shape.to_vec(), data)
@@ -137,9 +131,7 @@ pub fn upload_f32(shape: &[usize], data: &[f32]) -> Result<TensorHandle, TensorE
 
 /// Explicit device→host readback (counts as one host transfer).
 pub fn download_f32(handle: &TensorHandle) -> Result<Vec<f32>, TensorError> {
-    let out = handle
-        .to_vec_f32()
-        .map_err(|e| TensorError::Device(format!("CUDA readback: {e}")))?;
+    let out = handle.to_vec_f32().map_err(|e| TensorError::Device(format!("CUDA readback: {e}")))?;
     note_host_transfer();
     Ok(out)
 }
@@ -152,11 +144,7 @@ fn execute_keeping_device(request: OpRequest) -> Result<TensorHandle, TensorErro
         .map_err(|e| TensorError::Device(format!("CUDA dispatch: {e}")))?
         .wait()
         .map_err(|e| TensorError::Device(format!("CUDA completion: {e}")))?;
-    finished
-        .outputs
-        .into_iter()
-        .next()
-        .ok_or_else(|| TensorError::Device("CUDA op returned no outputs".into()))
+    finished.outputs.into_iter().next().ok_or_else(|| TensorError::Device("CUDA op returned no outputs".into()))
 }
 
 /// Contiguous row-major f32 GEMM on CUDA, **keeping** the result on device.
@@ -187,22 +175,12 @@ pub fn gemm_f32(lhs: &[f32], m: usize, k: usize, rhs: &[f32], n: usize) -> Resul
 
 /// Element-wise add (same shape) on device.
 pub fn add_handles(lhs: &TensorHandle, rhs: &TensorHandle, shape: &[usize]) -> Result<TensorHandle, TensorError> {
-    execute_keeping_device(op_request(
-        "elementwise.add.f32",
-        vec![lhs.clone(), rhs.clone()],
-        shape.to_vec(),
-        AttrMap::new(),
-    ))
+    execute_keeping_device(op_request("elementwise.add.f32", vec![lhs.clone(), rhs.clone()], shape.to_vec(), AttrMap::new()))
 }
 
 /// Broadcast add on device.
 pub fn broadcast_add_handles(lhs: &TensorHandle, rhs: &TensorHandle, out_shape: &[usize]) -> Result<TensorHandle, TensorError> {
-    execute_keeping_device(op_request(
-        "broadcast.add",
-        vec![lhs.clone(), rhs.clone()],
-        out_shape.to_vec(),
-        AttrMap::new(),
-    ))
+    execute_keeping_device(op_request("broadcast.add", vec![lhs.clone(), rhs.clone()], out_shape.to_vec(), AttrMap::new()))
 }
 
 /// Softmax along last axis on device.
@@ -224,12 +202,7 @@ pub fn conv2d_handles(
     let mut attrs = AttrMap::new();
     attrs.insert("stride".into(), AttrValue::Int(stride as i64));
     attrs.insert("padding".into(), AttrValue::Int(padding as i64));
-    execute_keeping_device(op_request(
-        "conv2d",
-        vec![input.clone(), weight.clone()],
-        out_shape.to_vec(),
-        attrs,
-    ))
+    execute_keeping_device(op_request("conv2d", vec![input.clone(), weight.clone()], out_shape.to_vec(), attrs))
 }
 
 /// Scaled dot-product attention on device (q/k/v same last dims).

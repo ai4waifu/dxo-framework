@@ -215,15 +215,7 @@ impl Tensor {
                 }
                 let data = self.to_vec();
                 let handle = cuda::upload_f32(self.shape(), &data)?;
-                Ok(Self::from_storage_on(
-                    Storage::from_device(handle),
-                    0,
-                    self.shape(),
-                    false,
-                    None,
-                    None,
-                    DeviceKind::Cuda,
-                ))
+                Ok(Self::from_storage_on(Storage::from_device(handle), 0, self.shape(), false, None, None, DeviceKind::Cuda))
             }
         }
     }
@@ -308,9 +300,7 @@ impl Tensor {
             Storage::Device(handle) if self.is_contiguous() && self.offset == 0 => {
                 cuda::download_f32(handle).unwrap_or_else(|_| Vec::new())
             }
-            Storage::Host(data) if self.is_contiguous() && self.offset == 0 => {
-                data[..self.numel()].to_vec()
-            }
+            Storage::Host(data) if self.is_contiguous() && self.offset == 0 => data[..self.numel()].to_vec(),
             Storage::Device(_) => {
                 // Non-contiguous device views: download dense then gather (rare in preview).
                 let dense = match self.storage.device_handle() {
@@ -489,15 +479,7 @@ impl Tensor {
             let a = self.device_handle_for_op()?;
             let b = other.device_handle_for_op()?;
             let handle = cuda::broadcast_add_handles(&a, &b, &out_shape)?;
-            return Ok(Self::from_storage_on(
-                Storage::from_device(handle),
-                0,
-                &out_shape,
-                false,
-                None,
-                None,
-                DeviceKind::Cuda,
-            ));
+            return Ok(Self::from_storage_on(Storage::from_device(handle), 0, &out_shape, false, None, None, DeviceKind::Cuda));
         }
         let out = self.binary_broadcast(other, |a, b| a + b)?;
         Ok(Self::maybe_attach(out, &[self, other], Arc::new(AddBackward { a: self.clone(), b: other.clone() })))
@@ -530,7 +512,8 @@ impl Tensor {
             oi += 1;
         });
         // CPU kernels materialize host results even when tagged cuda (autograd path).
-        Ok(Self::from_storage_on(Storage::from_vec(out), 0, &out_shape, false, None, None, DeviceKind::Cpu).pipe_device(self.device))
+        Ok(Self::from_storage_on(Storage::from_vec(out), 0, &out_shape, false, None, None, DeviceKind::Cpu)
+            .pipe_device(self.device))
     }
 
     fn pipe_device(mut self, device: DeviceKind) -> Self {
@@ -569,15 +552,7 @@ impl Tensor {
             let a = self.device_handle_for_op()?;
             let b = other.device_handle_for_op()?;
             let handle = cuda::gemm_handles(&a, &b, m, n)?;
-            return Ok(Self::from_storage_on(
-                Storage::from_device(handle),
-                0,
-                &[m, n],
-                false,
-                None,
-                None,
-                DeviceKind::Cuda,
-            ));
+            return Ok(Self::from_storage_on(Storage::from_device(handle), 0, &[m, n], false, None, None, DeviceKind::Cuda));
         }
 
         let a = self.to_vec();
