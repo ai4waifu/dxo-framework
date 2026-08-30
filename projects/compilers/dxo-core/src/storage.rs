@@ -18,11 +18,9 @@ impl fmt::Debug for Storage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Host(data) => f.debug_tuple("Host").field(&data.len()).finish(),
-            Self::Device(handle) => f
-                .debug_struct("Device")
-                .field("shape", &handle.shape())
-                .field("dtype", &handle.dtype())
-                .finish(),
+            Self::Device(handle) => {
+                f.debug_struct("Device").field("shape", &handle.shape()).field("dtype", &handle.dtype()).finish()
+            }
         }
     }
 }
