@@ -1,7 +1,4 @@
-//! Titan-backed CPU engine facade.
-//!
-//! Host tensors in this slice still use shared CPU storage; the session proves
-//! the Titan HAL boundary is wired for later device-buffer uploads.
+//! Titan-backed CPU engine facade + CUDA event probe entry points.
 
 use std::sync::{Arc, OnceLock};
 
@@ -28,9 +25,6 @@ pub const fn backend_label() -> &'static str {
 }
 
 /// Exercise Titan HAL `wait_event` (upload stream → compute stream) via the CPU session.
-///
-/// This proves DXO consumes the HAL dependency primitive rather than substituting a host
-/// `await`. CUDA cross-stream proof remains a separate machine-gated check.
 pub fn probe_event_dep() -> Result<(), TensorError> {
     let session = cpu_session();
     let upload_stream = session.create_stream().map_err(|e| TensorError::Device(format!("create_stream: {e}")))?;
@@ -45,4 +39,9 @@ pub fn probe_event_dep() -> Result<(), TensorError> {
         .map_err(|e| TensorError::Device(format!("wait_event: {e}")))?;
     session.wait(upload_event.as_ref()).map_err(|e| TensorError::Device(format!("wait: {e}")))?;
     Ok(())
+}
+
+/// CUDA HAL `wait_event` probe (fails when CUDA unavailable).
+pub fn probe_event_dep_cuda() -> Result<(), TensorError> {
+    crate::cuda::probe_event_dep()
 }

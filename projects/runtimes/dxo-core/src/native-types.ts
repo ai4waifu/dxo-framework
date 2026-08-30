@@ -82,6 +82,10 @@ export interface NativeAddon {
     cudaAvailable(): boolean;
     doctorReport(): NativeDoctorReport;
     probeEventDep(): void;
+    probeEventDepCuda(): void;
+    hostTransferCount(): number;
+    resetHostTransferCount(): void;
+    cudaCapabilityFingerprint(): string;
     setGradEnabled(enabled: boolean): boolean;
     isGradEnabled(): boolean;
     tensor(data: number[], shape: number[], requiresGrad?: boolean): NativeTensor;

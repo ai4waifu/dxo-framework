@@ -1,4 +1,4 @@
-//! CPU float32 tensor with shared storage, stride views, eager autograd, and CUDA device tags.
+//! CPU float32 tensor with shared storage, stride views, eager autograd, and CUDA residency.
 
 use std::fmt;
 use std::sync::Arc;
@@ -12,8 +12,10 @@ use crate::dtype::DType;
 use crate::shape::{Shape, Strides, contiguous_strides, is_contiguous, numel};
 use crate::storage::Storage;
 
-/// Placement for tensor values. CPU tensors use host storage; CUDA matmul uses
-/// Titan runtime dispatch with explicit readback (host mirror spike — not device-resident yet).
+/// Placement for tensor values.
+///
+/// CUDA tensors prefer opaque Titan device buffers; host materialization happens
+/// only on explicit readback (`to_vec` / `to('cpu')`) or CPU-only ops.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeviceKind {
     /// Host CPU storage.
@@ -189,7 +191,7 @@ impl Tensor {
         self.device
     }
 
-    /// Explicit device migration. CUDA path requires a usable NVIDIA driver.
+    /// Explicit device migration. CUDA path uploads into opaque Titan storage.
     /// Autograd leaves must be detached before moving to CUDA in this spike.
     pub fn to(&self, device: DeviceKind) -> Result<Self, TensorError> {
         if device == self.device {
@@ -211,19 +213,17 @@ impl Tensor {
                         "CUDA unavailable (no driver/device). Build still supports cpu; gpu-matmul skips when unset.".into(),
                     ));
                 }
-                if !self.is_contiguous() || self.offset != 0 {
-                    let data = self.to_vec();
-                    return Ok(Self::from_storage_on(
-                        Storage::from_vec(data),
-                        0,
-                        self.shape(),
-                        false,
-                        None,
-                        None,
-                        DeviceKind::Cuda,
-                    ));
-                }
-                Ok(Self::from_storage_on(self.storage.clone(), self.offset, self.shape(), false, None, None, DeviceKind::Cuda))
+                let data = self.to_vec();
+                let handle = cuda::upload_f32(self.shape(), &data)?;
+                Ok(Self::from_storage_on(
+                    Storage::from_device(handle),
+                    0,
+                    self.shape(),
+                    false,
+                    None,
+                    None,
+                    DeviceKind::Cuda,
+                ))
             }
         }
     }
@@ -302,18 +302,50 @@ impl Tensor {
         self.storage.ptr_eq(&other.storage)
     }
 
-    /// Dense copy of tensor elements.
+    /// Dense copy of tensor elements (device tensors perform explicit readback).
     pub fn to_vec(&self) -> Vec<f32> {
-        let out_len = self.numel();
-        if self.is_contiguous() && self.offset == 0 {
-            let slice = &self.storage.data()[..out_len];
-            return slice.to_vec();
+        match &self.storage {
+            Storage::Device(handle) if self.is_contiguous() && self.offset == 0 => {
+                cuda::download_f32(handle).unwrap_or_else(|_| Vec::new())
+            }
+            Storage::Host(data) if self.is_contiguous() && self.offset == 0 => {
+                data[..self.numel()].to_vec()
+            }
+            Storage::Device(_) => {
+                // Non-contiguous device views: download dense then gather (rare in preview).
+                let dense = match self.storage.device_handle() {
+                    Some(h) => cuda::download_f32(h).unwrap_or_default(),
+                    None => Vec::new(),
+                };
+                let host = Self::from_storage_on(Storage::from_vec(dense), 0, self.shape(), false, None, None, DeviceKind::Cpu);
+                let mut out = vec![0.0; self.numel()];
+                let mut idx = 0usize;
+                for_each_index(self.shape(), |coords| {
+                    out[idx] = host.read(coords);
+                    idx += 1;
+                });
+                out
+            }
+            Storage::Host(_) => {
+                let out_len = self.numel();
+                let mut out = vec![0.0; out_len];
+                self.for_each(|idx, value| {
+                    out[idx] = value;
+                });
+                out
+            }
         }
-        let mut out = vec![0.0; out_len];
-        self.for_each(|idx, value| {
-            out[idx] = value;
-        });
-        out
+    }
+
+    /// Host buffer for CPU kernels; downloads once when storage is device-resident.
+    pub(crate) fn host_arc(&self) -> Result<Arc<Vec<f32>>, TensorError> {
+        match &self.storage {
+            Storage::Host(data) => Ok(data.clone()),
+            Storage::Device(handle) => {
+                let data = cuda::download_f32(handle)?;
+                Ok(Arc::new(data))
+            }
+        }
     }
 
     fn linear_offset(&self, coords: &[usize]) -> usize {
@@ -325,7 +357,14 @@ impl Tensor {
     }
 
     fn read(&self, coords: &[usize]) -> f32 {
-        self.storage.data()[self.linear_offset(coords)]
+        match &self.storage {
+            Storage::Host(data) => data[self.linear_offset(coords)],
+            Storage::Device(_) => {
+                // Fallback path — prefer contiguous device ops that avoid per-element reads.
+                let host = self.host_arc().unwrap_or_else(|_| Arc::new(Vec::new()));
+                host.get(self.linear_offset(coords)).copied().unwrap_or(0.0)
+            }
+        }
     }
 
     fn for_each(&self, mut f: impl FnMut(usize, f32)) {
@@ -335,6 +374,25 @@ impl Tensor {
             f(idx, self.read(coords));
             idx += 1;
         });
+    }
+
+    /// Storage offset in elements (crate-internal).
+    pub(crate) fn storage_offset(&self) -> usize {
+        self.offset
+    }
+
+    /// Ensure a device handle for CUDA ops (uploads host storage if needed).
+    pub(crate) fn device_handle_for_op(&self) -> Result<titan_tensor::TensorHandle, TensorError> {
+        if self.device != DeviceKind::Cuda {
+            return Err(TensorError::Device("device handle requested for non-CUDA tensor".into()));
+        }
+        if !self.is_contiguous() || self.offset != 0 {
+            return Err(TensorError::Device("CUDA op requires contiguous tensor (offset 0)".into()));
+        }
+        match &self.storage {
+            Storage::Device(handle) => Ok(handle.clone()),
+            Storage::Host(data) => cuda::upload_f32(self.shape(), data.as_slice()),
+        }
     }
 
     pub(crate) fn maybe_attach(mut out: Self, parents: &[&Self], grad_fn: Arc<dyn GradFn>) -> Self {
@@ -398,6 +456,49 @@ impl Tensor {
 
     /// Element-wise add with NumPy-style broadcast.
     pub fn add(&self, other: &Self) -> Result<Self, TensorError> {
+        if self.device == DeviceKind::Cuda
+            && other.device == DeviceKind::Cuda
+            && self.shape() == other.shape()
+            && self.is_contiguous()
+            && other.is_contiguous()
+            && self.offset == 0
+            && other.offset == 0
+            && !self.requires_grad
+            && !other.requires_grad
+        {
+            let a = self.device_handle_for_op()?;
+            let b = other.device_handle_for_op()?;
+            let handle = cuda::add_handles(&a, &b, self.shape())?;
+            return Ok(Self::from_storage_on(
+                Storage::from_device(handle),
+                0,
+                self.shape(),
+                false,
+                None,
+                None,
+                DeviceKind::Cuda,
+            ));
+        }
+        if self.device == DeviceKind::Cuda
+            && other.device == DeviceKind::Cuda
+            && self.shape() != other.shape()
+            && !self.requires_grad
+            && !other.requires_grad
+        {
+            let out_shape = broadcast_shapes(self.shape(), other.shape())?;
+            let a = self.device_handle_for_op()?;
+            let b = other.device_handle_for_op()?;
+            let handle = cuda::broadcast_add_handles(&a, &b, &out_shape)?;
+            return Ok(Self::from_storage_on(
+                Storage::from_device(handle),
+                0,
+                &out_shape,
+                false,
+                None,
+                None,
+                DeviceKind::Cuda,
+            ));
+        }
         let out = self.binary_broadcast(other, |a, b| a + b)?;
         Ok(Self::maybe_attach(out, &[self, other], Arc::new(AddBackward { a: self.clone(), b: other.clone() })))
     }
@@ -416,6 +517,8 @@ impl Tensor {
                 other.device.as_str()
             )));
         }
+        let a = self.host_arc()?;
+        let b = other.host_arc()?;
         let out_shape = broadcast_shapes(self.shape(), other.shape())?;
         let rank = out_shape.len();
         let mut out = vec![0.0; numel(&out_shape)?];
@@ -423,10 +526,19 @@ impl Tensor {
         for_each_index(&out_shape, |index| {
             let li = self.offset + broadcast_offset(index, self.shape(), self.strides(), rank);
             let ri = other.offset + broadcast_offset(index, other.shape(), other.strides(), rank);
-            out[oi] = op(self.storage.data()[li], other.storage.data()[ri]);
+            out[oi] = op(a[li], b[ri]);
             oi += 1;
         });
-        Ok(Self::from_storage_on(Storage::from_vec(out), 0, &out_shape, false, None, None, self.device))
+        // CPU kernels materialize host results even when tagged cuda (autograd path).
+        Ok(Self::from_storage_on(Storage::from_vec(out), 0, &out_shape, false, None, None, DeviceKind::Cpu).pipe_device(self.device))
+    }
+
+    fn pipe_device(mut self, device: DeviceKind) -> Self {
+        if device == DeviceKind::Cuda {
+            // Keep host mirror but retag — prefer explicit device ops above for residency.
+            self.device = DeviceKind::Cuda;
+        }
+        self
     }
 
     /// Matrix multiply for rank-2 tensors: `[m,k] @ [k,n] -> [m,n]`.
@@ -454,10 +566,18 @@ impl Tensor {
             if !self.is_contiguous() || self.offset != 0 || !other.is_contiguous() || other.offset != 0 {
                 return Err(TensorError::Device("CUDA matmul requires contiguous rank-2 inputs (offset 0)".into()));
             }
-            let a = self.to_vec();
-            let b = other.to_vec();
-            let out = cuda::gemm_f32(&a, m, k, &b, n)?;
-            return Ok(Self::from_storage_on(Storage::from_vec(out), 0, &[m, n], false, None, None, DeviceKind::Cuda));
+            let a = self.device_handle_for_op()?;
+            let b = other.device_handle_for_op()?;
+            let handle = cuda::gemm_handles(&a, &b, m, n)?;
+            return Ok(Self::from_storage_on(
+                Storage::from_device(handle),
+                0,
+                &[m, n],
+                false,
+                None,
+                None,
+                DeviceKind::Cuda,
+            ));
         }
 
         let a = self.to_vec();
@@ -567,14 +687,16 @@ impl GradFn for MulBackward {
     fn apply(&self, grad_output: &[f32]) -> Result<(), TensorError> {
         let out_shape = broadcast_shapes(self.a.shape(), self.b.shape())?;
         let rank = out_shape.len();
+        let a_host = self.a.host_arc()?;
+        let b_host = self.b.host_arc()?;
         let mut ga_full = vec![0.0f32; grad_output.len()];
         let mut gb_full = vec![0.0f32; grad_output.len()];
         let mut oi = 0usize;
         for_each_index(&out_shape, |index| {
             let li = self.a.offset + broadcast_offset(index, self.a.shape(), self.a.strides(), rank);
             let ri = self.b.offset + broadcast_offset(index, self.b.shape(), self.b.strides(), rank);
-            let av = self.a.storage.data()[li];
-            let bv = self.b.storage.data()[ri];
+            let av = a_host[li];
+            let bv = b_host[ri];
             let g = grad_output[oi];
             ga_full[oi] = g * bv;
             gb_full[oi] = g * av;

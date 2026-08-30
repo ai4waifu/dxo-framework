@@ -71,6 +71,30 @@ pub fn probe_event_dep() -> Result<()> {
     dxo_core::probe_event_dep().map_err(map_err)
 }
 
+/// Probe HAL `wait_event` on the CUDA session (errors when CUDA unavailable).
+#[napi]
+pub fn probe_event_dep_cuda() -> Result<()> {
+    dxo_core::probe_event_dep_cuda().map_err(map_err)
+}
+
+/// Host↔device transfer counter (residency instrumentation).
+#[napi]
+pub fn host_transfer_count() -> u32 {
+    u32::try_from(dxo_core::host_transfer_count()).unwrap_or(u32::MAX)
+}
+
+/// Reset host-transfer counter (GPU residency verifies).
+#[napi]
+pub fn reset_host_transfer_count() {
+    dxo_core::reset_host_transfer_count();
+}
+
+/// CUDA capability fingerprint for GPU CI manifests.
+#[napi]
+pub fn cuda_capability_fingerprint() -> Result<String> {
+    dxo_core::cuda_capability_fingerprint().map_err(map_err)
+}
+
 /// Set whether the current thread records autograd ops; returns previous flag.
 #[napi]
 pub fn set_grad_enabled(enabled: bool) -> bool {

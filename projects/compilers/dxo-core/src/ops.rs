@@ -43,11 +43,28 @@ impl Tensor {
         Self::maybe_attach(base, &[self], Arc::new(MaxBackward { input: self.clone() }))
     }
 
-    /// Softmax along the last dimension (stable).
+    /// Softmax along the last dimension (stable). CUDA uses Titan `softmax` without host roundtrip when detached.
     pub fn softmax(&self) -> Result<Self, TensorError> {
         let rank = self.shape().len();
         if rank == 0 {
             return Err(TensorError::Shape("softmax requires rank >= 1".into()));
+        }
+        if self.device() == crate::tensor::DeviceKind::Cuda
+            && self.is_contiguous()
+            && self.storage_offset() == 0
+            && !self.requires_grad()
+        {
+            let handle = self.device_handle_for_op()?;
+            let out = crate::cuda::softmax_handle(&handle, self.shape())?;
+            return Ok(Self::from_storage_on(
+                Storage::from_device(out),
+                0,
+                self.shape(),
+                false,
+                None,
+                None,
+                crate::tensor::DeviceKind::Cuda,
+            ));
         }
         let axis = rank - 1;
         let outer: usize = self.shape()[..axis].iter().product();

@@ -118,11 +118,32 @@ try {
     );
 
     const defaultsJson = JSON.stringify(verifyScripts);
+    const dxoCommit =
+        process.env.GITHUB_SHA ||
+        spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout?.trim() ||
+        'unknown';
+    writeFileSync(
+        path.join(stage, 'evidence-manifest.json'),
+        JSON.stringify(
+            {
+                schema: 'dxo-gpu-evidence/v0',
+                packedAt: new Date().toISOString(),
+                dxoCommit,
+                githubRef: process.env.GITHUB_REF ?? null,
+                githubRunId: process.env.GITHUB_RUN_ID ?? null,
+                suites: verifyScripts,
+                requireCuda: true,
+                notes: 'Fill driver/capability/realDevice on Modal runner after nvidia-smi + probe.',
+            },
+            null,
+            2,
+        ),
+    );
     writeFileSync(
         path.join(stage, 'run-verifies.mjs'),
         `#!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -134,16 +155,48 @@ if (!list.length) {
   console.error('no verify scripts found');
   process.exit(1);
 }
+
+const results = [];
 for (const name of list) {
   console.log('---', name);
+  const started = Date.now();
   const r = spawnSync(process.execPath, ['--import', 'tsx', path.join(root, 'scripts', name)], {
     cwd: root,
     stdio: 'inherit',
     env: { ...process.env, DXO_REQUIRE_CUDA: '1' },
   });
-  if ((r.status ?? 1) !== 0) process.exit(r.status ?? 1);
+  const status = r.status ?? 1;
+  results.push({ suite: name, status, ms: Date.now() - started, skipped: false });
+  if (status !== 0) {
+    writeEvidence(results, false);
+    process.exit(status);
+  }
 }
+writeEvidence(results, true);
 console.log('gpu-verify bundle ok');
+
+function writeEvidence(suiteResults, ok) {
+  const manifestPath = path.join(root, 'evidence-manifest.json');
+  let base = {};
+  try { base = JSON.parse(readFileSync(manifestPath, 'utf8')); } catch {}
+  let fingerprint = null;
+  try {
+    const probe = spawnSync(process.execPath, ['--import', 'tsx', '-e',
+      "import { cudaAvailable, cudaCapabilityFingerprint } from '@dxo/core'; console.log(cudaAvailable() ? cudaCapabilityFingerprint() : '')"],
+      { cwd: root, encoding: 'utf8', env: { ...process.env, DXO_REQUIRE_CUDA: '1' } });
+    fingerprint = (probe.stdout || '').trim() || null;
+  } catch {}
+  const out = {
+    ...base,
+    completedAt: new Date().toISOString(),
+    ok,
+    realDevice: true,
+    capabilityFingerprint: fingerprint,
+    suiteResults,
+  };
+  writeFileSync(path.join(root, 'evidence-result.json'), JSON.stringify(out, null, 2));
+  console.log('wrote evidence-result.json');
+}
 `,
     );
 

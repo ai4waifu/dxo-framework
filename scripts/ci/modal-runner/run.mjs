@@ -60,13 +60,25 @@ const sb = await modal.sandboxes.create(app, image, {
 
 try {
     console.log(`modal-gpu-verify: sandbox=${sb.sandboxId}`);
-    await execChecked(sb, ['nvidia-smi']);
+    const smi = await execChecked(sb, ['nvidia-smi', '--query-gpu=name,driver_version,memory.total', '--format=csv,noheader']);
 
     console.log(`modal-gpu-verify: upload ${artifact}`);
     await sb.filesystem.copyFromLocal(artifact, remoteTar);
     await execChecked(sb, ['bash', '-lc', `rm -rf ${remoteDir} && mkdir -p ${remoteDir} && tar -xzf ${remoteTar} -C ${remoteDir}`]);
 
+    // Stamp driver evidence into the packed manifest before verifies run.
+    await execChecked(sb, [
+        'bash',
+        '-lc',
+        `cd ${remoteDir} && node -e ${JSON.stringify(
+            `const fs=require('fs');const p='evidence-manifest.json';const m=JSON.parse(fs.readFileSync(p,'utf8'));m.gpu=${JSON.stringify(gpu)};m.nvidiaSmi=${JSON.stringify(smi.stdout.trim())};m.modalSandboxId=${JSON.stringify(sb.sandboxId)};fs.writeFileSync(p,JSON.stringify(m,null,2));`,
+        )}`,
+    ]);
+
     await execChecked(sb, ['bash', '-lc', `cd ${remoteDir} && DXO_REQUIRE_CUDA=1 node run-verifies.mjs`]);
+
+    // Best-effort: print evidence result for GHA logs.
+    await execChecked(sb, ['bash', '-lc', `cd ${remoteDir} && test -f evidence-result.json && cat evidence-result.json || true`]);
 
     console.log('modal-gpu-verify: ok');
 } finally {

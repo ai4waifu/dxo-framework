@@ -242,10 +242,11 @@ export const SUITES: SuiteDef[] = [
         allowSkip: false,
         timeoutMs: 60_000,
     },
+    // Vision GPU-model suites need multi-package pack; run under Modal only after pack vendors vision/nn/serialize.
     {
         id: 'vision-resnet-state',
         script: 'scripts/test/vision-resnet-state.ts',
-        /** Heavy ResNet forward — GPU verify lane only; never ordinary cloud CPU CI. */
+        /** Heavy ResNet forward — GPU verify lane; not in core-only Modal artifact yet. */
         group: 'gpu-model',
         packages: ['@dxo/vision', '@dxo/core', '@dxo/nn'],
         platforms: ['all'],
@@ -254,12 +255,12 @@ export const SUITES: SuiteDef[] = [
         requiresNetwork: false,
         allowSkip: true,
         timeoutMs: 120_000,
-        includeInGpuArtifact: true,
+        includeInGpuArtifact: false,
     },
     {
         id: 'vision-load-weights',
         script: 'scripts/test/vision-load-weights.ts',
-        /** Safetensors encode/decode + ResNet loadState — GPU artifact pack, not cloud CPU CI. */
+        /** Safetensors encode/decode + ResNet loadState — GPU lane; not in core-only Modal artifact yet. */
         group: 'gpu-model',
         packages: ['@dxo/vision', '@dxo/core', '@dxo/nn', '@dxo/serialize'],
         platforms: ['all'],
@@ -268,7 +269,7 @@ export const SUITES: SuiteDef[] = [
         requiresNetwork: false,
         allowSkip: true,
         timeoutMs: 180_000,
-        includeInGpuArtifact: true,
+        includeInGpuArtifact: false,
     },
     {
         id: 'titan-event-dep',
@@ -355,6 +356,54 @@ export const SUITES: SuiteDef[] = [
         allowSkip: false,
         timeoutMs: 120_000,
     },
+    {
+        id: 'gpu-parity',
+        script: 'scripts/test/gpu-parity.ts',
+        group: 'gpu-parity',
+        packages: ['@dxo/core'],
+        platforms: ['linux'],
+        backend: ['cuda'],
+        requiresGpu: true,
+        requiresNetwork: false,
+        allowSkip: false,
+        timeoutMs: 180_000,
+    },
+    {
+        id: 'gpu-residency',
+        script: 'scripts/test/gpu-residency.ts',
+        group: 'gpu-residency',
+        packages: ['@dxo/core'],
+        platforms: ['linux'],
+        backend: ['cuda'],
+        requiresGpu: true,
+        requiresNetwork: false,
+        allowSkip: false,
+        timeoutMs: 120_000,
+    },
+    {
+        id: 'gpu-readback',
+        script: 'scripts/test/gpu-readback.ts',
+        group: 'gpu-residency',
+        packages: ['@dxo/core'],
+        platforms: ['linux'],
+        backend: ['cuda'],
+        requiresGpu: true,
+        requiresNetwork: false,
+        allowSkip: false,
+        timeoutMs: 60_000,
+    },
+    {
+        id: 'gpu-device-mismatch',
+        script: 'scripts/test/gpu-device-mismatch.ts',
+        group: 'gpu-residency',
+        packages: ['@dxo/core'],
+        platforms: ['linux'],
+        backend: ['cuda'],
+        requiresGpu: true,
+        requiresNetwork: false,
+        allowSkip: false,
+        timeoutMs: 60_000,
+    },
 ];
 
 export const SUITE_BY_ID: ReadonlyMap<string, SuiteDef> = new Map(SUITES.map((s) => [s.id, s]));
@@ -378,7 +427,13 @@ export function selectGroupSuites(group: SuiteGroup, platform: NodeJS.Platform =
     return SUITES.filter((s) => s.group === group && suiteMatchesPlatform(s, platform));
 }
 
-/** Suites packed into the Modal GPU verify artifact. */
+/** Suites packed into the Modal GPU verify artifact.
+ * Modal pack currently vendors `@dxo/core` only — non-core packages stay out until multi-package pack lands.
+ */
 export function selectGpuArtifactSuites(): SuiteDef[] {
-    return SUITES.filter((s) => s.requiresGpu || s.includeInGpuArtifact === true);
+    return SUITES.filter((s) => {
+        if (s.includeInGpuArtifact === true) return true;
+        if (!s.requiresGpu) return false;
+        return s.packages.every((p) => p === '@dxo/core');
+    });
 }

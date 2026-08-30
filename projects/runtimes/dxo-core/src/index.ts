@@ -299,6 +299,26 @@ export function probeEventDep(): void {
     loadNative().probeEventDep();
 }
 
+/** Probe HAL `wait_event` on CUDA (throws when CUDA unavailable). */
+export function probeEventDepCuda(): void {
+    loadNative().probeEventDepCuda();
+}
+
+/** Host↔device transfer count since process start / last reset. */
+export function hostTransferCount(): number {
+    return loadNative().hostTransferCount();
+}
+
+/** Reset residency transfer counter. */
+export function resetHostTransferCount(): void {
+    loadNative().resetHostTransferCount();
+}
+
+/** CUDA capability fingerprint for GPU CI manifests. */
+export function cudaCapabilityFingerprint(): string {
+    return loadNative().cudaCapabilityFingerprint();
+}
+
 /** Default inspect runs root (same rule as napi inspect HTTP serve). */
 export function defaultInspectRunsRoot(): string {
     return loadNative().defaultInspectRunsRoot();
