@@ -208,8 +208,13 @@ impl Tensor {
             }
             DeviceKind::Cuda => {
                 if self.requires_grad || self.grad_fn.is_some() {
-                    return Err(TensorError::Device(
-                        "to('cuda') requires a detached tensor without requiresGrad in this preview".into(),
+                    return Err(TensorError::from_diagnostic(
+                        crate::diagnostic::Diagnostic::error(
+                            "DXO_TENSOR_REQUIRES_DETACH",
+                            "to('cuda') requires a detached tensor without requiresGrad in this preview",
+                        )
+                        .with_arg("device", "cuda")
+                        .with_operation("to"),
                     ));
                 }
                 if !cuda::is_available() {

@@ -19,6 +19,7 @@ const CODE_TO_KEY: Record<string, string> = {
     DXO_BACKEND_UNAVAILABLE: 'dxo.backend.unavailable',
     DXO_TENSOR_NON_SCALAR: 'dxo.tensor.non_scalar',
     DXO_TENSOR_INVALID_SHAPE: 'dxo.tensor.invalid_shape',
+    DXO_TENSOR_REQUIRES_DETACH: 'dxo.tensor.requires_detach',
     DXO_TENSOR_BROADCAST_INCOMPATIBLE: 'dxo.tensor.broadcast_incompatible',
     DXO_AUTOGRAD_FAILED: 'dxo.autograd.failed',
     DXO_DEVICE_ERROR: 'dxo.backend.device_error',

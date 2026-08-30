@@ -9,6 +9,7 @@
     "tensor": {
       "non_scalar": "{operation} 需要标量张量，实际形状为 {shape}",
       "invalid_shape": "张量形状无效",
+      "requires_detach": "迁移到 {device} 需要已 detach 且无 requiresGrad 的张量",
       "broadcast_incompatible": "广播形状不兼容"
     },
     "autograd": {

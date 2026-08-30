@@ -9,6 +9,7 @@
     "tensor": {
       "non_scalar": "{operation} requires a scalar tensor, got shape {shape}",
       "invalid_shape": "Invalid tensor shape",
+      "requires_detach": "Moving to {device} requires a detached tensor without requiresGrad",
       "broadcast_incompatible": "Incompatible broadcast shapes"
     },
     "autograd": {
