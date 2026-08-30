@@ -3,13 +3,7 @@
  * Counts explicit uploads (to cuda) + one final readback only.
  */
 import assert from 'node:assert/strict';
-import {
-    cudaAvailable,
-    hostTransferCount,
-    resetHostTransferCount,
-    tensor,
-    version,
-} from '@dxo/core';
+import { cudaAvailable, hostTransferCount, resetHostTransferCount, tensor, version } from '@dxo/core';
 
 const v = version();
 if (!cudaAvailable()) {
@@ -32,11 +26,7 @@ assert.ok(afterUpload - before >= 2, `expected ≥2 uploads, got ${afterUpload -
 const mid = hostTransferCount();
 const c = a.matmul(b).matmul(b).add(a);
 const afterOps = hostTransferCount();
-assert.equal(
-    afterOps,
-    mid,
-    `device-resident chain must not transfer (mid=${mid} afterOps=${afterOps})`,
-);
+assert.equal(afterOps, mid, `device-resident chain must not transfer (mid=${mid} afterOps=${afterOps})`);
 
 const out = await c.toArray();
 const afterRead = hostTransferCount();

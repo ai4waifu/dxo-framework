@@ -119,9 +119,7 @@ try {
 
     const defaultsJson = JSON.stringify(verifyScripts);
     const dxoCommit =
-        process.env.GITHUB_SHA ||
-        spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout?.trim() ||
-        'unknown';
+        process.env.GITHUB_SHA || spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).stdout?.trim() || 'unknown';
     writeFileSync(
         path.join(stage, 'evidence-manifest.json'),
         JSON.stringify(
