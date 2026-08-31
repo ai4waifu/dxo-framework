@@ -31,12 +31,9 @@ pub fn probe_event_dep() -> Result<(), TensorError> {
     let compute_stream = session.create_stream().map_err(|e| TensorError::from_hal(e, "cpu"))?;
     let buf = session.allocate(16, 4).map_err(|e| TensorError::from_hal(e, "cpu"))?;
     let bytes = 1.0f32.to_le_bytes();
-    let upload_event = session
-        .upload(upload_stream.as_ref(), buf.as_ref(), &bytes)
-        .map_err(|e| TensorError::from_hal(e, "cpu"))?;
-    session
-        .wait_event(compute_stream.as_ref(), upload_event.as_ref())
-        .map_err(|e| TensorError::from_hal(e, "cpu"))?;
+    let upload_event =
+        session.upload(upload_stream.as_ref(), buf.as_ref(), &bytes).map_err(|e| TensorError::from_hal(e, "cpu"))?;
+    session.wait_event(compute_stream.as_ref(), upload_event.as_ref()).map_err(|e| TensorError::from_hal(e, "cpu"))?;
     session.wait(upload_event.as_ref()).map_err(|e| TensorError::from_hal(e, "cpu"))?;
     Ok(())
 }

@@ -114,13 +114,10 @@ pub fn probe_event_dep() -> Result<(), TensorError> {
     let compute_stream = session.create_stream().map_err(|e| TensorError::from_hal(e, "cuda"))?;
     let buf = session.allocate(16, 4).map_err(|e| TensorError::from_hal(e, "cuda"))?;
     let bytes = 1.0f32.to_le_bytes();
-    let upload_event = session
-        .upload(upload_stream.as_ref(), buf.as_ref(), &bytes)
-        .map_err(|e| TensorError::from_hal(e, "cuda"))?;
+    let upload_event =
+        session.upload(upload_stream.as_ref(), buf.as_ref(), &bytes).map_err(|e| TensorError::from_hal(e, "cuda"))?;
     note_host_transfer();
-    session
-        .wait_event(compute_stream.as_ref(), upload_event.as_ref())
-        .map_err(|e| TensorError::from_hal(e, "cuda"))?;
+    session.wait_event(compute_stream.as_ref(), upload_event.as_ref()).map_err(|e| TensorError::from_hal(e, "cuda"))?;
     session.wait(upload_event.as_ref()).map_err(|e| TensorError::from_hal(e, "cuda"))?;
     Ok(())
 }
@@ -129,11 +126,7 @@ pub fn probe_event_dep() -> Result<(), TensorError> {
 pub fn upload_f32(shape: &[usize], data: &[f32]) -> Result<TensorHandle, TensorError> {
     let expected = shape.iter().try_fold(1usize, |n, d| n.checked_mul(*d)).unwrap_or(0);
     if data.len() != expected {
-        return Err(TensorError::invalid_shape(format!(
-            "CUDA upload length mismatch: got {} expect {}",
-            data.len(),
-            expected
-        )));
+        return Err(TensorError::invalid_shape(format!("CUDA upload length mismatch: got {} expect {}", data.len(), expected)));
     }
     let state = cuda_state()?;
     let handle = TensorHandle::from_f32_vec(state.session.clone(), shape.to_vec(), data).map_err(|e| {

@@ -25,11 +25,7 @@ pub fn sgd_step(params: &[&Tensor], lr: f32) -> Result<Vec<Tensor>, TensorError>
             Some(g) => {
                 let data = p.to_vec();
                 if data.len() != g.len() {
-                    return Err(TensorError::Shape(format!(
-                        "SGD grad length mismatch: param={} grad={}",
-                        data.len(),
-                        g.len()
-                    )));
+                    return Err(TensorError::Shape(format!("SGD grad length mismatch: param={} grad={}", data.len(), g.len())));
                 }
                 let next: Vec<f32> = data.iter().zip(g.iter()).map(|(x, gi)| x - lr * gi).collect();
                 out.push(Tensor::from_vec_grad(next, p.shape().to_vec(), true)?);
@@ -119,10 +115,7 @@ pub fn backward_sgd_step(loss: &Tensor, params: &[&Tensor], lr: f32) -> Result<V
 
 fn ensure_cpu_leaf(p: &Tensor, op: &str) -> Result<(), TensorError> {
     if p.device() != DeviceKind::Cpu {
-        return Err(TensorError::Device(format!(
-            "{op} is CPU-only in this preview slice (got {})",
-            p.device().as_str()
-        )));
+        return Err(TensorError::Device(format!("{op} is CPU-only in this preview slice (got {})", p.device().as_str())));
     }
     Ok(())
 }

@@ -409,9 +409,7 @@ impl AdamState {
     /// Empty moment buffers (grown on first `adamStep`).
     #[napi(constructor)]
     pub fn new() -> Self {
-        Self {
-            inner: dxo_core::AdamState::default(),
-        }
+        Self { inner: dxo_core::AdamState::default() }
     }
 
     /// Optimizer step counter after the last `adamStep`.

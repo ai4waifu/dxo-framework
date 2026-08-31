@@ -177,26 +177,20 @@ impl TensorError {
     /// Device / backend unavailable (preview CPU-only or missing adapter).
     pub fn device_unavailable(device: &str) -> Self {
         Self::from_diagnostic(
-            Diagnostic::error(
-                "DXO_DEVICE_UNAVAILABLE",
-                format!("device '{device}' is not available in this preview"),
-            )
-            .with_arg("device", device)
-            .with_detail("requestedDevice", device)
-            .with_operation("to"),
+            Diagnostic::error("DXO_DEVICE_UNAVAILABLE", format!("device '{device}' is not available in this preview"))
+                .with_arg("device", device)
+                .with_detail("requestedDevice", device)
+                .with_operation("to"),
         )
     }
 
     /// Unknown device tag in parse path.
     pub fn unknown_device(tag: &str) -> Self {
         Self::from_diagnostic(
-            Diagnostic::error(
-                "DXO_BACKEND_UNAVAILABLE",
-                format!("unknown device '{tag}' (supported: cpu, cuda)"),
-            )
-            .with_arg("requested", tag)
-            .with_arg("available", "cpu,cuda")
-            .with_operation("parse"),
+            Diagnostic::error("DXO_BACKEND_UNAVAILABLE", format!("unknown device '{tag}' (supported: cpu, cuda)"))
+                .with_arg("requested", tag)
+                .with_arg("available", "cpu,cuda")
+                .with_operation("parse"),
         )
     }
 
@@ -204,23 +198,18 @@ impl TensorError {
     pub fn non_scalar(shape: &[usize], operation: &'static str) -> Self {
         let shape_s = format!("{shape:?}");
         Self::from_diagnostic(
-            Diagnostic::error(
-                "DXO_TENSOR_NON_SCALAR",
-                format!("{operation} requires a scalar tensor, got shape {shape_s}"),
-            )
-            .with_arg("shape", shape_s.clone())
-            .with_arg("operation", operation)
-            .with_detail("shape", shape_s)
-            .with_operation(operation),
+            Diagnostic::error("DXO_TENSOR_NON_SCALAR", format!("{operation} requires a scalar tensor, got shape {shape_s}"))
+                .with_arg("shape", shape_s.clone())
+                .with_arg("operation", operation)
+                .with_detail("shape", shape_s)
+                .with_operation(operation),
         )
     }
 
     /// Shape / numel mismatch.
     pub fn invalid_shape(message: impl Into<String>) -> Self {
         let message = message.into();
-        Self::from_diagnostic(
-            Diagnostic::error("DXO_TENSOR_INVALID_SHAPE", message.clone()).with_detail("debug", message),
-        )
+        Self::from_diagnostic(Diagnostic::error("DXO_TENSOR_INVALID_SHAPE", message.clone()).with_detail("debug", message))
     }
 
     /// Project any `TensorError` to a [`Diagnostic`] (legacy variants get default codes).
@@ -232,11 +221,8 @@ impl TensorError {
                 Diagnostic::error("DXO_TENSOR_BROADCAST_INCOMPATIBLE", msg.clone()).with_detail("debug", msg.clone())
             }
             Self::Autograd(msg) => {
-                let code = if msg.to_ascii_lowercase().contains("scalar") {
-                    "DXO_TENSOR_NON_SCALAR"
-                } else {
-                    "DXO_AUTOGRAD_FAILED"
-                };
+                let code =
+                    if msg.to_ascii_lowercase().contains("scalar") { "DXO_TENSOR_NON_SCALAR" } else { "DXO_AUTOGRAD_FAILED" };
                 Diagnostic::error(code, msg.clone()).with_detail("debug", msg.clone())
             }
             Self::Device(msg) => {
@@ -252,9 +238,7 @@ impl TensorError {
                 } else {
                     "DXO_DEVICE_ERROR"
                 };
-                Diagnostic::error(code, msg.clone())
-                    .with_detail("debug", msg.clone())
-                    .with_backend("cuda")
+                Diagnostic::error(code, msg.clone()).with_detail("debug", msg.clone()).with_backend("cuda")
             }
         }
     }

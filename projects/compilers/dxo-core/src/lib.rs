@@ -18,16 +18,14 @@ mod tensor;
 mod transformer;
 
 pub use autograd::{is_grad_enabled, set_grad_enabled, without_grad};
-pub use diagnostic::{
-    Diagnostic, DiagnosticValue, Severity, from_hal_error, from_titan_error, titan_kind_to_code,
-};
-pub use optim::{AdamState, adam_step, backward_sgd_step, sgd_step, zero_grads};
 pub use cuda::{
     capability_fingerprint as cuda_capability_fingerprint, host_transfer_count, is_available as cuda_available,
     reset_host_transfer_count,
 };
+pub use diagnostic::{Diagnostic, DiagnosticValue, Severity, from_hal_error, from_titan_error, titan_kind_to_code};
 pub use dtype::DType;
 pub use engine::{backend_label, cpu_session, probe_event_dep, probe_event_dep_cuda};
+pub use optim::{AdamState, adam_step, backward_sgd_step, sgd_step, zero_grads};
 pub use shape::{Shape, Strides, contiguous_strides};
 pub use storage::Storage;
 pub use tensor::{DeviceKind, Tensor, TensorError};
