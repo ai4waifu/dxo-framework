@@ -7,7 +7,10 @@
 use std::fmt;
 use std::fs;
 
-use dxo_core::{DeviceKind, Tensor as CoreTensor};
+use dxo_core::{
+    AlphaMode, ColorSpace, DeviceKind, HostImageBuffer, ImageDtype, ImageLayout, Tensor as CoreTensor,
+    precision_capabilities as core_precision_capabilities, resolve_weight_dtype as core_resolve_weight_dtype,
+};
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
@@ -426,6 +429,12 @@ pub struct AdamState {
     inner: dxo_core::AdamState,
 }
 
+impl Default for AdamState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[napi]
 impl AdamState {
     /// Empty moment buffers (grown on first `adamStep`).
@@ -503,7 +512,6 @@ pub fn adam_step(
 
 /// Named f32 tensor buffer for safetensors encode.
 #[napi(object)]
-#[derive(Debug)]
 pub struct SafetensorBufferEntry {
     /// Tensor key.
     pub name: String,
@@ -513,9 +521,18 @@ pub struct SafetensorBufferEntry {
     pub data: Buffer,
 }
 
+impl fmt::Debug for SafetensorBufferEntry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SafetensorBufferEntry")
+            .field("name", &self.name)
+            .field("shape", &self.shape)
+            .field("data", &format!("<Buffer {} bytes>", self.data.len()))
+            .finish()
+    }
+}
+
 /// Decoded safetensors tensor entry.
 #[napi(object)]
-#[derive(Debug)]
 pub struct DecodedSafetensorEntry {
     /// Tensor key.
     pub name: String,
@@ -525,14 +542,32 @@ pub struct DecodedSafetensorEntry {
     pub data: Buffer,
 }
 
+impl fmt::Debug for DecodedSafetensorEntry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("DecodedSafetensorEntry")
+            .field("name", &self.name)
+            .field("shape", &self.shape)
+            .field("data", &format!("<Buffer {} bytes>", self.data.len()))
+            .finish()
+    }
+}
+
 /// Result of [`decode_safetensors`].
 #[napi(object)]
-#[derive(Debug)]
 pub struct DecodeSafetensorsResult {
     /// Named tensor payloads (excludes `__metadata__`).
     pub tensors: Vec<DecodedSafetensorEntry>,
     /// Metadata map as JSON object string (may be `{}`).
     pub metadata_json: String,
+}
+
+impl fmt::Debug for DecodeSafetensorsResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("DecodeSafetensorsResult")
+            .field("tensors", &self.tensors)
+            .field("metadata_json", &self.metadata_json)
+            .finish()
+    }
 }
 
 fn entries_to_map(
@@ -989,6 +1024,190 @@ pub fn inspect_external_weights(format: String, data: Buffer) -> Result<Vec<Exte
 pub fn inspect_external_weights_file(format: String, path: String) -> Result<Vec<ExternalTensorInfo>> {
     let bytes = fs::read(path).map_err(|e| Error::from_reason(e.to_string()))?;
     inspect_external_weights(format, Buffer::from(bytes))
+}
+
+/// Runtime precision capability report (Living `12` — honest f32-only compute until mixed-precision lands).
+#[napi(object)]
+#[derive(Debug)]
+pub struct PrecisionCapsReport {
+    /// Active backend label (`cpu` / `cuda`).
+    pub backend: String,
+    /// CUDA session probe.
+    pub cuda_available: bool,
+    /// Weight dtypes available on this build.
+    pub weights: Vec<String>,
+    /// Activation dtypes available for compute.
+    pub activations: Vec<String>,
+    /// Accumulation dtypes for matmul/reduction style ops.
+    pub accumulation: Vec<String>,
+}
+
+/// Probe precision capabilities without fabricating int8/f16 kernels.
+#[napi]
+pub fn precision_capabilities() -> PrecisionCapsReport {
+    let caps = core_precision_capabilities();
+    PrecisionCapsReport {
+        backend: caps.backend.to_string(),
+        cuda_available: caps.cuda_available,
+        weights: caps.weights.iter().map(|s| (*s).to_string()).collect(),
+        activations: caps.activations.iter().map(|s| (*s).to_string()).collect(),
+        accumulation: caps.accumulation.iter().map(|s| (*s).to_string()).collect(),
+    }
+}
+
+/// Resolve a requested weight dtype against capabilities (throws when unavailable).
+#[napi]
+pub fn resolve_weight_dtype(requested: String) -> Result<String> {
+    let caps = core_precision_capabilities();
+    core_resolve_weight_dtype(&requested, &caps)
+        .map(|s| s.to_string())
+        .map_err(map_err)
+}
+
+fn parse_image_dtype(raw: &str) -> Result<ImageDtype> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "u8" => Ok(ImageDtype::U8),
+        "u16" => Ok(ImageDtype::U16),
+        "f32" | "float32" => Ok(ImageDtype::F32),
+        other => Err(Error::from_reason(format!("ImageBuffer: unsupported dtype '{other}'"))),
+    }
+}
+
+fn parse_image_layout(raw: &str) -> Result<ImageLayout> {
+    match raw.trim().to_ascii_uppercase().as_str() {
+        "HWC" => Ok(ImageLayout::Hwc),
+        "CHW" => Ok(ImageLayout::Chw),
+        other => Err(Error::from_reason(format!("ImageBuffer: unsupported layout '{other}'"))),
+    }
+}
+
+fn parse_color_space(raw: &str) -> Result<ColorSpace> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "rgb" => Ok(ColorSpace::Rgb),
+        "rgba" => Ok(ColorSpace::Rgba),
+        "gray" | "grey" => Ok(ColorSpace::Gray),
+        "bgr" => Ok(ColorSpace::Bgr),
+        "unknown" => Ok(ColorSpace::Unknown),
+        other => Err(Error::from_reason(format!("ImageBuffer: unsupported colorSpace '{other}'"))),
+    }
+}
+
+fn parse_alpha_mode(raw: &str) -> Result<AlphaMode> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "opaque" => Ok(AlphaMode::Opaque),
+        "straight" => Ok(AlphaMode::Straight),
+        "premultiplied" => Ok(AlphaMode::Premultiplied),
+        "none" => Ok(AlphaMode::None),
+        other => Err(Error::from_reason(format!("ImageBuffer: unsupported alphaMode '{other}'"))),
+    }
+}
+
+/// Typed host image pixel carrier (Living `11` napi bridge).
+#[napi]
+pub struct ImageBuffer {
+    inner: HostImageBuffer,
+}
+
+impl fmt::Debug for ImageBuffer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ImageBuffer")
+            .field("width", &self.inner.width)
+            .field("height", &self.inner.height)
+            .field("channels", &self.inner.channels)
+            .finish()
+    }
+}
+
+#[napi]
+impl ImageBuffer {
+    /// Width in pixels.
+    #[napi(getter)]
+    pub fn width(&self) -> u32 {
+        self.inner.width
+    }
+
+    /// Height in pixels.
+    #[napi(getter)]
+    pub fn height(&self) -> u32 {
+        self.inner.height
+    }
+
+    /// Channel count.
+    #[napi(getter)]
+    pub fn channels(&self) -> u32 {
+        self.inner.channels
+    }
+
+    /// Pixel dtype label (`u8` / `u16` / `f32`).
+    #[napi(getter)]
+    pub fn dtype(&self) -> String {
+        self.inner.dtype.as_str().to_string()
+    }
+
+    /// Layout label (`HWC` / `CHW`).
+    #[napi(getter)]
+    pub fn layout(&self) -> String {
+        self.inner.layout.as_str().to_string()
+    }
+
+    /// Color space hint.
+    #[napi(getter)]
+    pub fn color_space(&self) -> String {
+        self.inner.color_space.as_str().to_string()
+    }
+
+    /// Alpha interpretation.
+    #[napi(getter)]
+    pub fn alpha_mode(&self) -> String {
+        self.inner.alpha_mode.as_str().to_string()
+    }
+
+    /// Row-major pixel bytes (host copy).
+    #[napi]
+    pub fn pixel_bytes(&self) -> Buffer {
+        Buffer::from(self.inner.data.clone())
+    }
+
+    /// Convert to NCHW f32 tensor (vision default layout).
+    #[napi]
+    pub fn to_tensor(&self, normalize: Option<bool>) -> Result<Tensor> {
+        let t = self.inner.to_tensor_nchw(normalize.unwrap_or(true)).map_err(map_err)?;
+        Ok(Tensor { inner: t })
+    }
+}
+
+/// Construct an ImageBuffer from explicit pixel bytes + metadata.
+#[napi]
+#[allow(clippy::too_many_arguments)]
+pub fn create_image_buffer_from_pixels(
+    width: u32,
+    height: u32,
+    channels: u32,
+    dtype: String,
+    layout: String,
+    color_space: String,
+    alpha_mode: String,
+    data: Buffer,
+) -> Result<ImageBuffer> {
+    let buf = HostImageBuffer::from_pixels(
+        width,
+        height,
+        channels,
+        parse_image_dtype(&dtype)?,
+        parse_image_layout(&layout)?,
+        parse_color_space(&color_space)?,
+        parse_alpha_mode(&alpha_mode)?,
+        data.to_vec(),
+    )
+    .map_err(map_err)?;
+    Ok(ImageBuffer { inner: buf })
+}
+
+/// Decode encoded image bytes (v0: PNG; JPEG/WebP return structured errors).
+#[napi]
+pub fn decode_image_buffer(bytes: Buffer, format: Option<String>) -> Result<ImageBuffer> {
+    let buf = HostImageBuffer::decode(bytes.as_ref(), format.as_deref()).map_err(map_err)?;
+    Ok(ImageBuffer { inner: buf })
 }
 
 #[cfg(test)]

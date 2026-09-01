@@ -15,6 +15,14 @@
     "autograd": {
       "failed": "Autograd failed"
     },
+    "precision": {
+      "dtype_unavailable": "Weight dtype {requested} is unavailable on backend {backend}; supported: {supported}",
+      "dtype_unsupported": "Unsupported weight dtype {requested}"
+    },
+    "image": {
+      "decode_unsupported": "Image decode format {format} is not wired yet (use PNG or raw pixels)",
+      "decode_unknown": "Unknown image decode format {format}"
+    },
     "titan": {
       "device_not_found": "Titan device not found",
       "device_lost": "Titan device lost",

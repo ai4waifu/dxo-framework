@@ -68,6 +68,26 @@ export interface NativeDoctorReport {
     abi: string;
 }
 
+export interface NativePrecisionCapsReport {
+    backend: string;
+    cudaAvailable: boolean;
+    weights: string[];
+    activations: string[];
+    accumulation: string[];
+}
+
+export interface NativeImageBuffer {
+    width: number;
+    height: number;
+    channels: number;
+    dtype: string;
+    layout: string;
+    colorSpace: string;
+    alphaMode: string;
+    pixelBytes(): Buffer;
+    toTensor(normalize?: boolean): NativeTensor;
+}
+
 export interface NativeInspectRunMeta {
     format: string;
     version: number;
@@ -138,4 +158,17 @@ export interface NativeAddon {
     readInspectRunMeta(runId: string, runsRoot?: string | null): NativeInspectRunMeta | null;
     readInspectEventsJson(runId: string, runsRoot?: string | null): string;
     defaultInspectRunsRoot(): string;
+    precisionCapabilities(): NativePrecisionCapsReport;
+    resolveWeightDtype(requested: string): string;
+    createImageBufferFromPixels(
+        width: number,
+        height: number,
+        channels: number,
+        dtype: string,
+        layout: string,
+        colorSpace: string,
+        alphaMode: string,
+        data: Buffer,
+    ): NativeImageBuffer;
+    decodeImageBuffer(bytes: Buffer, format?: string | null): NativeImageBuffer;
 }

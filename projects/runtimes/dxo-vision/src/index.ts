@@ -38,6 +38,7 @@ export type {
     WeightSource,
 } from './types.js';
 export { resnetFeatureChannels } from './types.js';
+export { VisionImage, fromDecode, fromPixels, type FromDecodeOptions, type FromPixelsOptions } from './image.js';
 
 export type ColorSpace = 'rgb' | 'rgba' | 'gray' | 'bgr';
 export type ImageLayout = 'HWC' | 'CHW' | 'nchw' | 'nhwc';

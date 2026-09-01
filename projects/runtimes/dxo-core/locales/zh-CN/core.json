@@ -15,6 +15,14 @@
     "autograd": {
       "failed": "自动微分失败"
     },
+    "precision": {
+      "dtype_unavailable": "权重 dtype {requested} 在后端 {backend} 上不可用；支持：{supported}",
+      "dtype_unsupported": "不支持的权重 dtype {requested}"
+    },
+    "image": {
+      "decode_unsupported": "图像解码格式 {format} 尚未接入（请使用 PNG 或原始像素）",
+      "decode_unknown": "未知的图像解码格式 {format}"
+    },
     "titan": {
       "device_not_found": "未找到 Titan 设备",
       "device_lost": "Titan 设备已丢失",

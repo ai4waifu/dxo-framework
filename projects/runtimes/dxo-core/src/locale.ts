@@ -36,6 +36,10 @@ const CODE_TO_KEY: Record<string, string> = {
     DXO_TITAN_UPLOAD_FAILED: 'dxo.titan.upload_failed',
     DXO_TITAN_BACKEND_UNAVAILABLE: 'dxo.titan.backend_unavailable',
     DXO_TITAN_UNKNOWN: 'dxo.titan.unknown',
+    DXO_PRECISION_DTYPE_UNAVAILABLE: 'dxo.precision.dtype_unavailable',
+    DXO_PRECISION_DTYPE_UNSUPPORTED: 'dxo.precision.dtype_unsupported',
+    DXO_IMAGE_DECODE_UNSUPPORTED: 'dxo.image.decode_unsupported',
+    DXO_IMAGE_DECODE_UNKNOWN: 'dxo.image.decode_unknown',
     DXO_UNKNOWN: 'dxo.unknown',
 };
 

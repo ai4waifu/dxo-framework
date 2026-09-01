@@ -10,8 +10,10 @@ mod cuda;
 mod diagnostic;
 mod dtype;
 mod engine;
+mod image_buffer;
 mod ops;
 mod optim;
+mod precision;
 mod safetensors;
 mod shape;
 mod storage;
@@ -26,7 +28,9 @@ pub use cuda::{
 pub use diagnostic::{Diagnostic, DiagnosticValue, Severity, from_hal_error, from_titan_error, titan_kind_to_code};
 pub use dtype::DType;
 pub use engine::{backend_label, cpu_session, probe_event_dep, probe_event_dep_cuda};
+pub use image_buffer::{AlphaMode, ColorSpace, HostImageBuffer, ImageDtype, ImageLayout};
 pub use optim::{AdamState, adam_step, backward_sgd_step, sgd_step, zero_grads};
+pub use precision::{PrecisionCapabilities, precision_capabilities, resolve_weight_dtype};
 pub use safetensors::{
     SafetensorBufferSlice, SafetensorSlice, decode_safetensors, encode_safetensors, encode_safetensors_buffers,
 };

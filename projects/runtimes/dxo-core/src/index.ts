@@ -504,6 +504,7 @@ export type {
     VideoFrameBuffer,
 } from './domain-buffers.js';
 export type {
+    CreateImageBufferFromPixelsOptions,
     DecodeImageBridgeOptions,
     ImageBuffer,
     ImageBufferAlphaMode,
@@ -512,7 +513,9 @@ export type {
     ImageBufferLayout,
     ImageBufferToTensorOptions,
 } from './image-buffer.js';
-export { decodeImageBuffer, unsupportedImageBufferApi } from './image-buffer.js';
+export { decodeImageBuffer, createImageBufferFromPixels, unsupportedImageBufferApi } from './image-buffer.js';
+export type { PrecisionCapabilities, PrecisionPolicy } from './precision.js';
+export { precisionCapabilities, resolvePrecisionPolicy, resolveWeightDtype } from './precision.js';
 
 export type {
     BufferToTensorOptions,
