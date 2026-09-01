@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import type { TensorStateSlice } from '@dxo/nn';
-import { decodeSafetensors } from '@dxo/serialize';
+import { decodeState } from '@dxo/serialize';
 import { VisionError } from './errors.js';
 import type { ResNet } from './resnet.js';
 
@@ -42,7 +42,7 @@ export async function loadWeights(model: ResNet, options: LoadWeightsOptions): P
         bytes = new Uint8Array(await readFile(options.path!));
     }
 
-    const decoded = decodeSafetensors(bytes) as Record<string, TensorStateSlice>;
+    const decoded = decodeState(bytes);
     const scope = options.scope ?? 'backbone';
     const allowed = new Set(model.parameterNames());
     if (allowed.size === 0) {

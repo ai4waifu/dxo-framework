@@ -3,6 +3,8 @@ import { DxoError, wrapNative } from './errors.js';
 import { formatDiagnostic } from './locale.js';
 import { loadNative } from './native.js';
 import type {
+    DecodeSafetensorsResult,
+    DecodedSafetensorEntry,
     NativeAdamState,
     NativeDoctorReport,
     NativeInspectApiServerHandle,
@@ -10,6 +12,7 @@ import type {
     NativeInspectRunMeta,
     NativeInspectRunSummary,
     NativeTensor,
+    SafetensorBufferEntry,
 } from './native-types.js';
 
 export type Device = 'cpu' | 'cuda' | 'metal';
@@ -31,6 +34,9 @@ export type {
     NativeInspectRunMeta,
     NativeInspectRunSummary,
     NativeTensor,
+    SafetensorBufferEntry,
+    DecodedSafetensorEntry,
+    DecodeSafetensorsResult,
 } from './native-types.js';
 
 export {
@@ -237,6 +243,11 @@ export class Tensor {
         return wrapNative(() => this.#handle.toArray());
     }
 
+    /** Little-endian f32 bytes for Rust safetensors encode (no JS `number[]`). */
+    toF32Buffer(): Buffer {
+        return wrapNative(() => this.#handle.toF32Buffer());
+    }
+
     async item(): Promise<number> {
         if (this.numel() !== 1) {
             throw new DxoError({
@@ -363,6 +374,26 @@ export function adamStep(
             )
             .map((h) => new Tensor(h)),
     );
+}
+
+/** Create a CPU tensor from little-endian f32 bytes + shape. */
+export function tensorFromF32Buffer(data: Buffer, shape: readonly number[], options: TensorOptions = {}): Tensor {
+    assertCpu(options);
+    const rg = options.requiresGrad ?? false;
+    return new Tensor(wrapNative(() => loadNative().tensorF32(data, [...shape], rg)));
+}
+
+/** Encode named f32 tensor buffers to safetensors bytes (Rust codec). */
+export function encodeSafetensors(entries: SafetensorBufferEntry[], metadataJson?: string): Uint8Array {
+    return wrapNative(() => {
+        const buf = loadNative().encodeSafetensors(entries, metadataJson ?? undefined);
+        return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+    });
+}
+
+/** Decode safetensors bytes via Rust codec. */
+export function decodeSafetensors(bytes: Uint8Array): DecodeSafetensorsResult {
+    return wrapNative(() => loadNative().decodeSafetensors(Buffer.from(bytes)));
 }
 
 /** Host draw for sync init paths (e.g. Linear weight init). */

@@ -5,7 +5,7 @@
 
 import { type Tensor, type TokenBuffer, tensor, withoutGrad } from '@dxo/core';
 import type { NeuralNetwork, TinyTransformer } from '@dxo/nn';
-import { decodeSafetensors, encodeSafetensors, type SafetensorSlice } from '@dxo/serialize';
+import { decodeState, encodeState } from '@dxo/serialize';
 
 export type TokenizerEncodeOptions = {
     addSpecialTokens?: boolean;
@@ -224,13 +224,12 @@ export async function* generate(
 
 /** Encode TinyTransformer state as safetensors bytes. */
 export async function encodeTinyTransformerSafetensors(model: TinyTransformer): Promise<Uint8Array> {
-    return encodeSafetensors(await model.state());
+    return encodeState(await model.state());
 }
 
 /** Load TinyTransformer weights from safetensors (F32). */
 export function loadTinyTransformerSafetensors(model: TinyTransformer, bytes: Uint8Array, opts: { requiresGrad?: boolean } = {}): void {
-    const slices = decodeSafetensors(bytes) as Record<string, SafetensorSlice>;
-    model.loadState(slices, opts);
+    model.loadState(decodeState(bytes), opts);
 }
 
 export function llmVersion(): string {

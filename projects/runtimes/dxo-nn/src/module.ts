@@ -1,8 +1,15 @@
-import { embedding, ones, randnValues, Tensor, tensor, zeros, zeroGrads } from '@dxo/core';
+import { Buffer } from 'node:buffer';
+import { embedding, ones, randnValues, Tensor, tensor, tensorFromF32Buffer, zeros, zeroGrads } from '@dxo/core';
 
 export interface TensorStateSlice {
     shape: number[];
     data: number[];
+}
+
+/** Buffer-backed slice for Rust safetensors checkpoint restore. */
+export interface StateBufferSlice {
+    shape: number[];
+    data: Buffer;
 }
 
 export type State = Record<string, TensorStateSlice>;
@@ -181,9 +188,27 @@ export class FullyConnected extends Layer {
         };
     }
 
+    /** Buffer-backed state for Rust safetensors encode (checkpoint hot path). */
+    stateBuffers(): Record<string, StateBufferSlice> {
+        return {
+            weight: { shape: [...this.weight.shape], data: this.weight.toF32Buffer() },
+            bias: { shape: [...this.bias.shape], data: this.bias.toF32Buffer() },
+        };
+    }
+
     loadState(saved: LinearState): void {
         this.weight = tensor(saved.weight.data, saved.weight.shape, { requiresGrad: true });
         this.bias = tensor(saved.bias.data, saved.bias.shape, { requiresGrad: true });
+    }
+
+    /** Restore from decoded safetensors buffers (no intermediate `number[]`). */
+    loadStateFromBuffers(saved: Record<string, StateBufferSlice>, opts: { requiresGrad?: boolean } = {}): void {
+        const rg = opts.requiresGrad ?? true;
+        const weight = saved.weight;
+        const bias = saved.bias;
+        if (!weight || !bias) throw new Error('FullyConnected.loadStateFromBuffers: missing weight/bias');
+        this.weight = tensorFromF32Buffer(weight.data, weight.shape, { requiresGrad: rg });
+        this.bias = tensorFromF32Buffer(bias.data, bias.shape, { requiresGrad: rg });
     }
 }
 

@@ -163,6 +163,17 @@ impl Tensor {
         self.inner.grad().map(|g| g.iter().map(|&x| f64::from(x)).collect())
     }
 
+    /// Export host f32 payload as little-endian bytes (checkpoint hot path; no JS `number[]`).
+    #[napi]
+    pub fn export_f32(&self) -> Buffer {
+        let data = self.inner.to_vec();
+        let mut bytes = Vec::with_capacity(data.len() * 4);
+        for f in data {
+            bytes.extend_from_slice(&f.to_le_bytes());
+        }
+        Buffer::from(bytes)
+    }
+
     /// Element-wise add (NumPy-style broadcast).
     #[napi]
     pub fn add(&self, other: &Tensor) -> Result<Tensor> {
@@ -352,6 +363,17 @@ impl Tensor {
     pub fn to_array(&self) -> Vec<f64> {
         self.inner.data().iter().map(|&x| f64::from(x)).collect()
     }
+
+    /// Row-major little-endian f32 bytes (checkpoint hot path — no JS `number[]`).
+    #[napi]
+    pub fn to_f32_buffer(&self) -> Buffer {
+        let data = self.inner.to_vec();
+        let mut bytes = Vec::with_capacity(data.len() * 4);
+        for f in data {
+            bytes.extend_from_slice(&f.to_le_bytes());
+        }
+        Buffer::from(bytes)
+    }
 }
 
 /// Concatenate tensors along `dim`.
@@ -417,6 +439,50 @@ impl AdamState {
     pub fn step_count(&self) -> u32 {
         u32::try_from(self.inner.t).unwrap_or(u32::MAX)
     }
+
+    /// Set optimizer step counter (checkpoint restore).
+    #[napi(setter)]
+    pub fn set_step_count(&mut self, value: u32) {
+        self.inner.t = u64::from(value);
+    }
+
+    /// Export Adam moment tensors for checkpoint (`optimizer.adam.{i}.m|v`).
+    #[napi]
+    pub fn checkpoint_tensor_entries(&self, param_shapes: Vec<Vec<u32>>) -> Result<Vec<SafetensorBufferEntry>> {
+        let shapes: Vec<Vec<usize>> = param_shapes.iter().map(|s| shape_to_usize(s.clone())).collect();
+        let mut map = std::collections::BTreeMap::new();
+        self.inner.append_checkpoint_tensors(&shapes, &mut map).map_err(map_err)?;
+        let mut out = Vec::with_capacity(map.len());
+        for (name, slice) in map {
+            out.push(SafetensorBufferEntry {
+                name,
+                shape: slice.shape.iter().map(|&d| u32::try_from(d).unwrap_or(u32::MAX)).collect(),
+                data: Buffer::from(slice.data),
+            });
+        }
+        Ok(out)
+    }
+
+    /// Restore Adam moments from decoded safetensors entries.
+    #[napi]
+    pub fn restore_from_checkpoint_tensors(&mut self, param_count: u32, tensors: Vec<DecodedSafetensorEntry>) -> Result<()> {
+        let mut map = std::collections::BTreeMap::new();
+        for entry in tensors {
+            if !entry.name.starts_with("optimizer.adam.") {
+                continue;
+            }
+            if entry.data.len() % 4 != 0 {
+                return Err(Error::from_reason(format!("Adam restore: '{0}' byte length must be a multiple of 4", entry.name)));
+            }
+            let mut data = Vec::with_capacity(entry.data.len() / 4);
+            for chunk in entry.data.chunks_exact(4) {
+                let arr: [u8; 4] = chunk.try_into().map_err(|_| Error::from_reason("Adam restore: bad f32 chunk"))?;
+                data.push(f32::from_le_bytes(arr));
+            }
+            map.insert(entry.name, dxo_core::SafetensorSlice { shape: shape_to_usize(entry.shape), data });
+        }
+        self.inner.load_checkpoint_tensors(param_count as usize, &map).map_err(map_err)
+    }
 }
 
 /// Batch Adam; mutates `state` and returns new `requiresGrad` leaves.
@@ -433,6 +499,106 @@ pub fn adam_step(
     let updated =
         dxo_core::adam_step(&refs, &mut state.inner, lr as f32, beta1 as f32, beta2 as f32, eps as f32).map_err(map_err)?;
     Ok(updated.into_iter().map(|inner| Tensor { inner }).collect())
+}
+
+/// Named f32 tensor buffer for safetensors encode.
+#[napi(object)]
+#[derive(Debug)]
+pub struct SafetensorBufferEntry {
+    /// Tensor key.
+    pub name: String,
+    /// Row-major shape.
+    pub shape: Vec<u32>,
+    /// Little-endian f32 bytes.
+    pub data: Buffer,
+}
+
+/// Decoded safetensors tensor entry.
+#[napi(object)]
+#[derive(Debug)]
+pub struct DecodedSafetensorEntry {
+    /// Tensor key.
+    pub name: String,
+    /// Row-major shape.
+    pub shape: Vec<u32>,
+    /// Little-endian f32 bytes.
+    pub data: Buffer,
+}
+
+/// Result of [`decode_safetensors`].
+#[napi(object)]
+#[derive(Debug)]
+pub struct DecodeSafetensorsResult {
+    /// Named tensor payloads (excludes `__metadata__`).
+    pub tensors: Vec<DecodedSafetensorEntry>,
+    /// Metadata map as JSON object string (may be `{}`).
+    pub metadata_json: String,
+}
+
+fn entries_to_map(
+    entries: Vec<SafetensorBufferEntry>,
+) -> Result<std::collections::BTreeMap<String, dxo_core::SafetensorBufferSlice>> {
+    let mut map = std::collections::BTreeMap::new();
+    for entry in entries {
+        map.insert(
+            entry.name,
+            dxo_core::SafetensorBufferSlice { shape: shape_to_usize(entry.shape), data: entry.data.to_vec() },
+        );
+    }
+    Ok(map)
+}
+
+fn map_to_decoded_entries(
+    map: std::collections::BTreeMap<String, dxo_core::SafetensorSlice>,
+) -> Result<Vec<DecodedSafetensorEntry>> {
+    let mut out = Vec::with_capacity(map.len());
+    for (name, slice) in map {
+        let mut data = Vec::with_capacity(slice.data.len() * 4);
+        for f in slice.data {
+            data.extend_from_slice(&f.to_le_bytes());
+        }
+        out.push(DecodedSafetensorEntry {
+            name,
+            shape: slice.shape.iter().map(|&d| u32::try_from(d).unwrap_or(u32::MAX)).collect(),
+            data: Buffer::from(data),
+        });
+    }
+    Ok(out)
+}
+
+/// Encode named F32 tensors (+ optional metadata JSON object) to safetensors bytes.
+#[napi]
+pub fn encode_safetensors(entries: Vec<SafetensorBufferEntry>, metadata_json: Option<String>) -> Result<Buffer> {
+    let map = entries_to_map(entries)?;
+    let metadata = if let Some(json) = metadata_json {
+        let parsed: serde_json::Value =
+            serde_json::from_str(&json).map_err(|e| Error::from_reason(format!("encode_safetensors metadata: {e}")))?;
+        let obj = parsed.as_object().ok_or_else(|| Error::from_reason("encode_safetensors metadata must be a JSON object"))?;
+        let mut meta = std::collections::BTreeMap::new();
+        for (k, v) in obj {
+            if let Some(s) = v.as_str() {
+                meta.insert(k.clone(), s.to_string());
+            } else {
+                meta.insert(k.clone(), v.to_string());
+            }
+        }
+        Some(meta)
+    } else {
+        None
+    };
+    let meta_ref = metadata.as_ref();
+    let bytes = dxo_core::encode_safetensors_buffers(&map, meta_ref).map_err(map_err)?;
+    Ok(Buffer::from(bytes))
+}
+
+/// Decode safetensors bytes into named F32 buffers and metadata JSON.
+#[napi]
+pub fn decode_safetensors(bytes: Buffer) -> Result<DecodeSafetensorsResult> {
+    let (tensors, metadata) = dxo_core::decode_safetensors(bytes.as_ref()).map_err(map_err)?;
+    Ok(DecodeSafetensorsResult {
+        tensors: map_to_decoded_entries(tensors)?,
+        metadata_json: serde_json::to_string(&metadata).map_err(|e| Error::from_reason(e.to_string()))?,
+    })
 }
 
 /// Create a tensor filled with zeros.

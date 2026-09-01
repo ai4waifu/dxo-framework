@@ -746,6 +746,7 @@ name = "dxo-core"
 version = "0.1.0"
 dependencies = [
  "rand",
+ "serde_json",
  "titan-backend-cpu",
  "titan-backend-cuda",
  "titan-graph",

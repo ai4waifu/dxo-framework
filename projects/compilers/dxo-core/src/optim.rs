@@ -117,6 +117,79 @@ pub fn adam_step(
     Ok(out)
 }
 
+const ADAM_PREFIX: &str = "optimizer.adam";
+
+impl AdamState {
+    /// Append Adam moment tensors into a safetensors map (`optimizer.adam.{i}.m|v`).
+    pub fn append_checkpoint_tensors(
+        &self,
+        param_shapes: &[Vec<usize>],
+        out: &mut std::collections::BTreeMap<String, crate::safetensors::SafetensorBufferSlice>,
+    ) -> Result<(), TensorError> {
+        for (i, shape) in param_shapes.iter().enumerate() {
+            let m = self
+                .m
+                .get(i)
+                .ok_or_else(|| TensorError::invalid_shape(format!("Adam checkpoint: missing moment m for param {i}")))?;
+            let v = self
+                .v
+                .get(i)
+                .ok_or_else(|| TensorError::invalid_shape(format!("Adam checkpoint: missing moment v for param {i}")))?;
+            let n = shape.iter().product::<usize>();
+            if m.len() != n || v.len() != n {
+                return Err(TensorError::invalid_shape(format!(
+                    "Adam checkpoint: param {i} shape {shape:?} != moment lengths m={} v={}",
+                    m.len(),
+                    v.len()
+                )));
+            }
+            let mut m_bytes = Vec::with_capacity(n * 4);
+            for f in m {
+                m_bytes.extend_from_slice(&f.to_le_bytes());
+            }
+            let mut v_bytes = Vec::with_capacity(n * 4);
+            for f in v {
+                v_bytes.extend_from_slice(&f.to_le_bytes());
+            }
+            out.insert(
+                format!("{ADAM_PREFIX}.{i}.m"),
+                crate::safetensors::SafetensorBufferSlice { shape: shape.clone(), data: m_bytes },
+            );
+            out.insert(
+                format!("{ADAM_PREFIX}.{i}.v"),
+                crate::safetensors::SafetensorBufferSlice { shape: shape.clone(), data: v_bytes },
+            );
+        }
+        Ok(())
+    }
+
+    /// Restore Adam moments from safetensors decoded f32 slices.
+    pub fn load_checkpoint_tensors(
+        &mut self,
+        param_count: usize,
+        tensors: &std::collections::BTreeMap<String, crate::safetensors::SafetensorSlice>,
+    ) -> Result<(), TensorError> {
+        self.m.clear();
+        self.v.clear();
+        self.m.resize_with(param_count, Vec::new);
+        self.v.resize_with(param_count, Vec::new);
+        for i in 0..param_count {
+            let m_key = format!("{ADAM_PREFIX}.{i}.m");
+            let v_key = format!("{ADAM_PREFIX}.{i}.v");
+            let m =
+                tensors.get(&m_key).ok_or_else(|| TensorError::invalid_shape(format!("Adam checkpoint: missing '{m_key}'")))?;
+            let v =
+                tensors.get(&v_key).ok_or_else(|| TensorError::invalid_shape(format!("Adam checkpoint: missing '{v_key}'")))?;
+            if m.shape != v.shape {
+                return Err(TensorError::invalid_shape(format!("Adam checkpoint: shape mismatch {m_key} vs {v_key}")));
+            }
+            self.m[i] = m.data.clone();
+            self.v[i] = v.data.clone();
+        }
+        Ok(())
+    }
+}
+
 /// `loss.backward()` then [`sgd_step`] in one engine call.
 pub fn backward_sgd_step(loss: &Tensor, params: &[&Tensor], lr: f32) -> Result<Vec<Tensor>, TensorError> {
     loss.backward()?;
@@ -169,5 +242,22 @@ mod tests {
         let next = adam_step(&[&w], &mut state, 0.1, 0.9, 0.999, 1e-8).unwrap();
         assert!(next[0].to_vec()[0] < 1.0);
         assert_eq!(state.t, 1);
+    }
+
+    #[test]
+    fn adam_checkpoint_roundtrip() {
+        let w = Tensor::from_vec_grad(vec![1.0, 2.0], vec![2], true).unwrap();
+        let loss = w.sum();
+        loss.backward().unwrap();
+        let mut state = AdamState::default();
+        adam_step(&[&w], &mut state, 0.1, 0.9, 0.999, 1e-8).unwrap();
+        let mut map = std::collections::BTreeMap::new();
+        state.append_checkpoint_tensors(&[vec![2]], &mut map).unwrap();
+        let bytes = crate::encode_safetensors_buffers(&map, None).unwrap();
+        let (decoded, _) = crate::decode_safetensors(&bytes).unwrap();
+        let mut restored = AdamState::default();
+        restored.load_checkpoint_tensors(1, &decoded).unwrap();
+        assert_eq!(restored.m[0], state.m[0]);
+        assert_eq!(restored.v[0], state.v[0]);
     }
 }

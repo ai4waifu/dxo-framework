@@ -4,6 +4,8 @@ import {
     createAdamState,
     sgdStep,
     type AdamStateHandle,
+    type DecodedSafetensorEntry,
+    type SafetensorBufferEntry,
     type Tensor,
 } from '@dxo/core';
 
@@ -20,6 +22,12 @@ export interface Optimizer {
      * Only SGD exposes this; Adam keeps separate backward + `step`.
      */
     readonly fusedSgdLr?: number;
+    /** Optional checkpoint tensors for safetensors (Adam only in this slice). */
+    checkpointEntries?(paramShapes: number[][]): SafetensorBufferEntry[];
+    /** Restore optimizer state from decoded safetensors entries. */
+    restoreFromCheckpoint?(paramCount: number, entries: DecodedSafetensorEntry[]): void;
+    /** Optimizer step counter for checkpoint metadata (Adam). */
+    readonly checkpointStepCount?: number;
 }
 
 /**
@@ -55,6 +63,22 @@ export class Adam implements Optimizer {
 
     async step(params: Tensor[]): Promise<Tensor[]> {
         return adamStep(params, this.#state, this.lr, this.beta1, this.beta2, this.eps);
+    }
+
+    checkpointEntries(paramShapes: number[][]): SafetensorBufferEntry[] {
+        return this.#state.checkpointTensorEntries(paramShapes);
+    }
+
+    restoreFromCheckpoint(paramCount: number, entries: DecodedSafetensorEntry[]): void {
+        this.#state.restoreFromCheckpointTensors(paramCount, entries);
+    }
+
+    get checkpointStepCount(): number {
+        return this.#state.stepCount;
+    }
+
+    set checkpointStepCount(value: number) {
+        this.#state.stepCount = value;
     }
 }
 

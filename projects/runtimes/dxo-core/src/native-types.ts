@@ -1,5 +1,24 @@
+export interface SafetensorBufferEntry {
+    name: string;
+    shape: number[];
+    data: Buffer;
+}
+
+export interface DecodedSafetensorEntry {
+    name: string;
+    shape: number[];
+    data: Buffer;
+}
+
+export interface DecodeSafetensorsResult {
+    tensors: DecodedSafetensorEntry[];
+    metadataJson: string;
+}
+
 export interface NativeAdamState {
-    readonly stepCount: number;
+    stepCount: number;
+    checkpointTensorEntries(paramShapes: number[][]): SafetensorBufferEntry[];
+    restoreFromCheckpointTensors(paramCount: number, tensors: DecodedSafetensorEntry[]): void;
 }
 
 export interface NativeTensor {
@@ -37,6 +56,7 @@ export interface NativeTensor {
     zeroGrad(): void;
     backward(): void;
     toArray(): number[];
+    toF32Buffer(): Buffer;
 }
 
 /** Engine diagnosis from napi `doctorReport` (single source of truth for CLI doctor). */
@@ -110,6 +130,8 @@ export interface NativeAddon {
         beta2: number,
         eps: number,
     ): NativeTensor[];
+    encodeSafetensors(entries: SafetensorBufferEntry[], metadataJson?: string | null): Buffer;
+    decodeSafetensors(bytes: Buffer): DecodeSafetensorsResult;
     /** Loopback inspect HTTP serve (Rust `dxo-studio`). */
     createInspectApiServer(options?: NativeInspectApiServerOptions): NativeInspectApiServerHandle;
     listInspectRuns(runsRoot?: string | null): NativeInspectRunSummary[];

@@ -194,6 +194,10 @@ importers:
       '@dxo/core':
         specifier: workspace:*
         version: link:../dxo-core
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
 
   projects/runtimes/dxo-optimizer:
     dependencies:
@@ -202,6 +206,10 @@ importers:
         version: link:../dxo-core
 
   projects/runtimes/dxo-serialize:
+    dependencies:
+      '@dxo/core':
+        specifier: workspace:*
+        version: link:../dxo-core
     devDependencies:
       '@types/node':
         specifier: ^22.15.0

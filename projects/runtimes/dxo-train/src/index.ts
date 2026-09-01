@@ -2,14 +2,14 @@ import type { Tensor } from '@dxo/core';
 import type { Batch } from '@dxo/data';
 import type { FullyConnected } from '@dxo/nn';
 import { sgdTrainStep, type Optimizer } from '@dxo/optimizer';
-import { encodeState, type State } from '@dxo/serialize';
+import { decodeState, encodeCheckpoint, type State } from '@dxo/serialize';
 
 /** Events yielded by {@link Trainer.fitIter} / {@link Trainer.run}. */
 export type TrainEvent =
     | { type: 'epoch_start'; epoch: number; epochs: number }
     | { type: 'batch'; epoch: number; step: number; loss: number }
     | { type: 'epoch_end'; epoch: number; meanLoss: number; steps: number }
-    | { type: 'checkpoint'; epoch: number; state: State; bytes: Uint8Array; format: 'safetensors' }
+    | { type: 'checkpoint'; epoch: number; bytes: Uint8Array; format: 'safetensors'; state?: State }
     | { type: 'aborted'; reason: 'signal'; epoch: number; step: number }
     | { type: 'done'; epochs: number; steps: number; finalMeanLoss?: number };
 
@@ -152,12 +152,20 @@ export class Trainer {
 
             const shouldCheckpoint = epoch % this.checkpointEvery === 0 || epoch === this.epochs;
             if (shouldCheckpoint) {
-                const state = (await this.model.state()) as unknown as State;
+                const model = this.model.stateBuffers();
+                const metadata: Record<string, string> = {
+                    'dxo.checkpoint.version': '1',
+                    'train.epoch': String(epoch),
+                    'train.step': String(globalStep),
+                };
+                const optimizerEntries = this.optimizer.checkpointEntries?.(this.model.parameters().map((p) => [...p.shape]));
+                if (optimizerEntries?.length) {
+                    metadata['optimizer.adam.step'] = String(this.optimizer.checkpointStepCount ?? 0);
+                }
                 yield {
                     type: 'checkpoint',
                     epoch,
-                    state,
-                    bytes: encodeState(state),
+                    bytes: encodeCheckpoint({ model, optimizer: optimizerEntries, metadata }),
                     format: 'safetensors',
                 };
             }
@@ -186,7 +194,7 @@ export class Trainer {
                     break;
                 case 'checkpoint':
                     lastCheckpoint = event.bytes;
-                    lastState = event.state;
+                    lastState = decodeState(event.bytes, { format: 'safetensors' }) as unknown as State;
                     break;
                 case 'aborted':
                     aborted = true;

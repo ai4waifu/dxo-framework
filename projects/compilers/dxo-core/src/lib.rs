@@ -12,6 +12,7 @@ mod dtype;
 mod engine;
 mod ops;
 mod optim;
+mod safetensors;
 mod shape;
 mod storage;
 mod tensor;
@@ -26,6 +27,9 @@ pub use diagnostic::{Diagnostic, DiagnosticValue, Severity, from_hal_error, from
 pub use dtype::DType;
 pub use engine::{backend_label, cpu_session, probe_event_dep, probe_event_dep_cuda};
 pub use optim::{AdamState, adam_step, backward_sgd_step, sgd_step, zero_grads};
+pub use safetensors::{
+    SafetensorBufferSlice, SafetensorSlice, decode_safetensors, encode_safetensors, encode_safetensors_buffers,
+};
 pub use shape::{Shape, Strides, contiguous_strides};
 pub use storage::Storage;
 pub use tensor::{DeviceKind, Tensor, TensorError};
