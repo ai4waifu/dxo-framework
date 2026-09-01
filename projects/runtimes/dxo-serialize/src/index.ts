@@ -165,3 +165,8 @@ export function decodeCheckpoint(bytes: Uint8Array): {
 
 export { decodeSafetensors, encodeSafetensors, type SafetensorBufferEntry } from '@dxo/core';
 export type SafetensorSlice = TensorStateSlice;
+export {
+    precisionPolicyFromMetadata,
+    stampResolvedPrecision,
+    validateManifestPrecision,
+} from './precision-manifest.js';
