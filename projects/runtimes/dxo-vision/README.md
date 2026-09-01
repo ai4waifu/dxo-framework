@@ -1,6 +1,6 @@
 # @dxo/vision
 
-**Developer preview — API unstable.** Not a closed `vision-classify` gate.
+**Developer preview — API unstable.** `vision-classify` gate ✅ (compose / ResNet state / `loadWeights` / hub / UI smoke).
 
 Composable vision surface: `ResNet` (backbone / features), `LinearHead` / `Classifier` / `compose` (logits), `defineLabelSpace` / `decodeClassification` (labels).
 

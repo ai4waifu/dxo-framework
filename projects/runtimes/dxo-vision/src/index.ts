@@ -1,7 +1,7 @@
 /**
  * @dxo/vision — developer preview (API unstable).
  * Image types + ResNet backbone / heads / label decode.
- * Not a closed vision-classify gate. Weights live in external `@dxo/resnet`.
+ * `vision-classify` gate closed — weights conversion stays in external `@dxo/resnet` scripts.
  */
 
 import type { ImageBuffer, Tensor } from '@dxo/core';

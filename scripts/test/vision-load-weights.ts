@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { encodeSafetensors } from '@dxo/serialize';
+import { encodeState } from '@dxo/serialize';
 import { loadWeights, ResNet, VisionError } from '@dxo/vision';
 
 const src = new ResNet({ depth: 18, trainable: false });
@@ -15,7 +15,7 @@ assert.ok(names.length > 0);
 assert.ok(!names.some((k) => /(^|[.])fc([.]|$)/i.test(k)));
 
 const st = await src.state();
-const bytes = encodeSafetensors(st);
+const bytes = encodeState(st);
 
 // bytes path
 {
@@ -38,7 +38,7 @@ const bytes = encodeSafetensors(st);
         'fc.weight': { shape: [1000, 512], data: new Array(1000 * 512).fill(0) },
         'fc.bias': { shape: [1000], data: new Array(1000).fill(0) },
     };
-    await writeFile(file, encodeSafetensors(withFc));
+    await writeFile(file, encodeState(withFc));
     const dst = new ResNet({ depth: 18, trainable: false });
     await loadWeights(dst, { path: file, scope: 'backbone' });
     assert.deepEqual((await dst.state())['stem.convolution.weight']!.shape, st['stem.convolution.weight']!.shape);
