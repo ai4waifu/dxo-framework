@@ -1,6 +1,16 @@
 //! Batch optimizer steps in Rust (avoid per-parameter host roundtrips from TypeScript).
 
+use std::cmp::Ordering;
+
 use crate::tensor::{DeviceKind, Tensor, TensorError};
+
+fn is_positive_finite(x: f32) -> bool {
+    x.is_finite() && x.partial_cmp(&0.0) == Some(Ordering::Greater)
+}
+
+fn is_open_unit_interval(x: f32) -> bool {
+    x.is_finite() && x.partial_cmp(&0.0) == Some(Ordering::Greater) && x.partial_cmp(&1.0) == Some(Ordering::Less)
+}
 
 /// Clear gradients on every parameter leaf in one pass.
 pub fn zero_grads(params: &[&Tensor]) {
@@ -14,7 +24,7 @@ pub fn zero_grads(params: &[&Tensor]) {
 /// Returns **new** `requires_grad` leaves (G3 contract). Leaves without grad are
 /// cloned as fresh autograd leaves with the same values. CPU-only in this slice.
 pub fn sgd_step(params: &[&Tensor], lr: f32) -> Result<Vec<Tensor>, TensorError> {
-    if !(lr > 0.0) {
+    if !is_positive_finite(lr) {
         return Err(TensorError::Autograd("SGD lr must be positive".into()));
     }
     let mut out = Vec::with_capacity(params.len());
@@ -55,13 +65,13 @@ pub fn adam_step(
     beta2: f32,
     eps: f32,
 ) -> Result<Vec<Tensor>, TensorError> {
-    if !(lr > 0.0) {
+    if !is_positive_finite(lr) {
         return Err(TensorError::Autograd("Adam lr must be positive".into()));
     }
-    if !(0.0 < beta1 && beta1 < 1.0 && 0.0 < beta2 && beta2 < 1.0) {
+    if !is_open_unit_interval(beta1) || !is_open_unit_interval(beta2) {
         return Err(TensorError::Autograd("Adam betas must be in (0, 1)".into()));
     }
-    if !(eps > 0.0) {
+    if !is_positive_finite(eps) {
         return Err(TensorError::Autograd("Adam eps must be positive".into()));
     }
 
