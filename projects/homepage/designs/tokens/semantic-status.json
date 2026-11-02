@@ -9,12 +9,28 @@
             "value": "#0f766e"
         },
         {
+            "key": { "path": ["status", "info", "background"] },
+            "value": "#f0fdfa"
+        },
+        {
+            "key": { "path": ["status", "info", "border"] },
+            "value": "#99f6e4"
+        },
+        {
             "key": { "path": ["status", "success", "accent"] },
             "value": "#059669"
         },
         {
             "key": { "path": ["status", "success", "foreground"] },
             "value": "#047857"
+        },
+        {
+            "key": { "path": ["status", "success", "background"] },
+            "value": "#ecfdf5"
+        },
+        {
+            "key": { "path": ["status", "success", "border"] },
+            "value": "#a7f3d0"
         },
         {
             "key": { "path": ["status", "warning", "accent"] },
@@ -25,12 +41,28 @@
             "value": "#92400e"
         },
         {
+            "key": { "path": ["status", "warning", "background"] },
+            "value": "#fffbeb"
+        },
+        {
+            "key": { "path": ["status", "warning", "border"] },
+            "value": "#fde68a"
+        },
+        {
             "key": { "path": ["status", "danger", "accent"] },
             "value": "#dc2626"
         },
         {
             "key": { "path": ["status", "danger", "foreground"] },
             "value": "#991b1b"
+        },
+        {
+            "key": { "path": ["status", "danger", "background"] },
+            "value": "#fef2f2"
+        },
+        {
+            "key": { "path": ["status", "danger", "border"] },
+            "value": "#fecaca"
         }
     ]
 }

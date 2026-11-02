@@ -20,12 +20,15 @@
         "paper": "#ffffff",
         "mist": "#f8fafc",
         "page": "#f1f5f9",
+        "fill": "#f8fafc",
+        "code": "#0F172A",
         "ink": "#0F172A",
         "graphite": "#475569"
     },
     "text": {
         "ink": "#0F172A",
         "steel": "#475569",
+        "tertiary": "#64748b",
         "on-brand": "#f0fdfa",
         "on-ink": "#f8fafc"
     },

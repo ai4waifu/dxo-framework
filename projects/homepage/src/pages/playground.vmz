@@ -12,7 +12,7 @@
       <h1>@dxo/lite playground</h1>
       <p class="dxo-play__lede">
         Interactive browser demo via createRuntime. Kernels come from @dxo/lite-unknown-wasm32 when /dxo_lite_bg.wasm is
-        staged under public/ (CF copies public/** into the CDN root).
+        staged under public/ (CF copies everything under public/ into the CDN root).
       </p>
 
       <Card title="Runtime" :description="status">

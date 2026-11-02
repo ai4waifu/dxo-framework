@@ -38,3 +38,5 @@ projects/compilers/dxo-lite-wasm/.wasm-pack-out/
 .placeholder-npm-cache.json
 scripts/.placeholder-npm-cache.json
 .env.placeholder.local
+
+.cache/

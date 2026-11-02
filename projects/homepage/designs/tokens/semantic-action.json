@@ -29,8 +29,24 @@
             "value": "#e2e8f0"
         },
         {
+            "key": { "path": ["action", "primary", "soft"] },
+            "value": "#ccfbf1"
+        },
+        {
             "key": { "path": ["action", "secondary", "hover"] },
             "value": "#f8fafc"
+        },
+        {
+            "key": { "path": ["action", "secondary", "active"] },
+            "value": "#f1f5f9"
+        },
+        {
+            "key": { "path": ["action", "link", "foreground"] },
+            "value": "#0D9488"
+        },
+        {
+            "key": { "path": ["action", "link", "hover"] },
+            "value": "#0f766e"
         },
         {
             "key": { "path": ["focus", "ring"] },
