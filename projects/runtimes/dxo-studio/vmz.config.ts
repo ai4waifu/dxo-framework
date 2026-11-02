@@ -5,8 +5,8 @@ export default defineConfig({
     delivery: {
         default: 'node',
         profiles: {
-            node: { host: 'node', assembly: 'node-ssr' },
-            static: { host: 'browser', assembly: 'static-cdn' },
+            node: { host: 'browser', assembly: 'server-host', serverRuntime: 'node' },
+            static: { host: 'browser', assembly: 'web-static' },
         },
     },
 });

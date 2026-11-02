@@ -235,15 +235,15 @@ importers:
         specifier: workspace:*
         version: link:../dxo-inspect
       '@vmz/core':
-        specifier: ^0.1.12
-        version: 0.1.12
+        specifier: 0.3.12
+        version: 0.3.12
     devDependencies:
       '@types/node':
         specifier: ^22.15.0
         version: 22.20.1
       '@vmz/vmz':
-        specifier: ^0.1.12
-        version: 0.1.12(typescript@5.9.3)
+        specifier: 0.3.12
+        version: 0.3.12(typescript@5.9.3)
 
   projects/runtimes/dxo-train:
     dependencies:
@@ -554,9 +554,6 @@ packages:
     resolution: {integrity: sha512-Fs2CJZobP3K8qbpYF7yrHqmsBzG5/FMxAwITiiyJG0Aw4pQOlxW6mFTLwBkzjdwVi8/UIKfqiuntJSiKyPT5XQ==}
     engines: {node: '>=20'}
 
-  '@vmz/core@0.1.12':
-    resolution: {integrity: sha512-xbGPkZIXQPpPeypMyaX0ebqeVn9/X6vAG3wikBKD/WLpsKFbz17ub90RfPM+xDmoRHJPHuQPHQcp59slXlyC9g==}
-
   '@vmz/core@0.3.12':
     resolution: {integrity: sha512-IZp0a721lDCbMEJfufVVelcguDaYfNKuSUgGxGyW4KZ+df8DF6xgVeLuVVo5lYGMilv81J29ubc+c6veiGr7cg==}
 
@@ -574,15 +571,8 @@ packages:
       vmz-textmate:
         optional: true
 
-  '@vmz/plugin@0.1.12':
-    resolution: {integrity: sha512-o4Zv0zTVW4hJePfcIUTI4DQ8kpPHMnoBbgIOa3eqVQQVlVcTOukVAEGZZVvd320LpA92arxdXq/Lh6EL6md3LA==}
-
   '@vmz/plugin@0.3.12':
     resolution: {integrity: sha512-crOLXO+2dbpKGZbzHHimiKDipNu6iHY4zFilo4nNACSVbS5vuKLcKc8TL06aBXYPnBbrSFkeIjB5WxnrD6ZBzA==}
-
-  '@vmz/protocol@0.1.12':
-    resolution: {integrity: sha512-tnTFzBo56oY3rmRXo+Ce8KUNQw7hnsgQH36LP450XEP0NLdPef9nsqWwLISQYBLb8pklBWMEwFEgcDB6GDs69Q==}
-    engines: {node: '>=20'}
 
   '@vmz/protocol@0.3.12':
     resolution: {integrity: sha512-oAwBnhVJw9TvCYevwGwKh8Pr+Ruthmyr8qUfq/3XrKRvIKrg2vY6O2+0MExwPypPeX2vhXwW8+WvFYVSNMJSCQ==}
@@ -601,11 +591,6 @@ packages:
       '@vmz/ui-icons':
         optional: true
 
-  '@vmz/vmz-darwin-arm64@0.1.12':
-    resolution: {integrity: sha512-tYdKUJHKK5PRuIynBoWaK2/WnsA/I3zDC/gnwXrMfssNB+DuPWrukF8X58djl9BACZZZeovhmjd7ZxGYxUfn5g==}
-    cpu: [arm64]
-    os: [darwin]
-
   '@vmz/vmz-darwin-arm64@0.3.12':
     resolution: {integrity: sha512-BioHMvjPMMcor9VZRUCr9tLm2XyC71dPgLGoVtfwGzkK/GcPkQVcn38R+uBm7hKhiY09OJMYH2sRYspFRw7aiA==}
     cpu: [arm64]
@@ -621,11 +606,6 @@ packages:
     cpu: [arm64]
     os: [linux]
 
-  '@vmz/vmz-linux-x64@0.1.12':
-    resolution: {integrity: sha512-nEvJA6zujZdLafIatEDL+VdSUwPs10QoDSTAfJncbjvjgxuPWlknIHAWbSkQqwRAIVh1JryZudgPY4PmuetzXQ==}
-    cpu: [x64]
-    os: [linux]
-
   '@vmz/vmz-linux-x64@0.3.12':
     resolution: {integrity: sha512-5VbLc0z/0sByHII9uOPS83vVKMT14633KXkN4ZEdO5X5qv8BIxQgSJAX980sjBpiQ+Z5HCzUvWYTXfx4HwsXHA==}
     cpu: [x64]
@@ -636,30 +616,10 @@ packages:
     cpu: [arm64]
     os: [win32]
 
-  '@vmz/vmz-win32-x64@0.1.12':
-    resolution: {integrity: sha512-iNabpWfhRzFo9W3CIeQMVBNmnBYBSJLh6TfPE35y3Q9g1n38uJy/z58h93gn/5OBkcPzTMZvW3mNyRXS9eDGlA==}
-    cpu: [x64]
-    os: [win32]
-
   '@vmz/vmz-win32-x64@0.3.12':
     resolution: {integrity: sha512-6zHVJDmJ+WWrKnY1uYV94ba3HQWniu4dZjqN/H5bwjIoeRNDCaGo982fJTR9rCmReoU/27nZeZG9q6Bgfg82xg==}
     cpu: [x64]
     os: [win32]
-
-  '@vmz/vmz@0.1.12':
-    resolution: {integrity: sha512-ZjNambPim+F5+yDNCzlJe7nFMnLsbnwO88OXZKNDaw4ThS7rfK7WKCbnnvBMxyOqzEtOAb4JP/k4eNK7yd2MfQ==}
-    hasBin: true
-    peerDependencies:
-      '@vmz/plugin-markdown-it': 0.1.12
-      '@vmz/test': 0.1.12
-      typescript: ^5.8.3
-    peerDependenciesMeta:
-      '@vmz/plugin-markdown-it':
-        optional: true
-      '@vmz/test':
-        optional: true
-      typescript:
-        optional: true
 
   '@vmz/vmz@0.3.12':
     resolution: {integrity: sha512-b1xsKccZKpLjT1KPOndW/RJATRM0DOwT6nF8n6BD3tivPr3mXtnGPgJ/zKikVwyJgOlZX43lr0GmrtlPleoPmQ==}
@@ -780,15 +740,6 @@ packages:
 
   htmlparser2@10.1.0:
     resolution: {integrity: sha512-VTZkM9GWRAtEpveh7MSF6SjjrpNVNNVJfFup7xTY3UpFtm67foy9HDVXneLtFVt4pMz5kZtgNcvCniNFb1hlEQ==}
-
-  jiti@2.7.0:
-    resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
-    hasBin: true
-
-  json5@2.2.3:
-    resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
-    engines: {node: '>=6'}
-    hasBin: true
 
   linkedom@0.18.13:
     resolution: {integrity: sha512-ES/o9qotMpzpN2MHs+Iq/JcVoOj8Fa5wiQYrTdFpvAnwXL0g66XHHUc9WUMk6nAlBtGsFQ24ne+SYnvnaQ2FSw==}
@@ -1071,12 +1022,6 @@ snapshots:
 
   '@vmz/commander@0.3.12': {}
 
-  '@vmz/core@0.1.12':
-    dependencies:
-      linkedom: 0.18.13
-    transitivePeerDependencies:
-      - canvas
-
   '@vmz/core@0.3.12':
     dependencies:
       linkedom: 0.18.13
@@ -1097,15 +1042,9 @@ snapshots:
       '@vmz/plugin': 0.3.12
       shiki: 4.6.0
 
-  '@vmz/plugin@0.1.12':
-    dependencies:
-      '@vmz/protocol': 0.1.12
-
   '@vmz/plugin@0.3.12':
     dependencies:
       '@vmz/protocol': 0.3.12
-
-  '@vmz/protocol@0.1.12': {}
 
   '@vmz/protocol@0.3.12': {}
 
@@ -1117,9 +1056,6 @@ snapshots:
     optionalDependencies:
       '@vmz/ui-icons': 0.3.12(@vmz/ui@0.3.12)
 
-  '@vmz/vmz-darwin-arm64@0.1.12':
-    optional: true
-
   '@vmz/vmz-darwin-arm64@0.3.12':
     optional: true
 
@@ -1129,35 +1065,14 @@ snapshots:
   '@vmz/vmz-linux-arm64@0.3.12':
     optional: true
 
-  '@vmz/vmz-linux-x64@0.1.12':
-    optional: true
-
   '@vmz/vmz-linux-x64@0.3.12':
     optional: true
 
   '@vmz/vmz-win32-arm64@0.3.12':
     optional: true
 
-  '@vmz/vmz-win32-x64@0.1.12':
-    optional: true
-
   '@vmz/vmz-win32-x64@0.3.12':
     optional: true
-
-  '@vmz/vmz@0.1.12(typescript@5.9.3)':
-    dependencies:
-      '@vmz/core': 0.1.12
-      '@vmz/plugin': 0.1.12
-      '@vmz/protocol': 0.1.12
-      jiti: 2.7.0
-      json5: 2.2.3
-    optionalDependencies:
-      '@vmz/vmz-darwin-arm64': 0.1.12
-      '@vmz/vmz-linux-x64': 0.1.12
-      '@vmz/vmz-win32-x64': 0.1.12
-      typescript: 5.9.3
-    transitivePeerDependencies:
-      - canvas
 
   '@vmz/vmz@0.3.12(typescript@5.9.3)':
     dependencies:
@@ -1309,10 +1224,6 @@ snapshots:
       domhandler: 5.0.3
       domutils: 3.2.2
       entities: 7.0.1
-
-  jiti@2.7.0: {}
-
-  json5@2.2.3: {}
 
   linkedom@0.18.13:
     dependencies:

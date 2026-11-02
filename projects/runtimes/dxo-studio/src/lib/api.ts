@@ -7,7 +7,32 @@ export function studioApiBase(): string {
     return 'http://127.0.0.1:4310';
 }
 
+let shimReady: Promise<void> | null = null;
+
+/**
+ * Load `public/dxo-studio-api.js` (the launcher overwrites it with the bound
+ * loopback port) before the first API read. Optional — missing shim keeps the
+ * compiled-in default.
+ */
+export function ensureStudioApiShim(): Promise<void> {
+    if (shimReady) return shimReady;
+    if (typeof document === 'undefined') {
+        shimReady = Promise.resolve();
+        return shimReady;
+    }
+    shimReady = new Promise((resolve) => {
+        const el = document.createElement('script');
+        el.src = '/dxo-studio-api.js';
+        el.dataset.dxoStudioApi = '1';
+        el.onload = () => resolve();
+        el.onerror = () => resolve();
+        document.head.appendChild(el);
+    });
+    return shimReady;
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
+    await ensureStudioApiShim();
     const url = `${studioApiBase()}${path.startsWith('/') ? path : `/${path}`}`;
     const res = await fetch(url);
     if (!res.ok) {

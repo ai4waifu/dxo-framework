@@ -12,21 +12,21 @@
     <section class="studio__panel">
       <h1>Compare runs</h1>
       <p class="studio__hint">Select two or more runs to overlay scalar metrics.</p>
-      <p class="studio__status">{status}</p>
+      <p class="studio__status">{{ status }}</p>
 
       <ul class="studio__list studio__pick-list">
-        <li each={runs} as="run" key={run.runId}>
+        <li v-for="run in runs" :key="run.runId">
           <label>
-            <input type="checkbox" checked={isSelected(run.runId)} onChange={() => toggleRun(run.runId)} />
-            {runLabel(run)}
-            <span class="studio__badge">{run.meta.status}</span>
+            <input type="checkbox" :checked="isSelected(run.runId)" @change="() => toggleRun(run.runId)" />
+            {{ runLabel(run) }}
+            <span class="studio__badge">{{ run.meta.status }}</span>
           </label>
         </li>
       </ul>
 
-      <button class="studio__btn" onClick={loadCompare} disabled={selected.length < 2}>Compare</button>
+      <button class="studio__btn" @click="loadCompare" :disabled="selected.length < 2">Compare</button>
 
-      <div class="studio__compare" if={compareRows.length > 0}>
+      <div class="studio__compare" v-if="compareRows.length > 0">
         <h2>Metric overlay</h2>
         <table class="studio__table">
           <thead>
@@ -38,11 +38,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr each={compareRows} as="row" key={row.key}>
-              <td>{row.runLabel}</td>
-              <td>{row.name}</td>
-              <td>{row.step}</td>
-              <td>{row.value}</td>
+            <tr v-for="row in compareRows" :key="row.key">
+              <td>{{ row.runLabel }}</td>
+              <td>{{ row.name }}</td>
+              <td>{{ row.step }}</td>
+              <td>{{ row.value }}</td>
             </tr>
           </tbody>
         </table>
@@ -77,6 +77,7 @@ export default class ComparePage {
     }
 
     async onMount() {
+        if (typeof location === 'undefined') return;
         try {
             const data = await apiGet('/api/runs');
             this.runs = data.runs ?? [];

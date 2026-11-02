@@ -1,5 +1,4 @@
 <template>
-  <script src="/dxo-studio-api.js"></script>
   <slot />
 </template>
 

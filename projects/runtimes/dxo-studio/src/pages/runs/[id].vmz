@@ -10,8 +10,8 @@
     </header>
 
     <section class="studio__panel">
-      <h1>Run {runId}</h1>
-      <p class="studio__status">{status}</p>
+      <h1>Run {{ runId }}</h1>
+      <p class="studio__status">{{ status }}</p>
 
       <h2>Metrics</h2>
       <table class="studio__table">
@@ -19,65 +19,65 @@
           <tr><th>name</th><th>step</th><th>value</th></tr>
         </thead>
         <tbody>
-          <tr each={metrics} as="m" key={metricKey(m)}>
-            <td>{m.name}</td>
-            <td>{m.step ?? '—'}</td>
-            <td>{formatValue(m.value)}</td>
+          <tr v-for="m in metrics" :key="metricKey(m)">
+            <td>{{ m.name }}</td>
+            <td>{{ stepText(m) }}</td>
+            <td>{{ formatValue(m.value) }}</td>
           </tr>
         </tbody>
       </table>
 
       <h2>Confusion matrix</h2>
-      <p class="studio__hint" if={!hasMatrix}>No confusion-matrix artifact.</p>
-      <table class="studio__table studio__matrix" if={hasMatrix}>
+      <p class="studio__hint" v-if="!hasMatrix">No confusion-matrix artifact.</p>
+      <table class="studio__table studio__matrix" v-if="hasMatrix">
         <thead>
           <tr>
             <th></th>
-            <th each={matrixLabels} as="lbl" key={lbl}>{lbl}</th>
+            <th v-for="lbl in matrixLabels" :key="lbl">{{ lbl }}</th>
           </tr>
         </thead>
         <tbody>
-          <tr each={matrixRows} as="row" key={row.label}>
-            <th>{row.label}</th>
-            <td each={row.cells} as="cell" key={cell.key} class={cellClass(cell.value)}>{cell.value}</td>
+          <tr v-for="row in matrixRows" :key="row.label">
+            <th>{{ row.label }}</th>
+            <td v-for="cell in row.cells" :key="cell.key" :class="cellClass(cell.value)">{{ cell.value }}</td>
           </tr>
         </tbody>
       </table>
 
       <h2>Image samples</h2>
-      <p class="studio__hint" if={samples.length === 0}>No image-samples artifact.</p>
-      <ul class="studio__samples" if={samples.length > 0}>
-        <li each={samples} as="s" key={s.uri}>
-          <img src={s.src} alt={s.caption} />
-          <span class="studio__meta">{s.caption}</span>
+      <p class="studio__hint" v-if="samples.length === 0">No image-samples artifact.</p>
+      <ul class="studio__samples" v-if="samples.length > 0">
+        <li v-for="s in samples" :key="s.uri">
+          <img :src="s.src" :alt="s.caption" />
+          <span class="studio__meta">{{ s.caption }}</span>
         </li>
       </ul>
 
       <h2>Training events</h2>
       <ul class="studio__list studio__list--compact">
-        <li each={trainEvents} as="e" key={eventKey(e)}><code>{e.type}</code> {summarize(e)}</li>
+        <li v-for="e in trainEvents" :key="eventKey(e)"><code>{{ eventType(e) }}</code> {{ summarize(e) }}</li>
       </ul>
 
       <h2>Checkpoints</h2>
       <ul class="studio__list">
-        <li each={checkpoints} as="c" key={c.uri}><code>{c.name}</code> · {c.uri}</li>
+        <li v-for="c in checkpoints" :key="c.uri"><code>{{ c.name }}</code> · {{ c.uri }}</li>
       </ul>
 
       <h2>Models</h2>
       <p class="studio__hint">Module · Execution · Kernel are separate views — never one merged architecture diagram.</p>
       <div class="studio__tabs">
-        <button class={tabClass('module')} onClick={() => selectGraphTab('module')}>Module</button>
-        <button class={tabClass('execution')} onClick={() => selectGraphTab('execution')}>Execution</button>
-        <button class={tabClass('kernel')} onClick={() => selectGraphTab('kernel')}>Kernel</button>
+        <button :class="tabClass('module')" @click="() => selectGraphTab('module')">Module</button>
+        <button :class="tabClass('execution')" @click="() => selectGraphTab('execution')">Execution</button>
+        <button :class="tabClass('kernel')" @click="() => selectGraphTab('kernel')">Kernel</button>
       </div>
-      <p class="studio__meta" if={graphAvailability}>{graphAvailability}</p>
-      <pre class="studio__pre">{graphText}</pre>
+      <p class="studio__meta" v-if="graphAvailability">{{ graphAvailability }}</p>
+      <pre class="studio__pre">{{ graphText }}</pre>
 
       <h2>Profiler</h2>
-      <p class="studio__hint" if={!hasProfile}>{profileHint}</p>
-      <ul class="studio__list studio__list--compact" if={hasProfile}>
-        <li each={profileSpans} as="s" key={spanKey(s)}>
-          <code>{s.category}</code> {s.name} · {s.startMs}–{s.endMs} ms
+      <p class="studio__hint" v-if="!hasProfile">{{ profileHint }}</p>
+      <ul class="studio__list studio__list--compact" v-if="hasProfile">
+        <li v-for="s in profileSpans" :key="spanKey(s)">
+          <code>{{ s.category }}</code> {{ s.name }} · {{ s.startMs }}–{{ s.endMs }} ms
         </li>
       </ul>
     </section>
@@ -107,6 +107,14 @@ export default class RunDetailPage {
 
     metricKey(m) {
         return `${m.name}:${m.step ?? ''}:${m.wallTimeMs ?? ''}`;
+    }
+
+    stepText(m) {
+        return m.step ?? '—';
+    }
+
+    eventType(e) {
+        return e.type;
     }
 
     eventKey(e) {
@@ -229,6 +237,7 @@ export default class RunDetailPage {
     }
 
     async onMount() {
+        if (typeof location === 'undefined') return;
         const parts = location.pathname.split('/').filter(Boolean);
         this.runId = parts[1] ?? '';
         if (!this.runId) {

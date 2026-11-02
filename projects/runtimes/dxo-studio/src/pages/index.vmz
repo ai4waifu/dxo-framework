@@ -12,12 +12,12 @@
     <section class="studio__panel">
       <h1>Runs</h1>
       <p class="studio__hint">Append-only inspect store — refresh reloads history after the trainer exits.</p>
-      <p class="studio__status">{status}</p>
+      <p class="studio__status">{{ status }}</p>
       <ul class="studio__list">
-        <li each={runs} as="run" key={run.runId}>
-          <a href={`/runs/${run.runId}`}>{runLabel(run)}</a>
-          <span class="studio__badge">{run.meta.status}</span>
-          <span class="studio__meta">{formatTime(run.meta.startedAtMs)}</span>
+        <li v-for="run in runs" :key="run.runId">
+          <a :href="runHref(run)">{{ runLabel(run) }}</a>
+          <span class="studio__badge">{{ run.meta.status }}</span>
+          <span class="studio__meta">{{ formatTime(run.meta.startedAtMs) }}</span>
         </li>
       </ul>
     </section>
@@ -35,6 +35,10 @@ export default class RunsPage {
         return run.meta?.label ?? run.runId;
     }
 
+    runHref(run) {
+        return `/runs/${run.runId}`;
+    }
+
     formatTime(ms) {
         try {
             return new Date(ms).toLocaleString();
@@ -44,6 +48,7 @@ export default class RunsPage {
     }
 
     async onMount() {
+        if (typeof location === 'undefined') return;
         try {
             const data = await apiGet('/api/runs');
             this.runs = data.runs ?? [];

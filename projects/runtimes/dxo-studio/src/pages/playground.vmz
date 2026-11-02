@@ -12,23 +12,23 @@
     <section class="studio__panel studio__upload">
       <h1>Image playground</h1>
       <p class="studio__hint">
-        Upload an image to a loopback `@dxo/ui` model app (`defineModelApp`). Start serve separately on {appBase}.
+        Upload an image to a loopback `@dxo/ui` model app (`defineModelApp`). Start serve separately on {{ appBase }}.
       </p>
-      <p class="studio__status">{status}</p>
+      <p class="studio__status">{{ status }}</p>
 
       <label class="studio__file">
         <span>Image file</span>
-        <input type="file" accept="image/*" onChange={onFile} />
+        <input type="file" accept="image/*" @change="onFile" />
       </label>
 
-      <button class="studio__btn" onClick={predict} disabled={!file}>Predict</button>
-      <button class="studio__btn studio__btn--ghost" onClick={cancel} disabled={!busy}>Cancel</button>
+      <button class="studio__btn" @click="predict" :disabled="!file">Predict</button>
+      <button class="studio__btn studio__btn--ghost" @click="cancel" :disabled="!busy">Cancel</button>
 
-      <div if={previewUrl} class="studio__preview">
-        <img src={previewUrl} alt="upload preview" />
+      <div v-if="previewUrl" class="studio__preview">
+        <img :src="previewUrl" alt="upload preview" />
       </div>
 
-      <pre class="studio__pre" if={resultText}>{resultText}</pre>
+      <pre class="studio__pre" v-if="resultText">{{ resultText }}</pre>
     </section>
   </main>
 </template>
@@ -36,9 +36,11 @@
 <script client>
 import { modelAppBase } from '../lib/api.ts';
 
+const boot = { appBase: modelAppBase() };
+
 export default class PlaygroundPage {
     status = 'ready';
-    appBase = modelAppBase();
+    appBase = boot.appBase;
     file = null;
     previewUrl = '';
     resultText = '';
@@ -47,7 +49,7 @@ export default class PlaygroundPage {
 
     onFile(e) {
         const input = e.target;
-        const f = input?.files?.[0];
+        const f = input && input.files ? input.files[0] : null;
         this.file = f ?? null;
         if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
         this.previewUrl = f ? URL.createObjectURL(f) : '';
