@@ -7,6 +7,7 @@ use serde_json::{Map, Value};
 use crate::tensor::TensorError;
 
 const DTYPE_F32: &str = "F32";
+const DTYPE_U8: &str = "U8";
 const HEADER_ALIGN: usize = 8;
 const METADATA_KEY: &str = "__metadata__";
 
@@ -121,7 +122,9 @@ pub fn encode_safetensors_buffers(
     Ok(out)
 }
 
-/// Decode safetensors bytes into named F32 slices and optional metadata map.
+/// Decode safetensors bytes into named f32 slices and optional metadata map.
+///
+/// `F32` payloads are read as-is; `U8` payloads (HF image/label datasets) are widened to f32.
 pub fn decode_safetensors(bytes: &[u8]) -> Result<DecodedSafetensors, TensorError> {
     if bytes.len() < 8 {
         return Err(TensorError::invalid_shape("decode_safetensors: buffer too short"));
@@ -157,11 +160,15 @@ pub fn decode_safetensors(bytes: &[u8]) -> Result<DecodedSafetensors, TensorErro
             .get("dtype")
             .and_then(|v| v.as_str())
             .ok_or_else(|| TensorError::invalid_shape(format!("decode_safetensors: missing dtype for '{name}'")))?;
-        if dtype != DTYPE_F32 {
-            return Err(TensorError::invalid_shape(format!(
-                "decode_safetensors: unsupported dtype '{dtype}' for '{name}' (v0 is F32-only)"
-            )));
-        }
+        let element_bytes = match dtype {
+            DTYPE_F32 => 4usize,
+            DTYPE_U8 => 1,
+            other => {
+                return Err(TensorError::invalid_shape(format!(
+                    "decode_safetensors: unsupported dtype '{other}' for '{name}' (supported: F32, U8)"
+                )));
+            }
+        };
         let shape = info
             .get("shape")
             .and_then(|v| v.as_array())
@@ -186,7 +193,7 @@ pub fn decode_safetensors(bytes: &[u8]) -> Result<DecodedSafetensors, TensorErro
         if end < begin || data_base + end > bytes.len() {
             return Err(TensorError::invalid_shape(format!("decode_safetensors: bad data_offsets for '{name}'")));
         }
-        let expected = numel(&shape) * 4;
+        let expected = numel(&shape) * element_bytes;
         if end - begin != expected {
             return Err(TensorError::invalid_shape(format!(
                 "decode_safetensors: '{name}' byte span {} != {expected}",
@@ -194,7 +201,8 @@ pub fn decode_safetensors(bytes: &[u8]) -> Result<DecodedSafetensors, TensorErro
             )));
         }
         let raw = &bytes[data_base + begin..data_base + end];
-        tensors.insert(name.clone(), SafetensorSlice { shape, data: f32_bytes_to_vec(raw)? });
+        let data = if dtype == DTYPE_U8 { raw.iter().map(|byte| f32::from(*byte)).collect() } else { f32_bytes_to_vec(raw)? };
+        tensors.insert(name.clone(), SafetensorSlice { shape, data });
     }
 
     Ok((tensors, metadata))
@@ -233,5 +241,20 @@ mod tests {
         let (decoded, got_meta) = decode_safetensors(&bytes).expect("decode");
         assert_eq!(decoded, tensors);
         assert_eq!(got_meta.get("epoch"), Some(&"3".into()));
+    }
+
+    #[test]
+    fn decodes_u8_payloads_as_f32() {
+        let header = br#"{"image":{"dtype":"U8","shape":[2,2],"data_offsets":[0,4]}}"#;
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&(header.len() as u64).to_le_bytes());
+        bytes.extend_from_slice(header);
+        bytes.extend_from_slice(&[0, 7, 128, 255]);
+
+        let (decoded, metadata) = decode_safetensors(&bytes).expect("decode u8");
+        assert!(metadata.is_empty());
+        let image = decoded.get("image").expect("image tensor");
+        assert_eq!(image.shape, vec![2, 2]);
+        assert_eq!(image.data, vec![0.0, 7.0, 128.0, 255.0]);
     }
 }

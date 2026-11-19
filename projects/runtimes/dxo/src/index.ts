@@ -9,6 +9,15 @@ import type { GlobalFlags } from './output.js';
 import { writeError, writeResult } from './output.js';
 import { cliPackage } from './pkg.js';
 
+export {
+    type ClassificationReport,
+    decodeSafetensors,
+    encodeSafetensors,
+    GraphMlp,
+    type GraphMlpOptions,
+    type ParameterInfo,
+} from '@dxo/core';
+
 type SharedOptions = GlobalFlags & {
     cwd?: string;
     config?: string;

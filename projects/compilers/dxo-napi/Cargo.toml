@@ -22,6 +22,11 @@ dxo-studio.workspace = true
 napi.workspace = true
 napi-derive.workspace = true
 serde_json = "1"
+dl-types.workspace = true
+dl-tensor.workspace = true
+dl-graph.workspace = true
+dl-train.workspace = true
+dl-nn.workspace = true
 
 [build-dependencies]
 napi-build = "2"

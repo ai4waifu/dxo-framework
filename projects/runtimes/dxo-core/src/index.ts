@@ -517,6 +517,9 @@ export { decodeImageBuffer, createImageBufferFromPixels, unsupportedImageBufferA
 export type { PrecisionCapabilities, PrecisionPolicy } from './precision.js';
 export { precisionCapabilities, resolvePrecisionPolicy, resolveWeightDtype } from './precision.js';
 
+export type { ClassificationReport, GraphMlpOptions, ParameterInfo } from './graph-train.js';
+export { GraphMlp } from './graph-train.js';
+
 export type {
     BufferToTensorOptions,
     CodecHandle,

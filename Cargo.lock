@@ -149,6 +149,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "boost-math"
+version = "0.1.0"
+source = "git+https://github.com/oovm/boost.rs.git?rev=0cce4336f72b2cd683945b912af20970d6559000#0cce4336f72b2cd683945b912af20970d6559000"
+
+[[package]]
+name = "boost-random"
+version = "0.1.0"
+source = "git+https://github.com/oovm/boost.rs.git?rev=0cce4336f72b2cd683945b912af20970d6559000#0cce4336f72b2cd683945b912af20970d6559000"
+dependencies = [
+ "boost-math",
+]
+
+[[package]]
 name = "brotli"
 version = "8.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -681,6 +694,72 @@ dependencies = [
 ]
 
 [[package]]
+name = "dl-autograd"
+version = "0.1.0"
+source = "git+https://github.com/oovm/boost.rs.git?rev=0cce4336f72b2cd683945b912af20970d6559000#0cce4336f72b2cd683945b912af20970d6559000"
+dependencies = [
+ "dl-ops",
+ "dl-tensor",
+ "dl-types",
+]
+
+[[package]]
+name = "dl-graph"
+version = "0.1.0"
+source = "git+https://github.com/oovm/boost.rs.git?rev=0cce4336f72b2cd683945b912af20970d6559000#0cce4336f72b2cd683945b912af20970d6559000"
+dependencies = [
+ "dl-ops",
+ "dl-tensor",
+ "dl-types",
+]
+
+[[package]]
+name = "dl-nn"
+version = "0.1.0"
+source = "git+https://github.com/oovm/boost.rs.git?rev=0cce4336f72b2cd683945b912af20970d6559000#0cce4336f72b2cd683945b912af20970d6559000"
+dependencies = [
+ "boost-random",
+ "dl-autograd",
+ "dl-tensor",
+ "dl-types",
+]
+
+[[package]]
+name = "dl-ops"
+version = "0.1.0"
+source = "git+https://github.com/oovm/boost.rs.git?rev=0cce4336f72b2cd683945b912af20970d6559000#0cce4336f72b2cd683945b912af20970d6559000"
+dependencies = [
+ "dl-tensor",
+ "dl-types",
+]
+
+[[package]]
+name = "dl-tensor"
+version = "0.1.0"
+source = "git+https://github.com/oovm/boost.rs.git?rev=0cce4336f72b2cd683945b912af20970d6559000#0cce4336f72b2cd683945b912af20970d6559000"
+dependencies = [
+ "dl-types",
+]
+
+[[package]]
+name = "dl-train"
+version = "0.1.0"
+source = "git+https://github.com/oovm/boost.rs.git?rev=0cce4336f72b2cd683945b912af20970d6559000#0cce4336f72b2cd683945b912af20970d6559000"
+dependencies = [
+ "boost-random",
+ "dl-autograd",
+ "dl-graph",
+ "dl-nn",
+ "dl-tensor",
+ "dl-types",
+]
+
+[[package]]
+name = "dl-types"
+version = "0.1.0"
+source = "git+https://github.com/oovm/boost.rs.git?rev=0cce4336f72b2cd683945b912af20970d6559000#0cce4336f72b2cd683945b912af20970d6559000"
+
+[[package]]
 name = "dlopen2"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -796,6 +875,11 @@ dependencies = [
 name = "dxo-napi"
 version = "0.1.0"
 dependencies = [
+ "dl-graph",
+ "dl-nn",
+ "dl-tensor",
+ "dl-train",
+ "dl-types",
  "dxo-core",
  "dxo-studio",
  "napi",

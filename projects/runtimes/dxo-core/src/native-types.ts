@@ -59,6 +59,34 @@ export interface NativeTensor {
     toF32Buffer(): Buffer;
 }
 
+/** Classification metrics returned by the Boost graph trainer. */
+export interface NativeClassificationReport {
+    meanLoss: number;
+    accuracy: number;
+    batches: number;
+}
+
+/** Parameter summary returned by the Boost graph trainer. */
+export interface NativeParameterInfo {
+    name: string;
+    shape: number[];
+}
+
+/**
+ * Fixed-batch MLP training session backed by Boost `dl-graph` / `dl-train`.
+ * All buffers are little-endian f32; rows are packed as `[rows, features]` / `[rows, classes]`.
+ */
+export interface NativeGraphMlp {
+    readonly sizes: number[];
+    readonly batchSize: number;
+    fitEpoch(inputs: Buffer, targets: Buffer): number;
+    evaluate(inputs: Buffer, targets: Buffer): NativeClassificationReport;
+    predict(inputs: Buffer): Buffer;
+    parameters(): NativeParameterInfo[];
+    parameter(name: string): Buffer;
+    setParameter(name: string, data: Buffer): void;
+}
+
 /** Engine diagnosis from napi `doctorReport` (single source of truth for CLI doctor). */
 export interface NativeDoctorReport {
     ok: boolean;
@@ -150,6 +178,7 @@ export interface NativeAddon {
         beta2: number,
         eps: number,
     ): NativeTensor[];
+    GraphMlp: new (sizes: number[], batchSize?: number | null, seed?: number | null, learningRate?: number | null) => NativeGraphMlp;
     encodeSafetensors(entries: SafetensorBufferEntry[], metadataJson?: string | null): Buffer;
     decodeSafetensors(bytes: Buffer): DecodeSafetensorsResult;
     /** Loopback inspect HTTP serve (Rust `dxo-studio`). */

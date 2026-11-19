@@ -1,4 +1,4 @@
-﻿[workspace]
+[workspace]
 resolver = "2"
 members = [
     "projects/compilers/dxo-core",
@@ -36,6 +36,12 @@ ucf-ir = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev" }
 ucf-scheduler = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev" }
 ucf-types = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev" }
 ucf-runtime = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev" }
+# Boost DL/ML：训练图与优化器固定到 boost.rs 的明确提交，不复用 titan 的第二套图。
+dl-types = { git = "https://github.com/oovm/boost.rs.git", rev = "0cce4336f72b2cd683945b912af20970d6559000" }
+dl-tensor = { git = "https://github.com/oovm/boost.rs.git", rev = "0cce4336f72b2cd683945b912af20970d6559000" }
+dl-graph = { git = "https://github.com/oovm/boost.rs.git", rev = "0cce4336f72b2cd683945b912af20970d6559000" }
+dl-train = { git = "https://github.com/oovm/boost.rs.git", rev = "0cce4336f72b2cd683945b912af20970d6559000" }
+dl-nn = { git = "https://github.com/oovm/boost.rs.git", rev = "0cce4336f72b2cd683945b912af20970d6559000" }
 
 [profile.release]
 lto = true
