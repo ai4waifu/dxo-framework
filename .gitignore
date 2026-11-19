@@ -40,3 +40,6 @@ scripts/.placeholder-npm-cache.json
 .env.placeholder.local
 
 .cache/
+
+# npm secrets (nifty)
+.secrets/
