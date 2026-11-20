@@ -67,7 +67,10 @@ import { Trainer } from '@dxo/train';
     const opt = new Adam(0.05);
     model.zeroGrad();
     const pred = model.forward(tensor([1, 0], [1, 2]));
-    const loss = pred.sub(tensor([0], [1, 1])).mul(pred.sub(tensor([0], [1, 1]))).mean();
+    const loss = pred
+        .sub(tensor([0], [1, 1]))
+        .mul(pred.sub(tensor([0], [1, 1])))
+        .mean();
     loss.backward();
     const before = (await model.weight.toArray()).slice();
     model.loadParameters(await opt.step(model.parameters()));

@@ -3,8 +3,8 @@ import { DxoError, wrapNative } from './errors.js';
 import { formatDiagnostic } from './locale.js';
 import { loadNative } from './native.js';
 import type {
-    DecodeSafetensorsResult,
     DecodedSafetensorEntry,
+    DecodeSafetensorsResult,
     NativeAdamState,
     NativeDoctorReport,
     NativeInspectApiServerHandle,
@@ -26,7 +26,18 @@ export interface TensorOptions {
     requiresGrad?: boolean;
 }
 
+export {
+    type DxoDiagnostic,
+    DxoError,
+    type DxoErrorInit,
+    type DxoSeverity,
+    rethrowAsDxoError,
+    wrapNative,
+} from './errors.js';
+export { type DxoLocale, formatDiagnostic, resolveLocale } from './locale.js';
 export type {
+    DecodedSafetensorEntry,
+    DecodeSafetensorsResult,
     NativeAddon,
     NativeDoctorReport,
     NativeInspectApiServerHandle,
@@ -35,19 +46,7 @@ export type {
     NativeInspectRunSummary,
     NativeTensor,
     SafetensorBufferEntry,
-    DecodedSafetensorEntry,
-    DecodeSafetensorsResult,
 } from './native-types.js';
-
-export {
-    DxoError,
-    wrapNative,
-    rethrowAsDxoError,
-    type DxoDiagnostic,
-    type DxoErrorInit,
-    type DxoSeverity,
-} from './errors.js';
-export { formatDiagnostic, resolveLocale, type DxoLocale } from './locale.js';
 
 /**
  * Dense float32 tensor (CPU preview + optional CUDA matmul spike).
@@ -169,9 +168,7 @@ export class Tensor {
     }
 
     conv2d(weight: Tensor, bias: Tensor | null, stride: number, padding: number): Tensor {
-        return new Tensor(
-            wrapNative(() => this.#handle.conv2d(weight.nativeHandle, bias ? bias.nativeHandle : null, stride, padding)),
-        );
+        return new Tensor(wrapNative(() => this.#handle.conv2d(weight.nativeHandle, bias ? bias.nativeHandle : null, stride, padding)));
     }
 
     maxPool2d(kernel: number, stride: number, padding: number): Tensor {
@@ -354,14 +351,7 @@ export function createAdamState(): AdamStateHandle {
 }
 
 /** Batch Adam in Rust; mutates `state` and returns new `requiresGrad` leaves. */
-export function adamStep(
-    params: readonly Tensor[],
-    state: AdamStateHandle,
-    lr: number,
-    beta1 = 0.9,
-    beta2 = 0.999,
-    eps = 1e-8,
-): Tensor[] {
+export function adamStep(params: readonly Tensor[], state: AdamStateHandle, lr: number, beta1 = 0.9, beta2 = 0.999, eps = 1e-8): Tensor[] {
     return wrapNative(() =>
         loadNative()
             .adamStep(
@@ -503,6 +493,8 @@ export type {
     TokenBufferDtype,
     VideoFrameBuffer,
 } from './domain-buffers.js';
+export type { ClassificationReport, GraphMlpOptions, ParameterInfo } from './graph-train.js';
+export { GraphMlp } from './graph-train.js';
 export type {
     CreateImageBufferFromPixelsOptions,
     DecodeImageBridgeOptions,
@@ -513,12 +505,9 @@ export type {
     ImageBufferLayout,
     ImageBufferToTensorOptions,
 } from './image-buffer.js';
-export { decodeImageBuffer, createImageBufferFromPixels, unsupportedImageBufferApi } from './image-buffer.js';
+export { createImageBufferFromPixels, decodeImageBuffer, unsupportedImageBufferApi } from './image-buffer.js';
 export type { PrecisionCapabilities, PrecisionPolicy } from './precision.js';
 export { precisionCapabilities, resolvePrecisionPolicy, resolveWeightDtype } from './precision.js';
-
-export type { ClassificationReport, GraphMlpOptions, ParameterInfo } from './graph-train.js';
-export { GraphMlp } from './graph-train.js';
 
 export type {
     BufferToTensorOptions,

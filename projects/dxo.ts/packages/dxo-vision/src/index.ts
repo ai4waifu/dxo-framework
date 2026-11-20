@@ -15,6 +15,7 @@ export {
     LinearHead,
     type LinearHeadOptions,
 } from './heads.js';
+export { type FromDecodeOptions, type FromPixelsOptions, fromDecode, fromPixels, VisionImage } from './image.js';
 export {
     type BilingualLabelSpaceOptions,
     type ClassificationDecode,
@@ -38,7 +39,6 @@ export type {
     WeightSource,
 } from './types.js';
 export { resnetFeatureChannels } from './types.js';
-export { VisionImage, fromDecode, fromPixels, type FromDecodeOptions, type FromPixelsOptions } from './image.js';
 
 export type ColorSpace = 'rgb' | 'rgba' | 'gray' | 'bgr';
 export type ImageLayout = 'HWC' | 'CHW' | 'nchw' | 'nhwc';

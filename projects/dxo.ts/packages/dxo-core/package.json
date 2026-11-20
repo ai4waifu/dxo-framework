@@ -24,8 +24,8 @@
     ],
     "scripts": {
         "build": "tsc -p tsconfig.json",
-        "build:native": "node ../../../scripts/build/napi.mjs --release",
-        "smoke": "tsx ../../../scripts/test/smoke.ts"
+        "build:native": "node ../../../../scripts/build/napi.mjs --release",
+        "smoke": "tsx ../../../../scripts/test/smoke.ts"
     },
     "optionalDependencies": {
         "@dxo/dxo-win32-x64": "workspace:*",

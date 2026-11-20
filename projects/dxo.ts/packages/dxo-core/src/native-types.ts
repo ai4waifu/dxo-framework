@@ -170,14 +170,7 @@ export interface NativeAddon {
     sgdStep(params: NativeTensor[], lr: number): NativeTensor[];
     backwardSgdStep(loss: NativeTensor, params: NativeTensor[], lr: number): NativeTensor[];
     AdamState: new () => NativeAdamState;
-    adamStep(
-        params: NativeTensor[],
-        state: NativeAdamState,
-        lr: number,
-        beta1: number,
-        beta2: number,
-        eps: number,
-    ): NativeTensor[];
+    adamStep(params: NativeTensor[], state: NativeAdamState, lr: number, beta1: number, beta2: number, eps: number): NativeTensor[];
     GraphMlp: new (sizes: number[], batchSize?: number | null, seed?: number | null, learningRate?: number | null) => NativeGraphMlp;
     encodeSafetensors(entries: SafetensorBufferEntry[], metadataJson?: string | null): Buffer;
     decodeSafetensors(bytes: Buffer): DecodeSafetensorsResult;

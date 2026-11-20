@@ -19,8 +19,14 @@ import { DxoError, precisionCapabilities, resolveWeightDtype } from '@dxo/core';
 }
 
 {
-    assert.throws(() => resolveWeightDtype('f16'), (err: unknown) => err instanceof DxoError && (err as DxoError).code === 'DXO_PRECISION_DTYPE_UNAVAILABLE');
-    assert.throws(() => resolveWeightDtype('int8'), (err: unknown) => err instanceof DxoError && (err as DxoError).code === 'DXO_PRECISION_DTYPE_UNAVAILABLE');
+    assert.throws(
+        () => resolveWeightDtype('f16'),
+        (err: unknown) => err instanceof DxoError && (err as DxoError).code === 'DXO_PRECISION_DTYPE_UNAVAILABLE',
+    );
+    assert.throws(
+        () => resolveWeightDtype('int8'),
+        (err: unknown) => err instanceof DxoError && (err as DxoError).code === 'DXO_PRECISION_DTYPE_UNAVAILABLE',
+    );
 }
 
 console.log('precision-capabilities: ok');

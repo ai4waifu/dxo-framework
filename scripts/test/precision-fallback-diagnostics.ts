@@ -4,18 +4,8 @@
  */
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
-import {
-    DxoError,
-    decodeImageBuffer,
-    formatDiagnostic,
-    resolvePrecisionPolicy,
-    resolveWeightDtype,
-} from '@dxo/core';
-import {
-    precisionPolicyFromMetadata,
-    stampResolvedPrecision,
-    validateManifestPrecision,
-} from '@dxo/serialize';
+import { DxoError, decodeImageBuffer, formatDiagnostic, resolvePrecisionPolicy, resolveWeightDtype } from '@dxo/core';
+import { precisionPolicyFromMetadata, stampResolvedPrecision, validateManifestPrecision } from '@dxo/serialize';
 
 function catchDxo(fn: () => void): DxoError {
     try {
@@ -61,9 +51,12 @@ function catchDxo(fn: () => void): DxoError {
         'dxo.precision.activations': 'f32',
     });
     assert.deepEqual(policy, { weights: 'f32', activations: 'f32' });
-    assert.deepEqual(validateManifestPrecision({
-        'dxo.precision.weights': 'f32',
-    }), { weights: 'f32', activations: 'f32' });
+    assert.deepEqual(
+        validateManifestPrecision({
+            'dxo.precision.weights': 'f32',
+        }),
+        { weights: 'f32', activations: 'f32' },
+    );
 }
 
 {

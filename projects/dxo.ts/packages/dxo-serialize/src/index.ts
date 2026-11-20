@@ -98,8 +98,7 @@ export function encodeCheckpoint(options: {
     if (options.optimizer?.length) {
         entries.push(...options.optimizer);
     }
-    const metadataJson =
-        options.metadata && Object.keys(options.metadata).length ? JSON.stringify(options.metadata) : undefined;
+    const metadataJson = options.metadata && Object.keys(options.metadata).length ? JSON.stringify(options.metadata) : undefined;
     return nativeEncode(entries, metadataJson);
 }
 

@@ -3,8 +3,8 @@
  * Honest probe — no silent int8/f16 kernel fallback.
  */
 
-import { loadNative } from './native.js';
 import { wrapNative } from './errors.js';
+import { loadNative } from './native.js';
 import type { NativePrecisionCapsReport } from './native-types.js';
 
 export type PrecisionCapabilities = NativePrecisionCapsReport;

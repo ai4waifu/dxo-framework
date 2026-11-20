@@ -12,13 +12,7 @@ import {
     type ImageBufferLayout,
     type Tensor,
 } from '@dxo/core';
-import type {
-    ColorSpace,
-    Image,
-    ImageDtype,
-    ImageLayout,
-    ImageToTensorOptions,
-} from './index.js';
+import type { ColorSpace, Image, ImageDtype, ImageLayout, ImageToTensorOptions } from './index.js';
 
 export type FromPixelsOptions = {
     width: number;

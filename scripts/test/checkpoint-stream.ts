@@ -6,13 +6,7 @@ import { decodeSafetensors, encodeSafetensors, tensor } from '@dxo/core';
 import { batch, dataset } from '@dxo/data';
 import { FullyConnected } from '@dxo/nn';
 import { Adam } from '@dxo/optimizer';
-import {
-    decodeCheckpoint,
-    decodeState,
-    decodeStateBuffers,
-    encodeCheckpoint,
-    encodeStateBuffers,
-} from '@dxo/serialize';
+import { decodeCheckpoint, decodeState, decodeStateBuffers, encodeCheckpoint, encodeStateBuffers } from '@dxo/serialize';
 import { Trainer } from '@dxo/train';
 
 // Rust encode/decode roundtrip with metadata

@@ -22,10 +22,7 @@ import { fromDecode, fromPixels } from '@dxo/vision';
 }
 
 {
-    const png = Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
-        'base64',
-    );
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
     const img = await fromDecode(png, { format: 'png', source: { kind: 'test' } });
     assert.equal(img.width, 1);
     assert.equal(img.source?.kind, 'test');

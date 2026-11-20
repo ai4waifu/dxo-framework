@@ -20,7 +20,7 @@
         "README.md"
     ],
     "scripts": {
-        "build": "node ../../../scripts/build/lite-wasm.mjs"
+        "build": "node ../../../../scripts/build/lite-wasm.mjs"
     },
     "publishConfig": {
         "access": "public"

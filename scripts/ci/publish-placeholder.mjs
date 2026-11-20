@@ -663,9 +663,7 @@ function cmdTrust() {
         // Need a live list. Cache miss / non-match / --refresh.
         if (!totpSecretRaw && !otpStatic) {
             saveCache(cache);
-            fail(
-                `need npmTotpSecret (or 6-digit npmOtp) to list ${spec.name}. Put it in .secrets/nifty.json then: pnpm placeholder:trust`,
-            );
+            fail(`need npmTotpSecret (or 6-digit npmOtp) to list ${spec.name}. Put it in .secrets/nifty.json then: pnpm placeholder:trust`);
         }
 
         const live = listTrustLive(spec.name);

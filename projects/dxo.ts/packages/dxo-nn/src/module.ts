@@ -1,5 +1,5 @@
-import { Buffer } from 'node:buffer';
-import { embedding, ones, randnValues, Tensor, tensor, tensorFromF32Buffer, zeros, zeroGrads } from '@dxo/core';
+import type { Buffer } from 'node:buffer';
+import { embedding, ones, randnValues, Tensor, tensor, tensorFromF32Buffer, zeroGrads, zeros } from '@dxo/core';
 
 export interface TensorStateSlice {
     shape: number[];

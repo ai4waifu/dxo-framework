@@ -1,7 +1,7 @@
 import type { Tensor } from '@dxo/core';
 import type { Batch } from '@dxo/data';
 import type { FullyConnected } from '@dxo/nn';
-import { sgdTrainStep, type Optimizer } from '@dxo/optimizer';
+import { type Optimizer, sgdTrainStep } from '@dxo/optimizer';
 import { decodeState, encodeCheckpoint, type State } from '@dxo/serialize';
 
 /** Events yielded by {@link Trainer.fitIter} / {@link Trainer.run}. */

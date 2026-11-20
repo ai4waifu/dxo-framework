@@ -2,7 +2,7 @@
  * Manifest precision fields (Living `12`) — validate against runtime capabilities; no silent fallback.
  */
 
-import { resolvePrecisionPolicy, type PrecisionPolicy } from '@dxo/core';
+import { type PrecisionPolicy, resolvePrecisionPolicy } from '@dxo/core';
 
 const KEYS = {
     weights: 'dxo.precision.weights',

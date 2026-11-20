@@ -3,7 +3,7 @@
  */
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
-import { createImageBufferFromPixels, decodeImageBuffer, DxoError } from '@dxo/core';
+import { createImageBufferFromPixels, DxoError, decodeImageBuffer } from '@dxo/core';
 
 // HWC u8 → NCHW f32 normalize
 {
@@ -31,10 +31,7 @@ import { createImageBufferFromPixels, decodeImageBuffer, DxoError } from '@dxo/c
 
 // Minimal 1×1 red PNG decode
 {
-    const png = Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
-        'base64',
-    );
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
     const buf = await decodeImageBuffer(png, { format: 'png' });
     assert.equal(buf.width, 1);
     assert.equal(buf.height, 1);

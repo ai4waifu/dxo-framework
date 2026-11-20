@@ -19,7 +19,7 @@
     ],
     "scripts": {
         "build": "tsc -p tsconfig.json",
-        "test:forward": "tsx ../../../scripts/test/nn-forward.ts"
+        "test:forward": "tsx ../../../../scripts/test/nn-forward.ts"
     },
     "devDependencies": {
         "@types/node": "^22.15.0"

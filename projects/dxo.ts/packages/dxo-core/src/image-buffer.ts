@@ -4,8 +4,8 @@
  */
 
 import { Buffer } from 'node:buffer';
-import { Tensor } from './index.js';
 import { wrapNative } from './errors.js';
+import { Tensor } from './index.js';
 import { loadNative } from './native.js';
 import type { NativeImageBuffer } from './native-types.js';
 import type { BufferToTensorOptions, HostDtype, TypedBuffer } from './typed-buffer.js';

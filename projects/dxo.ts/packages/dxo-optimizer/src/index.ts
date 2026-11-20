@@ -1,11 +1,11 @@
 import {
+    type AdamStateHandle,
     adamStep,
     backwardSgdStep,
     createAdamState,
-    sgdStep,
-    type AdamStateHandle,
     type DecodedSafetensorEntry,
     type SafetensorBufferEntry,
+    sgdStep,
     type Tensor,
 } from '@dxo/core';
 
