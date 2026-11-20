@@ -432,6 +432,19 @@ export const SUITES: SuiteDef[] = [
         timeoutMs: 60_000,
     },
     {
+        id: 'dxo-asset',
+        script: 'scripts/test/dxo-asset.ts',
+        group: 'product',
+        packages: ['@dxo/core'],
+        platforms: ['all'],
+        backend: ['cpu'],
+        requiresGpu: false,
+        requiresNetwork: false,
+        /** 需要磁盘上的数据集 `.dxo`（同级 dxo-* 仓）；CI 无数据时自跳过。 */
+        allowSkip: true,
+        timeoutMs: 180_000,
+    },
+    {
         id: 'model-runtime-text',
         script: 'scripts/test/model-runtime-text.ts',
         group: 'product',
