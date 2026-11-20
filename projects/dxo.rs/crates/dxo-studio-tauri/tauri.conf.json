@@ -4,10 +4,10 @@
     "version": "0.1.0",
     "identifier": "dev.dxo.studio",
     "build": {
-        "beforeDevCommand": "pnpm --dir ../../../runtimes/dxo-studio exec vmz dev --port 5173 .",
+        "beforeDevCommand": "pnpm --dir ../../../dxo.ts/packages/dxo-studio exec vmz dev --port 5173 .",
         "devUrl": "http://localhost:5173",
-        "beforeBuildCommand": "pnpm --dir ../../../runtimes/dxo-studio exec vmz build --release --profile static .",
-        "frontendDist": "../../../runtimes/dxo-studio/dist"
+        "beforeBuildCommand": "pnpm --dir ../../../dxo.ts/packages/dxo-studio exec vmz build --release --profile static .",
+        "frontendDist": "../../../dxo.ts/packages/dxo-studio/dist"
     },
     "app": {
         "windows": [],

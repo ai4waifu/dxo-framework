@@ -1,13 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-    "projects/compilers/dxo-core",
-    "projects/compilers/dxo-napi",
-    "projects/compilers/dxo-studio",
-    "projects/compilers/dxo-studio-tauri",
-    "projects/compilers/dxo-lite-wasm",
+    "projects/dxo.rs/crates/dxo-core",
+    "projects/dxo.rs/crates/dxo-napi",
+    "projects/dxo.rs/crates/dxo-studio",
+    "projects/dxo.rs/crates/dxo-studio-tauri",
+    "projects/dxo.rs/crates/dxo-lite-wasm",
 ]
-default-members = ["projects/compilers/dxo-core"]
+default-members = ["projects/dxo.rs/crates/dxo-core"]
 
 [workspace.package]
 version = "0.1.0"
@@ -18,8 +18,8 @@ repository = "https://github.com/ai4waifu/dxo-framework"
 rust-version = "1.77"
 
 [workspace.dependencies]
-dxo-core = { path = "projects/compilers/dxo-core" }
-dxo-studio = { path = "projects/compilers/dxo-studio" }
+dxo-core = { path = "projects/dxo.rs/crates/dxo-core" }
+dxo-studio = { path = "projects/dxo.rs/crates/dxo-studio" }
 rand = "0.10.2"
 napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
 napi-derive = "3.6.3"
@@ -37,11 +37,11 @@ ucf-scheduler = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev"
 ucf-types = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev" }
 ucf-runtime = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev" }
 # Boost DL/ML：训练图与优化器固定到 boost.rs 的明确提交，不复用 titan 的第二套图。
-dl-types = { git = "https://github.com/oovm/boost.rs.git", rev = "0cce4336f72b2cd683945b912af20970d6559000" }
-dl-tensor = { git = "https://github.com/oovm/boost.rs.git", rev = "0cce4336f72b2cd683945b912af20970d6559000" }
-dl-graph = { git = "https://github.com/oovm/boost.rs.git", rev = "0cce4336f72b2cd683945b912af20970d6559000" }
-dl-train = { git = "https://github.com/oovm/boost.rs.git", rev = "0cce4336f72b2cd683945b912af20970d6559000" }
-dl-nn = { git = "https://github.com/oovm/boost.rs.git", rev = "0cce4336f72b2cd683945b912af20970d6559000" }
+dl-types = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
+dl-tensor = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
+dl-graph = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
+dl-train = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
+dl-nn = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
 
 [profile.release]
 lto = true

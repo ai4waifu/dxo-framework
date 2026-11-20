@@ -12,16 +12,16 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const wasmLib = path.join(root, 'projects/runtimes/dxo-lite-unknown-wasm32/lib/dxo_lite_bg.wasm');
-const publicDir = path.join(root, 'projects/homepage/public');
+const wasmLib = path.join(root, 'projects/dxo.ts/platforms/dxo-lite-unknown-wasm32/lib/dxo_lite_bg.wasm');
+const publicDir = path.join(root, 'projects/dxo.ts/homepage/public');
 const publicWasm = path.join(publicDir, 'dxo_lite_bg.wasm');
 const force = process.argv.includes('--force') || process.env.DXO_FORCE_WASM_BUILD === '1' || process.env.DXO_FORCE_WASM_BUILD === 'true';
 const skipRust = process.env.CF_PAGES === '1' || process.env.DXO_HOMEPAGE_SKIP_WASM === '1' || process.env.DXO_HOMEPAGE_SKIP_WASM === 'true';
 
 function publishedWasmCandidates() {
     return [
-        path.join(root, 'projects/homepage/node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
-        path.join(root, 'projects/homepage/node_modules/@dxo/lite/node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
+        path.join(root, 'projects/dxo.ts/homepage/node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
+        path.join(root, 'projects/dxo.ts/homepage/node_modules/@dxo/lite/node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
         path.join(root, 'node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
         path.join(root, 'node_modules/@dxo/lite/node_modules/@dxo/lite-unknown-wasm32/lib/dxo_lite_bg.wasm'),
     ];

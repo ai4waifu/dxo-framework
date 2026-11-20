@@ -11,8 +11,8 @@ DXO training workbench (developer preview). **WebUI is VMZ** — not a separate 
 
 | Layer       | Path                                                         |
 |-------------|--------------------------------------------------------------|
-| Rust API    | `projects/compilers/dxo-studio`                              |
-| Rust GUI    | `projects/compilers/dxo-studio-tauri` → **`dxo-studio.exe`** |
+| Rust API    | `projects/dxo.rs/crates/dxo-studio`                              |
+| Rust GUI    | `projects/dxo.rs/crates/dxo-studio-tauri` → **`dxo-studio.exe`** |
 | TS launcher | `launcher/` → `dist/`                                        |
 | VMZ WebUI   | package root (`src/*.vmz`, `vmz.config.ts`)                  |
 

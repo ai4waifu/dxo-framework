@@ -27,19 +27,19 @@ const NATIVE_PLATFORMS = [
 /** @type {{ dir: string, publishName?: string }[]} */
 const JS_PACKAGES = [
     // WASM artifact before @dxo/lite (dependency).
-    { dir: 'projects/runtimes/dxo-lite-unknown-wasm32', publishName: '@dxo/lite-unknown-wasm32' },
-    { dir: 'projects/runtimes/dxo-lite', publishName: '@dxo/lite' },
-    { dir: 'projects/runtimes/dxo-core', publishName: '@dxo/core' },
-    { dir: 'projects/runtimes/dxo', publishName: '@dxo/dxo' },
-    { dir: 'projects/runtimes/dxo-nn', publishName: '@dxo/nn' },
-    { dir: 'projects/runtimes/dxo-optimizer', publishName: '@dxo/optimizer' },
-    { dir: 'projects/runtimes/dxo-data', publishName: '@dxo/data' },
-    { dir: 'projects/runtimes/dxo-serialize', publishName: '@dxo/serialize' },
-    { dir: 'projects/runtimes/dxo-train', publishName: '@dxo/train' },
-    { dir: 'projects/runtimes/dxo-inspect', publishName: '@dxo/inspect' },
-    { dir: 'projects/runtimes/dxo-graph', publishName: '@dxo/graph' },
-    { dir: 'projects/runtimes/dxo-studio', publishName: '@dxo/studio' },
-    { dir: 'projects/runtimes/dxo-vision', publishName: '@dxo/vision' },
+    { dir: 'projects/dxo.ts/platforms/dxo-lite-unknown-wasm32', publishName: '@dxo/lite-unknown-wasm32' },
+    { dir: 'projects/dxo.ts/packages/dxo-lite', publishName: '@dxo/lite' },
+    { dir: 'projects/dxo.ts/packages/dxo-core', publishName: '@dxo/core' },
+    { dir: 'projects/dxo.ts/packages/dxo', publishName: '@dxo/dxo' },
+    { dir: 'projects/dxo.ts/packages/dxo-nn', publishName: '@dxo/nn' },
+    { dir: 'projects/dxo.ts/packages/dxo-optimizer', publishName: '@dxo/optimizer' },
+    { dir: 'projects/dxo.ts/packages/dxo-data', publishName: '@dxo/data' },
+    { dir: 'projects/dxo.ts/packages/dxo-serialize', publishName: '@dxo/serialize' },
+    { dir: 'projects/dxo.ts/packages/dxo-train', publishName: '@dxo/train' },
+    { dir: 'projects/dxo.ts/packages/dxo-inspect', publishName: '@dxo/inspect' },
+    { dir: 'projects/dxo.ts/packages/dxo-graph', publishName: '@dxo/graph' },
+    { dir: 'projects/dxo.ts/packages/dxo-studio', publishName: '@dxo/studio' },
+    { dir: 'projects/dxo.ts/packages/dxo-vision', publishName: '@dxo/vision' },
     // @dxo/resnet is external (sibling dxo-resnet/); hub/llm/diffuser/ui stay out until their gates.
 ];
 

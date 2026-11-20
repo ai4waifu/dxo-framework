@@ -12,8 +12,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const crate = path.join(root, 'projects/compilers/dxo-lite-wasm');
-const outPkg = path.join(root, 'projects/runtimes/dxo-lite-unknown-wasm32');
+const crate = path.join(root, 'projects/dxo.rs/crates/dxo-lite-wasm');
+const outPkg = path.join(root, 'projects/dxo.ts/platforms/dxo-lite-unknown-wasm32');
 const libDir = path.join(outPkg, 'lib');
 const distDir = path.join(outPkg, 'dist');
 const staging = path.join(crate, '.wasm-pack-out');

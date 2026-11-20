@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { RunRecorder } from '@dxo/inspect';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const bin = path.join(root, 'projects/runtimes/dxo/bin/dxo.mjs');
+const bin = path.join(root, 'projects/dxo.ts/packages/dxo/bin/dxo.mjs');
 const require = createRequire(import.meta.url);
 // Ensure dist exists (CI builds first).
 require.resolve('@dxo/dxo');

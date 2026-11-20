@@ -35,7 +35,7 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/ai4waifu/dxo-framework.git",
-        "directory": "projects/runtimes/dxo-diffuser"
+        "directory": "projects/dxo.ts/packages/dxo-diffuser"
     },
     "bugs": {
         "url": "https://github.com/ai4waifu/dxo-framework/issues"

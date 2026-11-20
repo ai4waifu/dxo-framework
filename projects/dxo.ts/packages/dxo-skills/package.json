@@ -15,7 +15,7 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/ai4waifu/dxo-framework.git",
-        "directory": "projects/runtimes/dxo-skills"
+        "directory": "projects/dxo.ts/packages/dxo-skills"
     },
     "bugs": {
         "url": "https://github.com/ai4waifu/dxo-framework/issues"

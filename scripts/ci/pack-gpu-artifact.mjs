@@ -23,8 +23,8 @@ if (process.platform !== 'linux' || process.arch !== 'x64') {
     process.exit(1);
 }
 
-const corePkg = path.join(root, 'projects/runtimes/dxo-core');
-const linuxPkg = path.join(root, 'projects/runtimes/dxo-linux-x64');
+const corePkg = path.join(root, 'projects/dxo.ts/packages/dxo-core');
+const linuxPkg = path.join(root, 'projects/dxo.ts/platforms/dxo-linux-x64');
 const nodeFile = path.join(linuxPkg, 'dxo.linux-x64-gnu.node');
 
 if (!existsSync(path.join(corePkg, 'dist/index.js'))) {

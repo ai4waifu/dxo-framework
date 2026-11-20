@@ -1,3 +1,4 @@
 packages:
-  - 'projects/runtimes/*'
-  - 'projects/homepage'
+  - 'projects/dxo.ts/packages/*'
+  - 'projects/dxo.ts/platforms/*'
+  - 'projects/dxo.ts/homepage'

@@ -1,6 +1,6 @@
 /**
  * Build `dxo-napi` and install the `.node` into the current-platform workspace package
- * (`projects/runtimes/dxo-<short>/` → npm name `@dxo/dxo-<short>`).
+ * (`projects/dxo.ts/platforms/dxo-<short>/` → npm name `@dxo/dxo-<short>`).
  *
  * Usage: node scripts/build/napi.mjs [--release]
  */
@@ -84,7 +84,7 @@ if (!artifact) {
 }
 
 const plat = platformInfo();
-const outDir = path.join(root, 'projects', 'runtimes', `dxo-${plat.short}`);
+const outDir = path.join(root, 'projects', 'dxo.ts', 'platforms', `dxo-${plat.short}`);
 mkdirSync(outDir, { recursive: true });
 
 const pkgJsonPath = path.join(outDir, 'package.json');
