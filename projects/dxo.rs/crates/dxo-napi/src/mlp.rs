@@ -106,7 +106,7 @@ impl GraphMlp {
         }
         let mut random = seeded_random(seed as u64);
         let model = MlpGraph::new(&sizes, batch as usize, &mut random).map_err(dl_err)?;
-        let optimizer = GraphAdam::new(model.training(), learning_rate.unwrap_or(0.01) as f32);
+        let optimizer = GraphAdam::new(model.training(), learning_rate.unwrap_or(0.01) as f32).map_err(dl_err)?;
         Ok(Self { model, optimizer })
     }
 
