@@ -39,14 +39,13 @@ ucf-scheduler = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev"
 ucf-types = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev" }
 ucf-runtime = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev" }
 # Boost DL/ML：训练图与优化器固定到 boost.rs 的明确提交，不复用 titan 的第二套图。
-boost-net = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
-dl-types = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
-dl-tensor = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
-dl-graph = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
-dl-train = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
-dl-nn = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
-# 临时本地 path 依赖：boost.rs 远端尚未包含 data-binary-dxo 提交，可推送后改回 git rev。
-data-binary-dxo = { path = "../../vmz 全栈开发/rust-boost/projects/data/data.binary.dxo" }
+boost-net = { git = "https://github.com/oovm/boost.rs.git", rev = "96dacbfaedb026fa7c06aa9c2ab2bc5fa13618fa" }
+dl-types = { git = "https://github.com/oovm/boost.rs.git", rev = "96dacbfaedb026fa7c06aa9c2ab2bc5fa13618fa" }
+dl-tensor = { git = "https://github.com/oovm/boost.rs.git", rev = "96dacbfaedb026fa7c06aa9c2ab2bc5fa13618fa" }
+dl-graph = { git = "https://github.com/oovm/boost.rs.git", rev = "96dacbfaedb026fa7c06aa9c2ab2bc5fa13618fa" }
+dl-train = { git = "https://github.com/oovm/boost.rs.git", rev = "96dacbfaedb026fa7c06aa9c2ab2bc5fa13618fa" }
+dl-nn = { git = "https://github.com/oovm/boost.rs.git", rev = "96dacbfaedb026fa7c06aa9c2ab2bc5fa13618fa" }
+data-binary-dxo = { git = "https://github.com/oovm/boost.rs.git", rev = "96dacbfaedb026fa7c06aa9c2ab2bc5fa13618fa" }
 
 [profile.release]
 lto = true
