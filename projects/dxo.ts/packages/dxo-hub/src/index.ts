@@ -219,3 +219,6 @@ export type {
     WeightAsset,
 } from './asset.js';
 export { defineAsset, defineAssets } from './asset.js';
+
+export type { AssetSpec, DownloadConfig, DownloadOptions, DownloadReport, DownloadSource } from './resumable.js';
+export { Downloader, defaultCacheDir, downloadAsset, parseRetryAfterMs } from './resumable.js';
