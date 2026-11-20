@@ -17,6 +17,7 @@ name = "dxo_napi"
 workspace = true
 
 [dependencies]
+data-binary-dxo.workspace = true
 dxo-core.workspace = true
 dxo-studio.workspace = true
 napi.workspace = true

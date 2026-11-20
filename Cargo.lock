@@ -166,9 +166,25 @@ dependencies = [
 [[package]]
 name = "boost-collection"
 version = "0.1.0"
+dependencies = [
+ "boost-collection-macro 0.1.0",
+]
+
+[[package]]
+name = "boost-collection"
+version = "0.1.0"
 source = "git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813#fd94618129df6cba696d0da1013052baab42c813"
 dependencies = [
- "boost-collection-macro",
+ "boost-collection-macro 0.1.0 (git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813)",
+]
+
+[[package]]
+name = "boost-collection-macro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.10",
 ]
 
 [[package]]
@@ -180,6 +196,10 @@ dependencies = [
  "quote",
  "syn 3.0.10",
 ]
+
+[[package]]
+name = "boost-console"
+version = "0.1.0"
 
 [[package]]
 name = "boost-crypto"
@@ -195,11 +215,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "boost-harness"
+version = "0.1.0"
+dependencies = [
+ "boost-console",
+ "boost-harness-macro",
+ "boost-math 0.1.0",
+ "boost-source",
+ "serde",
+]
+
+[[package]]
+name = "boost-harness-macro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.10",
+]
+
+[[package]]
+name = "boost-math"
+version = "0.1.0"
+dependencies = [
+ "boost-collection 0.1.0",
+]
+
+[[package]]
 name = "boost-math"
 version = "0.1.0"
 source = "git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813#fd94618129df6cba696d0da1013052baab42c813"
 dependencies = [
- "boost-collection",
+ "boost-collection 0.1.0 (git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813)",
 ]
 
 [[package]]
@@ -219,7 +266,14 @@ name = "boost-random"
 version = "0.1.0"
 source = "git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813#fd94618129df6cba696d0da1013052baab42c813"
 dependencies = [
- "boost-math",
+ "boost-math 0.1.0 (git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813)",
+]
+
+[[package]]
+name = "boost-source"
+version = "0.1.0"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -655,6 +709,36 @@ version = "0.1.0"
 source = "git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813#fd94618129df6cba696d0da1013052baab42c813"
 
 [[package]]
+name = "data-binary-core"
+version = "0.1.0"
+dependencies = [
+ "boost-harness",
+]
+
+[[package]]
+name = "data-binary-dxo"
+version = "0.1.0"
+dependencies = [
+ "data-compression",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "data-checksum"
+version = "0.1.0"
+
+[[package]]
+name = "data-compression"
+version = "0.1.0"
+dependencies = [
+ "data-binary-core",
+ "data-checksum",
+]
+
+[[package]]
 name = "data-encoding"
 version = "0.1.0"
 source = "git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813#fd94618129df6cba696d0da1013052baab42c813"
@@ -1014,6 +1098,7 @@ dependencies = [
 name = "dxo-napi"
 version = "0.1.0"
 dependencies = [
+ "data-binary-dxo",
  "dl-graph",
  "dl-nn",
  "dl-tensor",
@@ -1575,8 +1660,8 @@ name = "hardware-ir"
 version = "0.1.0"
 source = "git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813#fd94618129df6cba696d0da1013052baab42c813"
 dependencies = [
- "boost-collection",
- "boost-math",
+ "boost-collection 0.1.0 (git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813)",
+ "boost-math 0.1.0 (git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813)",
  "hardware-types",
  "serde",
  "serde_json",
@@ -1620,7 +1705,7 @@ name = "hardware-scheduler"
 version = "0.1.0"
 source = "git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813#fd94618129df6cba696d0da1013052baab42c813"
 dependencies = [
- "boost-math",
+ "boost-math 0.1.0 (git+https://github.com/oovm/boost.rs.git?rev=fd94618129df6cba696d0da1013052baab42c813)",
  "hardware-capability",
  "hardware-harness",
  "hardware-ir",

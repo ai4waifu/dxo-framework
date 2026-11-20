@@ -87,6 +87,14 @@ export interface NativeGraphMlp {
     setParameter(name: string, data: Buffer): void;
 }
 
+/** Opened `.dxo` asset container backed by Rust `data-binary-dxo`. */
+export interface NativeDxoAsset {
+    metadataJson(): string;
+    verifyAll(): void;
+    readTensor(key: string): Buffer;
+    readSamples(split: string, field: string, startSample: number, count: number): Buffer;
+}
+
 /** Engine diagnosis from napi `doctorReport` (single source of truth for CLI doctor). */
 export interface NativeDoctorReport {
     ok: boolean;
@@ -172,6 +180,7 @@ export interface NativeAddon {
     AdamState: new () => NativeAdamState;
     adamStep(params: NativeTensor[], state: NativeAdamState, lr: number, beta1: number, beta2: number, eps: number): NativeTensor[];
     GraphMlp: new (sizes: number[], batchSize?: number | null, seed?: number | null, learningRate?: number | null) => NativeGraphMlp;
+    DxoAsset: new (path: string) => NativeDxoAsset;
     encodeSafetensors(entries: SafetensorBufferEntry[], metadataJson?: string | null): Buffer;
     decodeSafetensors(bytes: Buffer): DecodeSafetensorsResult;
     /** Loopback inspect HTTP serve (Rust `dxo-studio`). */

@@ -40,6 +40,7 @@ export type {
     DecodeSafetensorsResult,
     NativeAddon,
     NativeDoctorReport,
+    NativeDxoAsset,
     NativeInspectApiServerHandle,
     NativeInspectApiServerOptions,
     NativeInspectRunMeta,
@@ -482,6 +483,7 @@ export function withoutGrad<T>(run: () => T): T {
     }
 }
 
+export { DxoAsset } from './asset.js';
 export type {
     AudioBuffer,
     BatchBuffer,

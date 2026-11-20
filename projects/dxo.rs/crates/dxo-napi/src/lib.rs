@@ -14,6 +14,7 @@ use dxo_core::{
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
+mod asset;
 mod mlp;
 
 fn map_err(err: dxo_core::TensorError) -> Error {

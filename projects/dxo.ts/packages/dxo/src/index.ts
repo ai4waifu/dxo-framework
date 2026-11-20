@@ -12,6 +12,7 @@ import { cliPackage } from './pkg.js';
 export {
     type ClassificationReport,
     decodeSafetensors,
+    DxoAsset,
     encodeSafetensors,
     GraphMlp,
     type GraphMlpOptions,
