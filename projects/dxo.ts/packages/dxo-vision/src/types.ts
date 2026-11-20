@@ -9,7 +9,7 @@ export type TensorPort = {
     shape: ReadonlyArray<number | string>;
 };
 
-/** External weight locator (resolved by hub / external `@dxo/resnet` later). */
+/** External weight locator (resolved by hub / external `@dxo/imagenet` later). */
 export type WeightSource =
     | {
           provider: string;

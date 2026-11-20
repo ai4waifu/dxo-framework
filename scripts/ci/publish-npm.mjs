@@ -40,7 +40,7 @@ const JS_PACKAGES = [
     { dir: 'projects/dxo.ts/packages/dxo-graph', publishName: '@dxo/graph' },
     { dir: 'projects/dxo.ts/packages/dxo-studio', publishName: '@dxo/studio' },
     { dir: 'projects/dxo.ts/packages/dxo-vision', publishName: '@dxo/vision' },
-    // @dxo/resnet is external (sibling dxo-resnet/); hub/llm/diffuser/ui stay out until their gates.
+    // @dxo/imagenet is external (sibling dxo-imagenet/); hub/llm/diffuser/ui stay out until their gates.
 ];
 
 function fail(msg) {

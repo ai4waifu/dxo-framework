@@ -51,7 +51,7 @@ function isResNetLike(model: { parameterNames?: () => string[]; loadState?: unkn
 
 /**
  * Load **DXO-native** safetensors into a ResNet backbone.
- * Does **not** translate torchvision / `.pth` names — convert offline in external `@dxo/resnet` scripts.
+ * Does **not** translate torchvision / `.pth` names — convert offline in external `@dxo/imagenet` scripts.
  */
 export async function loadWeights(model: ResNet, options: LoadWeightsOptions): Promise<void> {
     if (!isResNetLike(model)) {

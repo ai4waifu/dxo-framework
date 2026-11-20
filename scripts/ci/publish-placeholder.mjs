@@ -74,7 +74,7 @@ const JS_STUBS = [
     '@dxo/studio',
     '@dxo/vision',
 ];
-// @dxo/resnet is external (sibling weight-asset repo). Other stubs (hub/llm/diffuser/ui) stay out until their gates.
+// @dxo/imagenet is external (sibling dxo-imagenet/). Other stubs (hub/llm/diffuser/ui) stay out until their gates.
 const NATIVE_STUBS = [
     { name: '@dxo/dxo-win32-x64', os: ['win32'], cpu: ['x64'] },
     { name: '@dxo/dxo-linux-x64', os: ['linux'], cpu: ['x64'] },

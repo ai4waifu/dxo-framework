@@ -17,4 +17,4 @@ const backbone = new ResNet({ depth: 18 });
 const model = compose(backbone, new LinearHead({ output: 10 }));
 ```
 
-Pretrained weight assets and **torch/pth → DXO safetensors** conversion live in the separate `@dxo/resnet` package (`scripts/`). Runtime `loadWeights` only accepts DXO-key safetensors (same keys as `new ResNet().state()`).
+Pretrained weight assets and **torch/pth → DXO safetensors** conversion live in the separate `@dxo/imagenet` package (`scripts/`). Runtime `loadWeights` only accepts DXO-key safetensors or a weights `.dxo` container.
