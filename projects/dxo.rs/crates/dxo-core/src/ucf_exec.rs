@@ -11,8 +11,8 @@ use titan_hal::{Buffer, Stream};
 use titan_tensor::TensorHandle;
 use ucf_backend_cuda::{CudaBackend, CudaExecStream, CudaExternalBuffer};
 use ucf_ir::{
-    Access, DepEdge, DepKind, Domain, Graph, Objective, ParamValue, Priority, ResourceGraph,
-    ResourceKind, ResourceNode, ShaderId, TaskGraph, TaskId, TaskKind, TaskNode,
+    Access, DepEdge, DepKind, Domain, Graph, Objective, ParamValue, Priority, ResourceGraph, ResourceKind, ResourceNode,
+    ShaderId, TaskGraph, TaskId, TaskKind, TaskNode,
 };
 use ucf_runtime::Runtime;
 use ucf_scheduler::ExecutionBindings;
@@ -36,33 +36,23 @@ fn ucf_backend() -> Result<&'static UcfCudaState, TensorError> {
         let mut runtime = Runtime::new();
         let backend = CudaBackend::new_primary(0).map_err(|e| e.to_string())?;
         runtime.register_backend(Box::new(backend));
-        Ok(UcfCudaState {
-            runtime: Mutex::new(runtime),
-        })
+        Ok(UcfCudaState { runtime: Mutex::new(runtime) })
     });
     init.as_ref().map_err(|msg| {
         TensorError::from_diagnostic(
-            crate::diagnostic::Diagnostic::error(
-                "DXO_UCF_BACKEND_UNAVAILABLE",
-                format!("UCF CUDA unavailable: {msg}"),
-            )
-            .with_arg("requested", "cuda")
-            .with_arg("available", "cpu")
-            .with_detail("debug", msg.clone())
-            .with_detail("executor", "ucf")
-            .with_backend("cuda")
-            .with_operation("open"),
+            crate::diagnostic::Diagnostic::error("DXO_UCF_BACKEND_UNAVAILABLE", format!("UCF CUDA unavailable: {msg}"))
+                .with_arg("requested", "cuda")
+                .with_arg("available", "cpu")
+                .with_detail("debug", msg.clone())
+                .with_detail("executor", "ucf")
+                .with_backend("cuda")
+                .with_operation("open"),
         )
     })
 }
 
 fn record_runtime_diagnostics(rt: &Runtime) {
-    let kinds = rt
-        .diagnostics()
-        .events()
-        .iter()
-        .map(|e| e.kind.clone())
-        .collect();
+    let kinds = rt.diagnostics().events().iter().map(|e| e.kind.clone()).collect();
     if let Ok(mut last) = LAST_EVENT_KINDS.lock() {
         *last = kinds;
     }
@@ -70,21 +60,15 @@ fn record_runtime_diagnostics(rt: &Runtime) {
 
 /// Stable UCF execution event kinds from the most recent [`gemm_handles`] call (inspect hook).
 pub fn last_execution_event_kinds() -> Vec<String> {
-    LAST_EVENT_KINDS
-        .lock()
-        .map(|v| v.clone())
-        .unwrap_or_default()
+    LAST_EVENT_KINDS.lock().map(|v| v.clone()).unwrap_or_default()
 }
 
 fn cuda_device_ptr(handle: &TensorHandle, role: &str) -> Result<(u64, u64), TensorError> {
-    let buf = handle.buffer().ok_or_else(|| {
-        TensorError::Device(format!("UCF gemm {role} handle has no device buffer"))
-    })?;
-    let cuda = buf.as_any().downcast_ref::<CudaBuffer>().ok_or_else(|| {
-        TensorError::Device(format!(
-            "UCF gemm {role} buffer is not a Titan CUDA allocation"
-        ))
-    })?;
+    let buf = handle.buffer().ok_or_else(|| TensorError::Device(format!("UCF gemm {role} handle has no device buffer")))?;
+    let cuda = buf
+        .as_any()
+        .downcast_ref::<CudaBuffer>()
+        .ok_or_else(|| TensorError::Device(format!("UCF gemm {role} buffer is not a Titan CUDA allocation")))?;
     Ok((cuda.device_ptr(), cuda.byte_len() as u64))
 }
 
@@ -102,13 +86,7 @@ fn matmul_graph(m: usize, n: usize, k: usize) -> Graph {
         }
     }
     Graph {
-        resources: ResourceGraph {
-            nodes: vec![
-                buffer(1, a_bytes),
-                buffer(2, b_bytes),
-                buffer(3, out_bytes),
-            ],
-        },
+        resources: ResourceGraph { nodes: vec![buffer(1, a_bytes), buffer(2, b_bytes), buffer(3, out_bytes)] },
         tasks: TaskGraph {
             nodes: vec![TaskNode {
                 id: TaskId(10),
@@ -127,18 +105,8 @@ fn matmul_graph(m: usize, n: usize, k: usize) -> Graph {
                 priority: Priority::Batch,
             }],
             edges: vec![
-                DepEdge {
-                    from_task: None,
-                    from_resource: Some(ResourceId(1)),
-                    to_task: TaskId(10),
-                    kind: DepKind::Data,
-                },
-                DepEdge {
-                    from_task: None,
-                    from_resource: Some(ResourceId(2)),
-                    to_task: TaskId(10),
-                    kind: DepKind::Data,
-                },
+                DepEdge { from_task: None, from_resource: Some(ResourceId(1)), to_task: TaskId(10), kind: DepKind::Data },
+                DepEdge { from_task: None, from_resource: Some(ResourceId(2)), to_task: TaskId(10), kind: DepKind::Data },
             ],
         },
     }
@@ -147,12 +115,7 @@ fn matmul_graph(m: usize, n: usize, k: usize) -> Graph {
 /// Contiguous row-major f32 GEMM via UCF CUDA, keeping the result on device.
 ///
 /// Does not increment DXO host-transfer counters (no upload/readback inside).
-pub fn gemm_handles(
-    lhs: &TensorHandle,
-    rhs: &TensorHandle,
-    m: usize,
-    n: usize,
-) -> Result<TensorHandle, TensorError> {
+pub fn gemm_handles(lhs: &TensorHandle, rhs: &TensorHandle, m: usize, n: usize) -> Result<TensorHandle, TensorError> {
     if m == 0 || n == 0 {
         return Err(TensorError::Shape("UCF gemm requires non-zero M and N".into()));
     }
@@ -175,21 +138,15 @@ pub fn gemm_handles(
             "UCF gemm byte size mismatch: a={a_bytes} (expect {expect_a}) b={b_bytes} (expect {expect_b})"
         )));
     }
-    let out_handle = TensorHandle::allocate_f32(state.session.clone(), vec![m, n]).map_err(|e| {
-        TensorError::Device(format!("UCF gemm output allocate: {e}"))
-    })?;
+    let out_handle = TensorHandle::allocate_f32(state.session.clone(), vec![m, n])
+        .map_err(|e| TensorError::Device(format!("UCF gemm output allocate: {e}")))?;
     let (out_ptr, out_bytes) = cuda_device_ptr(&out_handle, "out")?;
     let expect_out = (m * n * 4) as u64;
     if out_bytes != expect_out {
-        return Err(TensorError::Shape(format!(
-            "UCF gemm output bytes {out_bytes} != {expect_out}"
-        )));
+        return Err(TensorError::Shape(format!("UCF gemm output bytes {out_bytes} != {expect_out}")));
     }
 
-    let stream = state
-        .session
-        .create_stream()
-        .map_err(|e| TensorError::from_hal(e, "cuda"))?;
+    let stream = state.session.create_stream().map_err(|e| TensorError::from_hal(e, "cuda"))?;
     let cuda_stream = Stream::as_any(stream.as_ref())
         .downcast_ref::<CudaStream>()
         .ok_or_else(|| TensorError::Device("UCF gemm stream is not a Titan CUDA stream".into()))?;
@@ -198,29 +155,17 @@ pub fn gemm_handles(
     let mut bindings = ExecutionBindings::new();
     bindings.bind_buffer(ResourceId(1), CudaExternalBuffer::from_device_ptr(a_ptr, expect_a));
     bindings.bind_buffer(ResourceId(2), CudaExternalBuffer::from_device_ptr(b_ptr, expect_b));
-    bindings.bind_buffer(
-        ResourceId(3),
-        CudaExternalBuffer::from_device_ptr(out_ptr, expect_out),
-    );
+    bindings.bind_buffer(ResourceId(3), CudaExternalBuffer::from_device_ptr(out_ptr, expect_out));
     bindings.set_stream(ucf_stream);
 
     let graph = matmul_graph(m, n, k);
     let ucf = ucf_backend()?;
-    let mut runtime = ucf
-        .runtime
-        .lock()
-        .map_err(|_| TensorError::Device("UCF CUDA lock poisoned".into()))?;
+    let mut runtime = ucf.runtime.lock().map_err(|_| TensorError::Device("UCF CUDA lock poisoned".into()))?;
     runtime.clear_diagnostics();
     runtime.set_bindings(bindings);
-    runtime
-        .prepare(&graph)
-        .map_err(|e| TensorError::Device(format!("UCF prepare: {e}")))?;
-    runtime
-        .run_prepared(&graph)
-        .map_err(|e| TensorError::Device(format!("UCF run: {e}")))?;
-    runtime
-        .flush()
-        .map_err(|e| TensorError::Device(format!("UCF flush: {e}")))?;
+    runtime.prepare(&graph).map_err(|e| TensorError::Device(format!("UCF prepare: {e}")))?;
+    runtime.run_prepared(&graph).map_err(|e| TensorError::Device(format!("UCF run: {e}")))?;
+    runtime.flush().map_err(|e| TensorError::Device(format!("UCF flush: {e}")))?;
     record_runtime_diagnostics(&runtime);
 
     Ok(out_handle)

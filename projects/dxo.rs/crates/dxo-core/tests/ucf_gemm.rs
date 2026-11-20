@@ -3,8 +3,8 @@
 #![cfg(feature = "ucf")]
 
 use dxo_core::{
-    cuda_available, cuda_download_f32, cuda_upload_f32, host_transfer_count, reset_host_transfer_count,
-    ucf_gemm_handles, Tensor,
+    Tensor, cuda_available, cuda_download_f32, cuda_upload_f32, host_transfer_count, reset_host_transfer_count,
+    ucf_gemm_handles,
 };
 
 #[test]
@@ -63,11 +63,7 @@ fn ucf_gemm_matches_cpu_without_extra_host_transfer() {
         kinds_second.iter().any(|k| k == "module_cache_hit"),
         "expected module cache hit on repeat gemm, got {kinds_second:?}"
     );
-    assert_eq!(
-        host_transfer_count(),
-        after_upload,
-        "continuous UCF gemm must not host round-trip"
-    );
+    assert_eq!(host_transfer_count(), after_upload, "continuous UCF gemm must not host round-trip");
 
     let got = match cuda_download_f32(&out2) {
         Ok(v) => v,

@@ -24,13 +24,7 @@ pub fn precision_capabilities() -> PrecisionCapabilities {
     let cuda_available = cuda::is_available();
     let backend = if cuda_available { "cuda" } else { "cpu" };
     // Preview: compute kernels are f32-hosted; f16/bf16 are dtype tags only until mixed-precision parity lands.
-    PrecisionCapabilities {
-        backend,
-        cuda_available,
-        weights: vec!["f32"],
-        activations: vec!["f32"],
-        accumulation: vec!["f32"],
-    }
+    PrecisionCapabilities { backend, cuda_available, weights: vec!["f32"], activations: vec!["f32"], accumulation: vec!["f32"] }
 }
 
 fn canonical_weight_dtype(requested: &str) -> Result<&'static str, TensorError> {
@@ -50,16 +44,13 @@ fn canonical_weight_dtype(requested: &str) -> Result<&'static str, TensorError> 
 /// Resolve a requested weight dtype against capabilities.
 pub fn resolve_weight_dtype(requested: &str, caps: &PrecisionCapabilities) -> Result<&'static str, TensorError> {
     let canonical = canonical_weight_dtype(requested)?;
-    if caps.weights.iter().any(|d| *d == canonical) {
+    if caps.weights.contains(&canonical) {
         return Ok(canonical);
     }
     Err(TensorError::from_diagnostic(
         Diagnostic::error(
             "DXO_PRECISION_DTYPE_UNAVAILABLE",
-            format!(
-                "weight dtype '{requested}' unavailable on backend '{}'",
-                caps.backend
-            ),
+            format!("weight dtype '{requested}' unavailable on backend '{}'", caps.backend),
         )
         .with_arg("requested", requested)
         .with_arg("canonical", canonical)

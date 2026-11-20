@@ -1061,9 +1061,7 @@ pub fn precision_capabilities() -> PrecisionCapsReport {
 #[napi]
 pub fn resolve_weight_dtype(requested: String) -> Result<String> {
     let caps = core_precision_capabilities();
-    core_resolve_weight_dtype(&requested, &caps)
-        .map(|s| s.to_string())
-        .map_err(map_err)
+    core_resolve_weight_dtype(&requested, &caps).map(|s| s.to_string()).map_err(map_err)
 }
 
 fn parse_image_dtype(raw: &str) -> Result<ImageDtype> {

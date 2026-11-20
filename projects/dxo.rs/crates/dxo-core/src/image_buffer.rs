@@ -155,10 +155,7 @@ impl HostImageBuffer {
     ) -> Result<Self, TensorError> {
         let expected = Self::expected_len(width, height, channels, dtype)?;
         if data.len() != expected {
-            return Err(TensorError::invalid_shape(format!(
-                "ImageBuffer: byte length {} != expected {expected}",
-                data.len()
-            )));
+            return Err(TensorError::invalid_shape(format!("ImageBuffer: byte length {} != expected {expected}", data.len())));
         }
         Ok(Self { width, height, channels, dtype, layout, color_space, alpha_mode, data })
     }
@@ -168,13 +165,9 @@ impl HostImageBuffer {
         use png::{ColorType, Decoder, Transformations};
         let mut decoder = Decoder::new(bytes);
         decoder.set_transformations(Transformations::EXPAND | Transformations::STRIP_16);
-        let mut reader = decoder
-            .read_info()
-            .map_err(|e| TensorError::invalid_shape(format!("PNG decode: {e}")))?;
+        let mut reader = decoder.read_info().map_err(|e| TensorError::invalid_shape(format!("PNG decode: {e}")))?;
         let mut buf = vec![0u8; reader.output_buffer_size()];
-        let info = reader
-            .next_frame(&mut buf)
-            .map_err(|e| TensorError::invalid_shape(format!("PNG decode: {e}")))?;
+        let info = reader.next_frame(&mut buf).map_err(|e| TensorError::invalid_shape(format!("PNG decode: {e}")))?;
         buf.truncate(info.buffer_size());
         let width = info.width;
         let height = info.height;
@@ -266,17 +259,9 @@ mod tests {
     fn hwc_u8_to_nchw_normalize() {
         // 2x2 RGB white
         let data = vec![255u8; 2 * 2 * 3];
-        let buf = HostImageBuffer::from_pixels(
-            2,
-            2,
-            3,
-            ImageDtype::U8,
-            ImageLayout::Hwc,
-            ColorSpace::Rgb,
-            AlphaMode::Opaque,
-            data,
-        )
-        .unwrap();
+        let buf =
+            HostImageBuffer::from_pixels(2, 2, 3, ImageDtype::U8, ImageLayout::Hwc, ColorSpace::Rgb, AlphaMode::Opaque, data)
+                .unwrap();
         let t = buf.to_tensor_nchw(true).unwrap();
         assert_eq!(t.shape(), &[1, 3, 2, 2]);
         assert!((t.to_vec()[0] - 1.0).abs() < 1e-6);
