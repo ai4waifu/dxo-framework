@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { DxoAsset } from '@dxo/core';
 import type { TensorStateSlice } from '@dxo/nn';
 import { decodeState } from '@dxo/serialize';
 import { VisionError } from './errors.js';
@@ -11,6 +12,8 @@ export type LoadWeightsOptions = {
     path?: string;
     /** Pre-loaded safetensors bytes (DXO keys). */
     bytes?: Uint8Array;
+    /** Local filesystem path to a `.dxo` weights container (kind=weights, f32 tensors). */
+    assetPath?: string;
     /**
      * `backbone` (default): apply only keys in `model.parameterNames()`; ignore extras (e.g. `fc.*`).
      * `all`: require every tensor key to be a known parameter name (still no torch rename).
@@ -18,6 +21,29 @@ export type LoadWeightsOptions = {
     scope?: LoadWeightsScope;
     requiresGrad?: boolean;
 };
+
+type DxoWeightsMeta = {
+    kind: string;
+    tensors: Array<{ key: string; dtype: string; shape: number[] }>;
+};
+
+/** Read every tensor of a `weights` `.dxo` container through the napi reader. */
+function decodeDxoWeights(assetPath: string): Record<string, TensorStateSlice> {
+    const asset = new DxoAsset(assetPath);
+    const meta = JSON.parse(asset.metadataJson()) as DxoWeightsMeta;
+    if (meta.kind !== 'weights') {
+        throw new VisionError('INVALID_LOAD_SOURCE', `loadWeights: ${assetPath} is kind=${meta.kind}, expected weights`);
+    }
+    const out: Record<string, TensorStateSlice> = {};
+    for (const tensor of meta.tensors) {
+        if (tensor.dtype !== 'f32') {
+            throw new VisionError('UNSUPPORTED', `loadWeights: ${tensor.key} dtype ${tensor.dtype}, expected f32`);
+        }
+        const raw = asset.readTensor(tensor.key);
+        out[tensor.key] = { shape: [...tensor.shape], data: Array.from(new Float32Array(Uint8Array.from(raw).buffer)) };
+    }
+    return out;
+}
 
 function isResNetLike(model: { parameterNames?: () => string[]; loadState?: unknown }): model is ResNet {
     return typeof model.parameterNames === 'function' && typeof model.loadState === 'function';
@@ -31,18 +57,18 @@ export async function loadWeights(model: ResNet, options: LoadWeightsOptions): P
     if (!isResNetLike(model)) {
         throw new VisionError('INVALID_LOAD_TARGET', 'loadWeights expects a ResNet with parameterNames/loadState');
     }
-    if ((options.path == null) === (options.bytes == null)) {
-        throw new VisionError('INVALID_LOAD_SOURCE', 'loadWeights requires exactly one of path or bytes');
+    const sources = [options.path, options.bytes, options.assetPath].filter((v) => v != null).length;
+    if (sources !== 1) {
+        throw new VisionError('INVALID_LOAD_SOURCE', 'loadWeights requires exactly one of path, bytes or assetPath');
     }
 
-    let bytes: Uint8Array;
-    if (options.bytes) {
-        bytes = options.bytes;
+    let decoded: Record<string, TensorStateSlice>;
+    if (options.assetPath) {
+        decoded = decodeDxoWeights(options.assetPath);
     } else {
-        bytes = new Uint8Array(await readFile(options.path!));
+        const bytes = options.bytes ?? new Uint8Array(await readFile(options.path!));
+        decoded = decodeState(bytes);
     }
-
-    const decoded = decodeState(bytes);
     const scope = options.scope ?? 'backbone';
     const allowed = new Set(model.parameterNames());
     if (allowed.size === 0) {
