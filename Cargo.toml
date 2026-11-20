@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "projects/dxo.rs/crates/dxo-core",
+    "projects/dxo.rs/crates/dxo-download",
     "projects/dxo.rs/crates/dxo-napi",
     "projects/dxo.rs/crates/dxo-studio",
     "projects/dxo.rs/crates/dxo-studio-tauri",
@@ -19,6 +20,7 @@ rust-version = "1.77"
 
 [workspace.dependencies]
 dxo-core = { path = "projects/dxo.rs/crates/dxo-core" }
+dxo-download = { path = "projects/dxo.rs/crates/dxo-download" }
 dxo-studio = { path = "projects/dxo.rs/crates/dxo-studio" }
 rand = "0.10.2"
 napi = { version = "3.12.1", default-features = true, features = ["napi4"] }
@@ -37,6 +39,7 @@ ucf-scheduler = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev"
 ucf-types = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev" }
 ucf-runtime = { git = "https://github.com/muse-gpt/ucf.rs.git", branch = "dev" }
 # Boost DL/ML：训练图与优化器固定到 boost.rs 的明确提交，不复用 titan 的第二套图。
+boost-net = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
 dl-types = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
 dl-tensor = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }
 dl-graph = { git = "https://github.com/oovm/boost.rs.git", rev = "fd94618129df6cba696d0da1013052baab42c813" }

@@ -1,0 +1,19 @@
+[package]
+name = "dxo-download"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "DXO shared resumable asset downloader over boost.net"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+boost-net = { workspace = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.11"
